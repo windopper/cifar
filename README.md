@@ -28,6 +28,8 @@
 
 ---
 
+uv run main.py --optimizer adam --epochs 100 --lr 3e-4 --scheduler cosineannealinglr --net densenet121
+
 *다른 모델 결과는 아래에 추가될 예정입니다.*
 
 핵심 개선 포인트
