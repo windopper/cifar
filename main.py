@@ -18,6 +18,10 @@ from models.deep_baseline_bn_dropout_resnet import DeepBaselineNetBNDropoutResNe
 from models.deep_baseline_gap import DeepBaselineNetGAP
 from models.deep_baseline_se import DeepBaselineNetSE   
 from calibration import calibrate_temperature
+from models.resnet import ResNet18
+from models.vgg import VGG
+from models.mobilenetv2 import MobileNetV2
+from models.densenet import DenseNet121
 
 CLASS_NAMES = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -45,6 +49,10 @@ def get_net(name: str):
         'deep_baseline_bn_dropout': DeepBaselineNetBNDropout(),
         'deep_baseline_bn_dropout_resnet': DeepBaselineNetBNDropoutResNet(),
         'deep_baseline_se': DeepBaselineNetSE(),    
+        'resnet18': ResNet18(),
+        'vgg16': VGG('VGG16'),
+        'mobilenetv2': MobileNetV2(),
+        'densenet121': DenseNet121(),   
     }
     if name.lower() not in nets:
         raise ValueError(f"Unknown net: {name}. Available: {list(nets.keys())}")
@@ -54,11 +62,11 @@ def get_net(name: str):
 def get_optimizer(name: str, net: nn.Module, lr: float = 0.001, momentum: float = 0.9, weight_decay: float = 5e-4):
     """Optimizer 팩토리 함수"""
     optimizers = {
-        'sgd': optim.SGD(net.parameters(), lr=lr, momentum=momentum),
-        'adam': optim.Adam(net.parameters(), lr=lr),
+        'sgd': optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay),
+        'adam': optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay),
         'adamw': optim.AdamW(net.parameters(), lr=lr, weight_decay=weight_decay),
-        'adagrad': optim.Adagrad(net.parameters(), lr=lr),
-        'rmsprop': optim.RMSprop(net.parameters(), lr=lr, momentum=momentum),
+        'adagrad': optim.Adagrad(net.parameters(), lr=lr, weight_decay=weight_decay),
+        'rmsprop': optim.RMSprop(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay),
     }
     if name.lower() not in optimizers:
         raise ValueError(f"Unknown optimizer: {name}. Available: {list(optimizers.keys())}")
@@ -67,7 +75,8 @@ def get_optimizer(name: str, net: nn.Module, lr: float = 0.001, momentum: float 
 
 def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int = 1, 
                   lr: float = 0.001, gamma: float = 0.95, max_lr: float = None,
-                  factor: float = 0.1, patience: int = 10, mode: str = 'min'):
+                  factor: float = 0.1, patience: int = 10, mode: str = 'min',
+                  t_max: int = None, eta_min: float = 0.0):
     """Learning Rate Scheduler 팩토리 함수"""
     if name is None or (isinstance(name, str) and name.lower() == 'none'):
         return None
@@ -87,9 +96,15 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
         schedulers['reducelronplateau'] = lr_scheduler.ReduceLROnPlateau(
             optimizer, mode=mode, factor=factor, patience=patience, verbose=True
         )
+    elif name.lower() == 'cosineannealinglr':
+        if t_max is None:
+            t_max = epochs  # 기본값: 전체 epochs 수
+        schedulers['cosineannealinglr'] = lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=t_max, eta_min=eta_min
+        )
     
     if name.lower() not in schedulers:
-        raise ValueError(f"Unknown scheduler: {name}. Available: ['exponentiallr', 'onecyclelr', 'reducelronplateau', 'none']")
+        raise ValueError(f"Unknown scheduler: {name}. Available: ['exponentiallr', 'onecyclelr', 'reducelronplateau', 'cosineannealinglr', 'none']")
     
     return schedulers[name.lower()]
 
@@ -127,7 +142,10 @@ def parse_args():
                         help='손실 함수 (default: crossentropy)')
     parser.add_argument('--net', type=str, default='baseline',
                         choices=['baseline', 'deep_baseline', 'deep_baseline_silu',
-                                 'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout', 'deep_baseline_bn_dropout_resnet', 'deep_baseline_se'],
+                                 'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
+                                 'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
+                                 'vgg16', 'mobilenetv2', 'densenet121'],
+                        
                         help='네트워크 모델 (default: baseline)')
     parser.add_argument('--optimizer', type=str, default='sgd',
                         choices=['sgd', 'adam', 'adamw', 'adagrad', 'rmsprop'],
@@ -140,7 +158,7 @@ def parse_args():
     parser.add_argument('--weight-decay', type=float, default=5e-4,
                         help='Weight decay (default: 5e-4)')
     parser.add_argument('--scheduler', type=str, default='none',
-                        choices=['none', 'exponentiallr', 'onecyclelr', 'reducelronplateau'],
+                        choices=['none', 'exponentiallr', 'onecyclelr', 'reducelronplateau', 'cosineannealinglr'],
                         help='Learning rate scheduler (default: none)')
     parser.add_argument('--scheduler-gamma', type=float, default=0.95,
                         help='ExponentialLR의 gamma 값 (default: 0.95)')
@@ -153,12 +171,18 @@ def parse_args():
     parser.add_argument('--scheduler-mode', type=str, default='min',
                         choices=['min', 'max'],
                         help='ReduceLROnPlateau의 mode 값 (default: min)')
+    parser.add_argument('--scheduler-t-max', type=int, default=None,
+                        help='CosineAnnealingLR의 T_max 값 (default: epochs)')
+    parser.add_argument('--scheduler-eta-min', type=float, default=0.0,
+                        help='CosineAnnealingLR의 eta_min 값 (default: 0.0)')
     parser.add_argument('--label-smoothing', type=float, default=0.0,
                         help='Label smoothing 값 (0.0~1.0, 권장: 0.05~0.1, default: 0.0)')
     parser.add_argument('--augment', action='store_true',
                         help='데이터 증강 사용 (default: False)')
     parser.add_argument('--calibrate', action='store_true',
                         help='Temperature Scaling 캘리브레이션 수행 (default: False)')
+    parser.add_argument('--use-cifar-normalize', action='store_true',
+                        help='CIFAR-10 표준 Normalize 값 사용 (mean: 0.4914 0.4822 0.4465, std: 0.2023 0.1994 0.2010, default: False)')
     return parser.parse_args()
 
 
@@ -191,12 +215,19 @@ def main():
         elif args.scheduler.lower() == 'reducelronplateau':
             model_name_parts.append(f"factor{args.scheduler_factor}")
             model_name_parts.append(f"patience{args.scheduler_patience}")
+        elif args.scheduler.lower() == 'cosineannealinglr':
+            t_max = args.scheduler_t_max if args.scheduler_t_max else args.epochs
+            model_name_parts.append(f"tmax{t_max}")
+            if args.scheduler_eta_min > 0.0:
+                model_name_parts.append(f"etamin{args.scheduler_eta_min}")
     if args.label_smoothing > 0.0:
         model_name_parts.append(f"ls{args.label_smoothing}")
     if args.augment:
         model_name_parts.append("aug")
     if args.calibrate:
         model_name_parts.append("calibrated")
+    if args.use_cifar_normalize:
+        model_name_parts.append("cifar_normalize")
         
     model_name = "_".join(filter(None, model_name_parts))  # 빈 문자열 제거
     SAVE_PATH = f"outputs/{model_name}.pth"
@@ -204,6 +235,16 @@ def main():
     
     # outputs 디렉토리 생성
     os.makedirs("outputs", exist_ok=True)
+    
+    # Normalize 값 설정
+    if args.use_cifar_normalize:
+        # CIFAR-10 표준 Normalize 값
+        normalize_mean = (0.4914, 0.4822, 0.4465)
+        normalize_std = (0.2470, 0.2434, 0.2615)
+    else:
+        # 기본값
+        normalize_mean = (0.5, 0.5, 0.5)
+        normalize_std = (0.5, 0.5, 0.5)
     
     # Train 데이터 변환: 증강 on/off에 따라 다르게 설정
     if args.augment:
@@ -213,19 +254,19 @@ def main():
             transforms.RandomHorizontalFlip(),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.05),
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            transforms.Normalize(normalize_mean, normalize_std)
         ])
     else:
         # 데이터 증강 없이 기본 변환만
         train_transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            transforms.Normalize(normalize_mean, normalize_std)
         ])
     
     # Validation: 데이터 증강 없이 기본 변환만
     val_transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize(normalize_mean, normalize_std)
     ])
     
     train_set = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=train_transform)
@@ -249,7 +290,8 @@ def main():
         steps_per_epoch=steps_per_epoch, lr=args.lr,
         gamma=args.scheduler_gamma, max_lr=args.scheduler_max_lr,
         factor=args.scheduler_factor, patience=args.scheduler_patience,
-        mode=args.scheduler_mode
+        mode=args.scheduler_mode, t_max=args.scheduler_t_max,
+        eta_min=args.scheduler_eta_min
     )
     
     # 학습 히스토리 저장용 리스트
@@ -265,11 +307,14 @@ def main():
             'scheduler': args.scheduler,
             'label_smoothing': args.label_smoothing,
             'data_augment': args.augment,
+            'normalize_mean': list(normalize_mean),
+            'normalize_std': list(normalize_std),
             'device': str(device)
         },
         'train_loss': [],
         'val_loss': [],
-        'val_accuracy': []
+        'val_accuracy': [],
+        'best_val_accuracy': None
     }
     
     # Scheduler 관련 하이퍼파라미터 추가
@@ -283,6 +328,9 @@ def main():
             history['hyperparameters']['scheduler_patience'] = args.scheduler_patience
             history['hyperparameters']['scheduler_mode'] = args.scheduler_mode
             history['hyperparameters']['scheduler_metric'] = 'val_loss'
+        elif args.scheduler.lower() == 'cosineannealinglr':
+            history['hyperparameters']['scheduler_t_max'] = args.scheduler_t_max if args.scheduler_t_max else args.epochs
+            history['hyperparameters']['scheduler_eta_min'] = args.scheduler_eta_min
     
     # Optimizer 관련 하이퍼파라미터 추가
     if args.optimizer.lower() == 'adamw':
@@ -299,6 +347,8 @@ def main():
         print(f"  Weight decay: {args.weight_decay}")
     print(f"  Label smoothing: {args.label_smoothing}")
     print(f"  Data augmentation: {args.augment}")
+    print(f"  Normalize mean: {normalize_mean}")
+    print(f"  Normalize std: {normalize_std}")
     print(f"  Scheduler: {args.scheduler}")
     if args.scheduler and args.scheduler.lower() != 'none':
         if args.scheduler.lower() == 'exponentiallr':
@@ -311,9 +361,16 @@ def main():
             print(f"  Scheduler patience: {args.scheduler_patience}")
             print(f"  Scheduler mode: {args.scheduler_mode}")
             print(f"  Scheduler metric: val_loss")
+        elif args.scheduler.lower() == 'cosineannealinglr':
+            t_max = args.scheduler_t_max if args.scheduler_t_max else args.epochs
+            print(f"  Scheduler T_max: {t_max}")
+            print(f"  Scheduler eta_min: {args.scheduler_eta_min}")
     print(f"  Save path: {SAVE_PATH}")
     print(f"  History path: {HISTORY_PATH}")
     print()
+    
+    # 최고 검증 정확도 추적
+    best_val_acc = -1.0
     
     for epoch in range(args.epochs):
         running_loss = 0.0
@@ -345,8 +402,10 @@ def main():
         # Validation 수행
         val_loss, val_acc = validate(net, criterion, val_loader, device)
         
-        # ExponentialLR은 각 epoch마다 업데이트
+        # ExponentialLR과 CosineAnnealingLR은 각 epoch마다 업데이트
         if scheduler is not None and isinstance(scheduler, lr_scheduler.ExponentialLR):
+            scheduler.step()
+        if scheduler is not None and isinstance(scheduler, lr_scheduler.CosineAnnealingLR):
             scheduler.step()
         
         # ReduceLROnPlateau는 validation loss를 기반으로 각 epoch마다 업데이트
@@ -357,6 +416,13 @@ def main():
         history['train_loss'].append(avg_train_loss)
         history['val_loss'].append(val_loss)
         history['val_accuracy'].append(val_acc)
+        
+        # 최고 검증 정확도일 때만 모델 저장
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            history['best_val_accuracy'] = best_val_acc
+            torch.save(net.state_dict(), SAVE_PATH)
+            print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
         
         current_lr = optimizer.param_groups[0]['lr']
         print(f"Epoch {epoch + 1}/{args.epochs}:")
@@ -407,9 +473,8 @@ def main():
         with open(HISTORY_PATH, 'w') as f:
             json.dump(history, f, indent=2)
     
-    # 모델 저장
-    torch.save(net.state_dict(), SAVE_PATH)
-    print(f"Model saved to: {SAVE_PATH}")
+    # 최고 모델은 이미 저장되어 있음
+    print(f"Best model (Val Accuracy: {best_val_acc:.2f}%) saved to: {SAVE_PATH}")
     print(f"Training history saved to: {HISTORY_PATH}")
     
     # Temperature가 있으면 별도 파일로도 저장

@@ -193,7 +193,15 @@ def plot_scheduler_comparison(histories, save_path="outputs/specific_baselines_s
         scheduler_name = 'None'
         scheduler_params = ''
         
-        if 'schexponentiallr' in filename:
+        # 베이스라인 파일 확인 (스케줄러가 없는 경우)
+        is_baseline = 'baseline_sgd_crossentropy_bs16_ep24_lr0.001_mom0.9_history' in filename and \
+                     'schexponentiallr' not in filename and \
+                     'schonecyclelr' not in filename and \
+                     'schreducelronplateau' not in filename
+        
+        if is_baseline:
+            scheduler_name = 'Baseline'
+        elif 'schexponentiallr' in filename:
             scheduler_name = 'ExponentialLR'
             if 'gamma0.95' in filename:
                 scheduler_params = ' (γ=0.95)'
@@ -473,8 +481,15 @@ def print_summary(histories, comparison_type="Optimizer"):
         
         # 스케줄러 정보 출력
         if comparison_type == "Scheduler":
-            scheduler_name = 'None'
-            if 'schexponentiallr' in filename:
+            # 베이스라인 파일 확인
+            is_baseline = 'baseline_sgd_crossentropy_bs16_ep24_lr0.001_mom0.9_history' in filename and \
+                         'schexponentiallr' not in filename and \
+                         'schonecyclelr' not in filename and \
+                         'schreducelronplateau' not in filename
+            
+            if is_baseline:
+                print(f"    Scheduler: Baseline (None)")
+            elif 'schexponentiallr' in filename:
                 scheduler_name = 'ExponentialLR'
                 if 'gamma0.95' in filename:
                     print(f"    Scheduler: {scheduler_name} (γ=0.95)")
@@ -486,6 +501,8 @@ def print_summary(histories, comparison_type="Optimizer"):
             elif 'schreducelronplateau' in filename:
                 scheduler_name = 'ReduceLROnPlateau'
                 print(f"    Scheduler: {scheduler_name} (factor=0.1, patience=3)")
+            else:
+                print(f"    Scheduler: None")
         
         # 기법 정보 출력
         if comparison_type == "Technique":
@@ -510,16 +527,20 @@ def print_summary(histories, comparison_type="Optimizer"):
 
 def main():
     """메인 함수"""
+    # 베이스라인 파일명
+    baseline_file_name = "baseline_sgd_crossentropy_bs16_ep24_lr0.001_mom0.9_history"
+    
     # Optimizer 비교용 파일명들 (확장자 없이)
     optimizer_file_names = [
+        baseline_file_name,  # 베이스라인을 첫 번째로
         "baseline_adam_crossentropy_bs16_ep24_lr0.001_mom0.9_history",
-        "baseline_sgd_crossentropy_bs16_ep24_lr0.001_mom0.9_history",
         "baseline_adamw_crossentropy_bs16_ep24_lr0.001_mom0.9_wd0.0005_history",
         "baseline_adagrad_crossentropy_bs16_ep24_lr0.001_mom0.9_history"
     ]
     
     # Scheduler 비교용 파일명들 (확장자 없이)
     scheduler_file_names = [
+        baseline_file_name,  # 베이스라인을 첫 번째로
         "baseline_adam_crossentropy_bs16_ep24_lr0.001_mom0.9_schexponentiallr_gamma0.95_history",
         "baseline_adam_crossentropy_bs16_ep24_lr0.001_mom0.9_schonecyclelr_history",
         "baseline_adam_crossentropy_bs16_ep24_lr0.001_mom0.9_schreducelronplateau_factor0.1_patience3_history"
