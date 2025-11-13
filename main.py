@@ -15,6 +15,8 @@ from models.baseline import BaselineNet
 from models.deep_baseline import DeepBaselineNet
 from models.deep_baseline_silu import DeepBaselineNetSilu
 from models.deep_baseline_bn import DeepBaselineNetBN
+from models.deep_baseline2_bn import DeepBaselineNetBN2
+from models.deep_baseline2_bn_residual import DeepBaselineNetBN2Residual
 from models.deep_baseline_bn_dropout import DeepBaselineNetBNDropout
 from models.deep_baseline_bn_dropout_resnet import DeepBaselineNetBNDropoutResNet
 from models.deep_baseline_gap import DeepBaselineNetGAP
@@ -60,6 +62,8 @@ def get_net(name: str):
         'deep_baseline': DeepBaselineNet(),
         'deep_baseline_silu': DeepBaselineNetSilu(),
         'deep_baseline_bn': DeepBaselineNetBN(),
+        'deep_baseline2_bn': DeepBaselineNetBN2(),
+        'deep_baseline2_bn_residual': DeepBaselineNetBN2Residual(),
         'deep_baseline_gap': DeepBaselineNetGAP(),
         'deep_baseline_bn_dropout': DeepBaselineNetBNDropout(),
         'deep_baseline_bn_dropout_resnet': DeepBaselineNetBNDropoutResNet(),
@@ -164,7 +168,7 @@ def parse_args():
                         choices=['baseline', 'deep_baseline', 'deep_baseline_silu',
                                  'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
-                                 'vgg16', 'mobilenetv2', 'densenet121'],
+                                 'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual'],
 
                         help='네트워크 모델 (default: baseline)')
     parser.add_argument('--optimizer', type=str, default='sgd',
