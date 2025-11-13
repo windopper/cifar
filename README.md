@@ -1,32 +1,4 @@
-# CIFAR-10 분류 모델 결과
 
-## 모델 성능 결과
-
-### Baseline 모델
-
-**설정:**
-- 모델: BaselineNet
-- 옵티마이저: SGD
-- 손실 함수: CrossEntropyLoss
-
-**테스트 정확도:**
-- 전체 정확도: **55.77%**
-
-**클래스별 정확도:**
-| 클래스 | 정확도 |
-|--------|--------|
-| plane  | 63.7%  |
-| car    | 67.8%  |
-| bird   | 26.5%  |
-| cat    | 51.6%  |
-| deer   | 34.4%  |
-| dog    | 58.4%  |
-| frog   | 63.3%  |
-| horse  | 52.1%  |
-| ship   | 74.9%  |
-| truck  | 65.0%  |
-
----
 
 uv run main.py --optimizer adam --epochs 100 --lr 3e-4 --scheduler cosineannealinglr --net densenet121
 

@@ -17,6 +17,7 @@ from models.deep_baseline_silu import DeepBaselineNetSilu
 from models.deep_baseline_bn import DeepBaselineNetBN
 from models.deep_baseline2_bn import DeepBaselineNetBN2
 from models.deep_baseline2_bn_residual import DeepBaselineNetBN2Residual
+from models.deep_baseline2_bn_residual_preact import DeepBaselineNetBN2ResidualPreAct
 from models.deep_baseline_bn_dropout import DeepBaselineNetBNDropout
 from models.deep_baseline_bn_dropout_resnet import DeepBaselineNetBNDropoutResNet
 from models.deep_baseline_gap import DeepBaselineNetGAP
@@ -67,6 +68,7 @@ def get_net(name: str):
         'deep_baseline_gap': DeepBaselineNetGAP(),
         'deep_baseline_bn_dropout': DeepBaselineNetBNDropout(),
         'deep_baseline_bn_dropout_resnet': DeepBaselineNetBNDropoutResNet(),
+        'deep_baseline2_bn_residual_preact': DeepBaselineNetBN2ResidualPreAct(),
         'deep_baseline_se': DeepBaselineNetSE(),
         'resnet18': ResNet18(),
         'vgg16': VGG('VGG16'),
@@ -168,11 +170,13 @@ def parse_args():
                         choices=['baseline', 'deep_baseline', 'deep_baseline_silu',
                                  'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
-                                 'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual'],
+                                 'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
+                                 'deep_baseline2_bn_residual_preact'],
 
                         help='네트워크 모델 (default: baseline)')
     parser.add_argument('--optimizer', type=str, default='sgd',
-                        choices=['sgd', 'adam', 'adamw', 'adagrad', 'rmsprop'],
+                        choices=['sgd', 'adam', 'adamw',
+                                 'adagrad', 'rmsprop', 'muon'],
                         help='옵티마이저 (default: sgd)')
     parser.add_argument('--epochs', type=int, default=24,
                         help='에포크 수 (default: 24)')
@@ -285,8 +289,7 @@ def main():
         train_transform = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(
-                brightness=0.1, contrast=0.1, saturation=0.1, hue=0.05),
+            transforms.RandomRotation(15),
             transforms.ToTensor(),
             transforms.Normalize(normalize_mean, normalize_std)
         ])
