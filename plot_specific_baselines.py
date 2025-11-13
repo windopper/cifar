@@ -36,7 +36,7 @@ def load_specific_histories(file_names, output_dir="outputs"):
     
     return histories
 
-def plot_optimizer_comparison(histories, save_path="outputs/specific_baselines_optimizer_comparison.png"):
+def plot_optimizer_comparison(histories, save_path="comparison/specific_baselines_optimizer_comparison.png"):
     """특정 baseline 모델들의 optimizer별 비교 그래프 작성"""
     
     if not histories:
@@ -168,7 +168,7 @@ def plot_optimizer_comparison(histories, save_path="outputs/specific_baselines_o
     print(f"그래프가 저장되었습니다: {save_path}")
     plt.close()
 
-def plot_scheduler_comparison(histories, save_path="outputs/specific_baselines_scheduler_comparison.png"):
+def plot_scheduler_comparison(histories, save_path="comparison/specific_baselines_scheduler_comparison.png"):
     """특정 baseline 모델들의 scheduler별 비교 그래프 작성"""
     
     if not histories:
@@ -318,7 +318,7 @@ def plot_scheduler_comparison(histories, save_path="outputs/specific_baselines_s
     print(f"그래프가 저장되었습니다: {save_path}")
     plt.close()
 
-def plot_technique_comparison(histories, save_path="outputs/specific_baselines_technique_comparison.png"):
+def plot_technique_comparison(histories, save_path="comparison/specific_baselines_technique_comparison.png"):
     """특정 baseline 모델들의 기법별 비교 그래프 작성"""
     
     if not histories:

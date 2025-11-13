@@ -1,36 +1,103 @@
 
 
-uv run main.py --optimizer adam --epochs 100 --lr 3e-4 --scheduler cosineannealinglr --net densenet121
+# 시도
+`uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --cutmix --w-init`
+deep_baseline 모델을 기본으로 --augment, --cutmix, -w-init 조합 비교
 
-*다른 모델 결과는 아래에 추가될 예정입니다.*
+## 모델 비교 시에 사용하는 기본 설정
+Optimizer: Adam
+Epochs: 20
+Learning Rate: 3e-4
+Scheduler: Cosine Annealing LR
+Net: deep_baseline
 
-핵심 개선 포인트
-아키텍처
-Conv-BN-ReLU 표준화: 각 Conv2d 뒤에 BatchNorm2d+ReLU를 붙이고, 커널은 3×3, padding=1로 공간 크기 보존.
-채널 폭 확장: 3단계 스테이지로 폭을 64→128→256 등으로 점진 확대.
-다운샘플 방식: MaxPool2d(2) 또는 stride=2 conv로 단계별 해상도 절반.
-GAP로 FC 축소: 큰 FC 스택 제거, AdaptiveAvgPool2d(1)+Linear(num_features, 10)로 파라미터·과적합 감소.
-규제: Dropout(0.1~0.3)를 분류기 앞에 사용.
-선택적: 잔차 연결(ResNet BasicBlock), Squeeze-and-Excitation(채널 어텐션), SiLU 대체 등으로 추가 이득.
-정규화/손실
-Weight Decay: 5e-4(또는 AdamW 1e-4~5e-4).
-Label Smoothing: 0.05~0.1.
-마지막 로짓의 Temperature Scaling으로 캘리브레이션(선택).
-옵티마이저/스케줄러
-SGD + momentum 0.9(또는 Nesterov) 권장. 초기 lr 0.1(배치 128 기준), 배치에 따라 선형 스케일.
-CosineAnnealingLR(+ 5~10 epoch warmup) 또는 OneCycleLR.
-EMA(Exponential Moving Average) 가중치로 일반화 향상.
-데이터 증강(CIFAR-10 권장)
-기본: RandomCrop(32, padding=4), RandomHorizontalFlip().
-추가: 약한 ColorJitter 또는 TrivialAugmentWide/AutoAugment.
-Mixup 0.2~0.4 / CutMix 0.5 중 하나 또는 병행.
-텐서 변환 후 RandomErasing(p≈0.25).
+## Augmentation, CutMix, Weight Initialization, Label Smoothing 효과 비교 20 Epoch 기준
 
-학습 안정화/속도
-AMP 자동 혼합정밀(torch.cuda.amp.autocast, GradScaler).
-Gradient Clipping(예: 1.0).
-cudnn.benchmark=True(고정 해상도일 때), 재현성 필요 시 시드 고정.
-최고 검증 성능 체크포인트 및 Early Stopping.
-평가/모니터링
-TTA(수평뒤집음 등 소규모)로 최종 한두 점 향상.
-혼동행렬/클래스별 F1, 잘못 분류 샘플 점검.
+| 설정 | Augmentation | CutMix | Weight Init | Label Smoothing | 최고 Val Accuracy (%) |
+|------|--------------|--------|-------------|-----------------|----------------------|
+| 기본 (모두 없음) | ❌ | ❌ | ❌ | ❌ | 81.35 |
+| Weight Init만 | ❌ | ❌ | ✅ | ❌ | 83.29 |
+| Augmentation만 | ✅ | ❌ | ❌ | ❌ | 82.84 |
+| Augmentation + CutMix | ✅ | ✅ | ❌ | ❌ | 80.79 |
+| Augmentation + Weight Init | ✅ | ❌ | ✅ | ❌ | 87.81 |
+| Augmentation + Weight Init + Label Smoothing(0.05) | ✅ | ❌ | ✅ | ✅ (0.05) | **88.39** |
+| Augmentation + CutMix + Weight Init | ✅ | ✅ | ✅ | ❌ | 86.83 |
+
+![image](./comparison/augment_winit_comparison.png)
+
+**결과 요약:**
+- 최고 성능: Augmentation + Weight Init + Label Smoothing(0.05) = **88.39%**
+- Weight Initialization만 추가해도 기본 대비 +1.94%p 향상
+- Augmentation + Weight Init 조합이 가장 효과적 (87.81%)
+- Label Smoothing(0.05) 추가 시 추가 +0.58%p 향상
+- CutMix는 이 실험에서 오히려 성능을 약간 저하시킴 (Augmentation만: 82.84% vs Augmentation + CutMix: 80.79%)
+
+## 모델 아키텍처 비교 20 Epoch 기준
+
+| 모델 | Batch Normalization | Residual Connection | Pre-activation | 최고 Val Accuracy (%) |
+|------|---------------------|---------------------|----------------|----------------------|
+| deep_baseline | ❌ | ❌ | ❌ | 81.35 |
+| deep_baseline_bn | ✅ | ❌ | ❌ | 87.21 |
+| deep_baseline2_bn | ✅ | ❌ | ❌ | 88.41 |
+| deep_baseline2_bn_residual | ✅ | ✅ | ❌ | **88.47** |
+| deep_baseline2_bn_residual_preact | ✅ | ✅ | ✅ | 87.07 |
+| deep_baseline2_bn_resnext | ✅ | ✅ | ❌ | 87.53 |
+| deep_baseline3_bn | ✅ | ❌ | ❌ | 87.9 |
+
+![image](./comparison/model_comparison.png)
+
+**결과 요약:**
+- 최고 성능: deep_baseline2_bn_residual = **88.47%**
+- Batch Normalization 추가 시 기본 대비 +5.86%p 향상 (deep_baseline_bn: 87.21%)
+- deep_baseline2_bn이 deep_baseline_bn보다 +1.2%p 향상 (88.41% vs 87.21%)
+- Residual connection 추가 시 추가 +0.06%p 향상 (deep_baseline2_bn_residual: 88.47%)
+- Pre-activation residual은 이 실험에서 성능이 약간 저하됨 (87.07% vs 88.47%)
+- deep_baseline2_bn_resnext (ResNeXt 구조)는 87.53%로 deep_baseline2_bn_residual_preact (87.07%)보다 약간 높은 성능
+- deep_baseline3_bn은 deep_baseline2_bn보다 약간 낮은 성능 (87.9% vs 88.41%)
+
+## 모델별 최고 성능 조합 20 Epoch 기준
+
+| 모델 | Augmentation | CutMix | Weight Init | Label Smoothing | 최고 Val Accuracy (%) |
+|------|--------------|--------|-------------|-----------------|----------------------|
+| deep_baseline2_bn_residual | ✅ | ✅ | ✅ | ❌ | 90.4 |
+| deep_baseline2_bn_residual_preact | ✅ | ❌ | ✅ | ❌ | **90.84** |
+| deep_baseline2_bn_residual_preact | ✅ | ✅ | ✅ | ❌ | 90.02 |
+
+**결과 요약:**
+- 최고 성능: deep_baseline2_bn_residual_preact (Augmentation + Weight Init) = **90.84%**
+- deep_baseline2_bn_residual_preact 모델에 Augmentation + Weight Init을 적용한 결과: **90.84%**
+- 기본 deep_baseline2_bn_residual_preact (87.07%) 대비 +3.77%p 향상
+- deep_baseline2_bn_residual (Augmentation + CutMix + Weight Init, 90.4%)보다 +0.44%p 향상
+- deep_baseline2_bn_residual_preact (Augmentation + CutMix + Weight Init) = 90.02%
+  - Augmentation + Weight Init (90.84%)보다 -0.82%p 낮음
+  - CutMix 추가 시 성능이 약간 저하됨
+- Pre-activation residual 모델이 Augmentation + Weight Init 조합에서 최고 성능 달성
+- 모든 실험 중 최고 성능 달성
+
+## 100 Epoch 기준 실험 결과
+
+### deep_baseline_bn 모델 (100 Epoch)
+
+| 설정 | 모델 | Optimizer | Learning Rate | Batch Size | Augmentation | CutMix | Weight Init | Label Smoothing | Scheduler | 최고 Val Accuracy (%) |
+|------|------|-----------|---------------|------------|--------------|--------|-------------|-----------------|-----------|----------------------|
+| 최적화 조합 | deep_baseline_bn | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | **91.99** |
+
+**하이퍼파라미터:**
+- Epochs: 100
+- Optimizer: Adam
+- Learning Rate: 0.001
+- Batch Size: 128
+- Momentum: 0.9
+- Scheduler: CosineAnnealingLR (T_max: 100, eta_min: 0.0)
+- Label Smoothing: 0.05
+- Data Augmentation: ✅
+- CutMix: ✅
+- Weight Initialization: ✅
+- Seed: 42
+
+**결과 요약:**
+- 최고 성능: **91.99%** (100 에포크)
+- 20 에포크 기준 최고 성능 (88.39%) 대비 +3.60%p 향상
+- Augmentation + CutMix + Weight Init + Label Smoothing 조합으로 최고 성능 달성
+- 100 에포크까지 학습하여 모델의 최대 성능 확인
+

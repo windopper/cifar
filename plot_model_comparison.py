@@ -38,7 +38,7 @@ def load_histories(file_names, output_dir="outputs"):
     return histories
 
 
-def plot_model_comparison(histories, save_path="outputs/model_comparison.png"):
+def plot_model_comparison(histories, save_path="comparison/model_comparison.png"):
     """모델 비교 그래프 작성"""
 
     if not histories:
@@ -152,19 +152,16 @@ def plot_model_comparison(histories, save_path="outputs/model_comparison.png"):
     plt.close()
 
 
-def main():
-    """메인 함수"""
-    # 파일 리스트 (사용자가 채울 수 있도록 빈 리스트로 시작)
+def plot_model_comparison_20_epoch(save_path="comparison/model_comparison_20_epoch.png"):
+    """20 Epoch 기준 모델 성능 비교 그래프 작성"""
     file_names = [
-        # 여기에 비교할 모델의 history 파일명을 추가하세요
-        # 예: "deep_baseline2_bn_adam_crossentropy_bs16_ep100_lr0.0003_mom0.9_schcosineannealinglr_tmax100_history"
-        # "deep_baseline_adam_crossentropy_bs16_ep100_lr0.0003_mom0.9_schcosineannealinglr_tmax100_history.json",
-        # "deep_baseline_bn_adam_crossentropy_bs16_ep100_lr0.0003_mom0.9_schcosineannealinglr_tmax100_history.json",
         "deep_baseline2_bn_residual_preact_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
         "deep_baseline_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
         "deep_baseline_bn_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
         "deep_baseline2_bn_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
         "deep_baseline2_bn_residual_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
+        "deep_baseline2_bn_resnext_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
+        "deep_baseline3_bn_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
     ]
 
     if not file_names:
@@ -179,8 +176,24 @@ def main():
         return
 
     # 그래프 작성
-    plot_model_comparison(histories)
+    plot_model_comparison(histories, save_path=save_path)
+    
+def plot_model_comparison_100_epoch(save_path="comparison/model_comparison_100_epoch.png"):
+    file_names = [
+        "deep_baseline_bn_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
+        "deep_baseline2_bn_resnext_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_winit_history.json",
+    ]
+    
+    if not file_names:
+        print("로드된 history 파일이 없습니다.")
+        return
+    
+    histories = load_histories(file_names)
+    
+    # 100 Epoch 기준 모델 성능 비교 그래프 작성
+    plot_model_comparison(histories, save_path=save_path)
 
 
 if __name__ == "__main__":
-    main()
+    plot_model_comparison_20_epoch()
+    plot_model_comparison_100_epoch()

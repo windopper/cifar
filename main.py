@@ -16,8 +16,10 @@ from models.deep_baseline import DeepBaselineNet
 from models.deep_baseline_silu import DeepBaselineNetSilu
 from models.deep_baseline_bn import DeepBaselineNetBN
 from models.deep_baseline2_bn import DeepBaselineNetBN2
+from models.deep_baseline3_bn import DeepBaselineNetBN3
 from models.deep_baseline2_bn_residual import DeepBaselineNetBN2Residual
 from models.deep_baseline2_bn_residual_preact import DeepBaselineNetBN2ResidualPreAct
+from models.deep_baseline2_bn_resnext import DeepBaselineNetBN2ResNeXt
 from models.deep_baseline_bn_dropout import DeepBaselineNetBNDropout
 from models.deep_baseline_bn_dropout_resnet import DeepBaselineNetBNDropoutResNet
 from models.deep_baseline_gap import DeepBaselineNetGAP
@@ -27,6 +29,9 @@ from models.resnet import ResNet18
 from models.vgg import VGG
 from models.mobilenetv2 import MobileNetV2
 from models.densenet import DenseNet121
+from utils.cutmix import CutMixCollator, CutMixCriterion
+from utils.model_name import get_model_name_parts
+from utils.training_config import print_training_configuration
 
 CLASS_NAMES = ('plane', 'car', 'bird', 'cat', 'deer',
                'dog', 'frog', 'horse', 'ship', 'truck')
@@ -56,19 +61,21 @@ def get_criterion(name: str, label_smoothing: float = 0.0):
     return criterions[name.lower()]
 
 
-def get_net(name: str):
+def get_net(name: str, init_weights: bool = False):
     """Network 팩토리 함수"""
     nets = {
         'baseline': BaselineNet(),
-        'deep_baseline': DeepBaselineNet(),
+        'deep_baseline': DeepBaselineNet(init_weights=init_weights),
         'deep_baseline_silu': DeepBaselineNetSilu(),
-        'deep_baseline_bn': DeepBaselineNetBN(),
-        'deep_baseline2_bn': DeepBaselineNetBN2(),
-        'deep_baseline2_bn_residual': DeepBaselineNetBN2Residual(),
+        'deep_baseline_bn': DeepBaselineNetBN(init_weights=init_weights),
+        'deep_baseline2_bn': DeepBaselineNetBN2(init_weights=init_weights),
+        'deep_baseline2_bn_residual': DeepBaselineNetBN2Residual(init_weights=init_weights),
+        'deep_baseline2_bn_resnext': DeepBaselineNetBN2ResNeXt(init_weights=init_weights),
         'deep_baseline_gap': DeepBaselineNetGAP(),
         'deep_baseline_bn_dropout': DeepBaselineNetBNDropout(),
         'deep_baseline_bn_dropout_resnet': DeepBaselineNetBNDropoutResNet(),
         'deep_baseline2_bn_residual_preact': DeepBaselineNetBN2ResidualPreAct(),
+        'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline_se': DeepBaselineNetSE(),
         'resnet18': ResNet18(),
         'vgg16': VGG('VGG16'),
@@ -171,7 +178,7 @@ def parse_args():
                                  'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
                                  'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
-                                 'deep_baseline2_bn_residual_preact'],
+                                 'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext'],
 
                         help='네트워크 모델 (default: baseline)')
     parser.add_argument('--optimizer', type=str, default='sgd',
@@ -211,12 +218,20 @@ def parse_args():
                         help='Label smoothing 값 (0.0~1.0, 권장: 0.05~0.1, default: 0.0)')
     parser.add_argument('--augment', action='store_true',
                         help='데이터 증강 사용 (default: False)')
+    parser.add_argument('--cutmix', action='store_true',
+                        help='CutMix 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
     parser.add_argument('--calibrate', action='store_true',
                         help='Temperature Scaling 캘리브레이션 수행 (default: False)')
     parser.add_argument('--use-cifar-normalize', action='store_true',
                         help='CIFAR-10 표준 Normalize 값 사용 (mean: 0.4914 0.4822 0.4465, std: 0.2023 0.1994 0.2010, default: False)')
     parser.add_argument('--seed', type=int, default=42,
                         help='랜덤 시드 값 (default: 42)')
+    parser.add_argument('--w-init', action='store_true',
+                        help='Weight initialization 사용 (deep_baseline 모델에만 적용, default: False)')
+    parser.add_argument('--early-stopping', action='store_true',
+                        help='Early stopping 사용 (default: False)')
+    parser.add_argument('--early-stopping-patience', type=int, default=5,
+                        help='Early stopping patience 값 (default: 5)')
     return parser.parse_args()
 
 
@@ -231,41 +246,7 @@ def main():
     print(f"Using device: {device}")
 
     # Save path에 모델 이름과 설정 정보 자동 추가
-    model_name_parts = [
-        args.save_prefix,
-        args.net,
-        args.optimizer,
-        args.criterion,
-        f"bs{args.batch_size}",
-        f"ep{args.epochs}",
-        f"lr{args.lr}",
-        f"mom{args.momentum}"
-    ]
-    if args.optimizer.lower() == 'adamw':
-        model_name_parts.append(f"wd{args.weight_decay}")
-    if args.scheduler and args.scheduler.lower() != 'none':
-        model_name_parts.append(f"sch{args.scheduler}")
-        if args.scheduler.lower() == 'exponentiallr':
-            model_name_parts.append(f"gamma{args.scheduler_gamma}")
-        elif args.scheduler.lower() == 'onecyclelr' and args.scheduler_max_lr:
-            model_name_parts.append(f"maxlr{args.scheduler_max_lr}")
-        elif args.scheduler.lower() == 'reducelronplateau':
-            model_name_parts.append(f"factor{args.scheduler_factor}")
-            model_name_parts.append(f"patience{args.scheduler_patience}")
-        elif args.scheduler.lower() == 'cosineannealinglr':
-            t_max = args.scheduler_t_max if args.scheduler_t_max else args.epochs
-            model_name_parts.append(f"tmax{t_max}")
-            if args.scheduler_eta_min > 0.0:
-                model_name_parts.append(f"etamin{args.scheduler_eta_min}")
-    if args.label_smoothing > 0.0:
-        model_name_parts.append(f"ls{args.label_smoothing}")
-    if args.augment:
-        model_name_parts.append("aug")
-    if args.calibrate:
-        model_name_parts.append("calibrated")
-    if args.use_cifar_normalize:
-        model_name_parts.append("cifar_normalize")
-
+    model_name_parts = get_model_name_parts(args)
     model_name = "_".join(filter(None, model_name_parts))  # 빈 문자열 제거
     SAVE_PATH = f"outputs/{model_name}.pth"
     HISTORY_PATH = f"outputs/{model_name}_history.json"
@@ -308,8 +289,17 @@ def main():
 
     train_set = torchvision.datasets.CIFAR10(
         root='./data', train=True, download=True, transform=train_transform)
+    
+    # CutMix 설정 (--augment가 활성화되어 있을 때만)
+    cutmix_collator = None
+    cutmix_criterion = None
+    if args.cutmix and args.augment:
+        cutmix_collator = CutMixCollator(alpha=1.0, prob=0.5)
+        cutmix_criterion = CutMixCriterion(reduction='mean', label_smoothing=args.label_smoothing)
+    
     train_loader = torch.utils.data.DataLoader(
-        train_set, batch_size=args.batch_size, shuffle=True, num_workers=2)
+        train_set, batch_size=args.batch_size, shuffle=True, num_workers=2,
+        collate_fn=cutmix_collator if cutmix_collator is not None else None)
 
     val_set = torchvision.datasets.CIFAR10(
         root='./data', train=False, download=True, transform=val_transform)
@@ -319,7 +309,7 @@ def main():
     dataiter = iter(train_loader)
     images, labels = next(dataiter)
 
-    net = get_net(args.net)
+    net = get_net(args.net, init_weights=args.w_init)
     net = net.to(device)
     criterion = get_criterion(
         args.criterion, label_smoothing=args.label_smoothing)
@@ -350,10 +340,14 @@ def main():
             'scheduler': args.scheduler,
             'label_smoothing': args.label_smoothing,
             'data_augment': args.augment,
+            'cutmix': args.cutmix and args.augment,
             'normalize_mean': list(normalize_mean),
             'normalize_std': list(normalize_std),
             'seed': args.seed,
-            'device': str(device)
+            'weight_init': args.w_init,
+            'device': str(device),
+            'early_stopping': args.early_stopping,
+            'early_stopping_patience': args.early_stopping_patience if args.early_stopping else None
         },
         'train_loss': [],
         'val_loss': [],
@@ -380,54 +374,39 @@ def main():
     if args.optimizer.lower() == 'adamw':
         history['hyperparameters']['weight_decay'] = args.weight_decay
 
-    print(f"Training configuration:")
-    print(f"  Seed: {args.seed}")
-    print(f"  Batch size: {args.batch_size}")
-    print(f"  Criterion: {args.criterion}")
-    print(f"  Net: {args.net}")
-    print(f"  Optimizer: {args.optimizer}")
-    print(f"  Epochs: {args.epochs}")
-    print(f"  Learning rate: {args.lr}")
-    if args.optimizer.lower() == 'adamw':
-        print(f"  Weight decay: {args.weight_decay}")
-    print(f"  Label smoothing: {args.label_smoothing}")
-    print(f"  Data augmentation: {args.augment}")
-    print(f"  Normalize mean: {normalize_mean}")
-    print(f"  Normalize std: {normalize_std}")
-    print(f"  Scheduler: {args.scheduler}")
-    if args.scheduler and args.scheduler.lower() != 'none':
-        if args.scheduler.lower() == 'exponentiallr':
-            print(f"  Scheduler gamma: {args.scheduler_gamma}")
-        elif args.scheduler.lower() == 'onecyclelr':
-            max_lr = args.scheduler_max_lr if args.scheduler_max_lr else args.lr * 10
-            print(f"  Scheduler max_lr: {max_lr}")
-        elif args.scheduler.lower() == 'reducelronplateau':
-            print(f"  Scheduler factor: {args.scheduler_factor}")
-            print(f"  Scheduler patience: {args.scheduler_patience}")
-            print(f"  Scheduler mode: {args.scheduler_mode}")
-            print(f"  Scheduler metric: val_loss")
-        elif args.scheduler.lower() == 'cosineannealinglr':
-            t_max = args.scheduler_t_max if args.scheduler_t_max else args.epochs
-            print(f"  Scheduler T_max: {t_max}")
-            print(f"  Scheduler eta_min: {args.scheduler_eta_min}")
-    print(f"  Save path: {SAVE_PATH}")
-    print(f"  History path: {HISTORY_PATH}")
-    print()
+    # Training configuration 출력
+    print_training_configuration(args, normalize_mean, normalize_std, SAVE_PATH, HISTORY_PATH)
 
     # 최고 검증 정확도 추적
     best_val_acc = -1.0
+    
+    # Early stopping 설정
+    early_stopping_enabled = args.early_stopping
+    early_stopping_patience = args.early_stopping_patience if early_stopping_enabled else None
+    patience_counter = 0
 
     for epoch in range(args.epochs):
         running_loss = 0.0
         pbar = tqdm(train_loader, desc=f'Epoch {epoch + 1}/{args.epochs}')
         for i, data in enumerate(pbar, 0):
             inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs = inputs.to(device)
+            
+            # CutMix 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
+            if isinstance(labels, (tuple, list)):
+                targets1, targets2, lam = labels
+                labels = (targets1.to(device), targets2.to(device), lam)
+            else:
+                labels = labels.to(device)
 
             optimizer.zero_grad()
 
             outputs = net(inputs)
-            loss = criterion(outputs, labels)
+            # CutMix 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
+            if cutmix_criterion is not None and isinstance(labels, tuple):
+                loss = cutmix_criterion(outputs, labels)
+            else:
+                loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
@@ -469,6 +448,13 @@ def main():
             history['best_val_accuracy'] = best_val_acc
             torch.save(net.state_dict(), SAVE_PATH)
             print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
+            # Early stopping 카운터 리셋 (활성화된 경우에만)
+            if early_stopping_enabled:
+                patience_counter = 0
+        else:
+            # 개선이 없으면 patience 카운터 증가 (활성화된 경우에만)
+            if early_stopping_enabled:
+                patience_counter += 1
 
         current_lr = optimizer.param_groups[0]['lr']
         print(f"Epoch {epoch + 1}/{args.epochs}:")
@@ -476,12 +462,34 @@ def main():
         print(f"  Val Loss: {val_loss:.4f}")
         print(f"  Val Accuracy: {val_acc:.2f}%")
         print(f"  Learning Rate: {current_lr:.6f}")
+        if early_stopping_enabled and patience_counter > 0:
+            print(f"  Early Stopping: {patience_counter}/{early_stopping_patience} (no improvement)")
         print()
 
         # 매 epoch마다 히스토리 저장 (중간에 중단되어도 데이터 보존)
         with open(HISTORY_PATH, 'w') as f:
             json.dump(history, f, indent=2)
+        
+        # Early stopping 체크 (활성화된 경우에만)
+        if early_stopping_enabled and patience_counter >= early_stopping_patience:
+            print(f"\nEarly stopping triggered after {epoch + 1} epochs")
+            print(f"No improvement in validation accuracy for {early_stopping_patience} consecutive epochs")
+            history['early_stopped'] = True
+            history['early_stopped_epoch'] = epoch + 1
+            history['early_stopping_patience'] = early_stopping_patience
+            # 히스토리 파일 업데이트
+            with open(HISTORY_PATH, 'w') as f:
+                json.dump(history, f, indent=2)
+            break
 
+    # Early stopping이 발생하지 않은 경우 히스토리 업데이트
+    if not early_stopping_enabled or (early_stopping_enabled and patience_counter < early_stopping_patience):
+        history['early_stopped'] = False
+        if early_stopping_enabled:
+            history['early_stopping_patience'] = early_stopping_patience
+        with open(HISTORY_PATH, 'w') as f:
+            json.dump(history, f, indent=2)
+    
     print('Finished Training')
 
     # Temperature Scaling 캘리브레이션 수행

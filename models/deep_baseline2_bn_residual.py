@@ -145,7 +145,7 @@ class DeepBaselineNetBN2Residual(nn.Module):
     7. Fully Connected Layers (분류기)
     """
     
-    def __init__(self):
+    def __init__(self, init_weights=False):
         super(DeepBaselineNetBN2Residual, self).__init__()
         
         # 초기 feature extraction
@@ -179,6 +179,24 @@ class DeepBaselineNetBN2Residual(nn.Module):
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 128)
         self.fc4 = nn.Linear(128, 10)  # CIFAR-10: 10개 클래스
+        
+        if init_weights:
+            self._initialize_weights()
+    
+    def _initialize_weights(self):
+        """가중치 초기화 - ReLU를 사용하므로 Kaiming initialization 사용"""
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
     
     def forward(self, x):
         """
