@@ -1,17 +1,28 @@
 !git clone https://colab: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@github.com/windopper/cifar.git
 
-# 시도
-`uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --cutmix --w-init`
-deep_baseline 모델을 기본으로 --augment, --cutmix, -w-init 조합 비교
+# Scheduler 비교
+Optimizer: Adam
+Epochs: 60
+Batch Size: 128
+Learning Rate: 3e-4
+Net: deep_baseline_bn
+Weight Initialization: ✅
 
-## 모델 비교 시에 사용하는 기본 설정
+| Scheduler | 최고 Val Accuracy (%) |
+|------|------------|
+| Cosine Annealing LR | -- |
+| One Cycle LR | -- |
+| Exponential LR | -- |
+| ReduceLROnPlateau | -- |
+
+# 모델 비교 시에 사용하는 기본 설정
 Optimizer: Adam
 Epochs: 20
 Learning Rate: 3e-4
 Scheduler: Cosine Annealing LR
 Net: deep_baseline
 
-## Augmentation, CutMix, Weight Initialization, Label Smoothing 효과 비교 20 Epoch 기준
+# Augmentation, CutMix, Weight Initialization, Label Smoothing 효과 비교 20 Epoch 기준
 기본 모델: deep_baseline
 
 | 설정 | Augmentation | CutMix | Weight Init | Label Smoothing | 최고 Val Accuracy (%) |
@@ -33,28 +44,30 @@ Net: deep_baseline
 - Label Smoothing(0.05) 추가 시 추가 +0.58%p 향상
 - CutMix는 이 실험에서 오히려 성능을 약간 저하시킴 (Augmentation만: 82.84% vs Augmentation + CutMix: 80.79%)
 
-## Augmentation 비교 100 Epoch 기준
+# Augmentation 비교 100 Epoch 기준
 Model: deep_baseline_bn
 Optimizer: Adam
 Epochs: 100
 Batch Size: 128
-Learning Rate: 0.001
+Learning Rate: 3e-4
 Scheduler: Cosine Annealing LR
 Weight Initialization: ✅
 
+Augmentation: RandomCrop(32, padding=4), RandomHorizontalFlip, RandomRotation(15)
+
 | 설정 | Augmentation | CutMix | Mixup | AutoAugment | 최고 Val Accuracy (%) |
 |------|--------------|--------|-------------|-----------------|----------------------|
-| 기본 (모두 없음) | ❌ | ❌ | ❌ | ❌ | 대기 |
-| Augmentation만 | ✅ | ❌ | ❌ | ❌ | 대기 |
-| Augmentation + CutMix | ✅ | ✅ | ❌ | ❌ | 대기 |
-| Augmentation + Mixup | ✅ | ❌ | ✅ | ❌ | 대기 |
-| Augmentation + CutMix + Mixup | ✅ | ✅ | ✅ | ❌ | 대기 |
-| Augmentation + AutoAugment | ✅ | ❌ | ❌ | ✅ | 대기 |
-| Augmentation + CutMix + AutoAugment | ✅ | ✅ | ❌ | ✅ | 대기 |
-| Augmentation + Mixup + AutoAugment | ✅ | ❌ | ✅ | ✅ | 대기 |
-| Augmentation + CutMix + Mixup + AutoAugment | ✅ | ✅ | ✅ | ✅ | 대기 |
+| 기본 (모두 없음) | ❌ | ❌ | ❌ | ❌ | 78.43 |
+| Augmentation | ✅ | ❌ | ❌ | ❌ | 90.01 |
+| Augmentation + CutMix | ✅ | ✅ | ❌ | ❌ | 90.26 |
+| Augmentation + Mixup | ✅ | ❌ | ✅ | ❌ | 89.85 |
+| Augmentation + AutoAugment | ✅ | ❌ | ❌ | ✅ | **91.17** |
+| Augmentation + CutMix + AutoAugment | ✅ | ✅ | ❌ | ✅ | 90.88 |
+| Augmentation + Mixup + AutoAugment | ✅ | ❌ | ✅ | ✅ | 90.43 |
 
-## 모델 아키텍처 비교 20 Epoch 기준
+![image](./comparison/augmentation_comparison_100epoch.png)
+
+# 모델 아키텍처 비교 20 Epoch 기준
 
 | 모델 | Batch Normalization | Residual Connection | Pre-activation | Squeeze-and-Excitation | 최고 Val Accuracy (%) |
 |------|---------------------|---------------------|----------------|----------------------|
@@ -83,7 +96,7 @@ Weight Initialization: ✅
 - deep_baseline2_bn_resnext (ResNeXt 구조)는 87.53%로 deep_baseline2_bn_residual_preact (87.07%)보다 약간 높은 성능
 - deep_baseline3_bn은 deep_baseline2_bn보다 약간 낮은 성능 (87.9% vs 88.41%)
 
-## 모델별 최고 성능 조합 20 Epoch 기준
+# 모델별 최고 성능 조합 20 Epoch 기준
 
 | 모델 | Augmentation | CutMix | Weight Init | Label Smoothing | 최고 Val Accuracy (%) |
 |------|--------------|--------|-------------|-----------------|----------------------|
@@ -111,27 +124,27 @@ Weight Initialization: ✅
 - Pre-activation residual 모델이 Augmentation + Weight Init 조합에서 최고 성능 달성
 - 모든 실험 중 최고 성능 달성
 
-### Optimizer별 최적 Learning Rate 실험 계획
+# Optimizer/Learning Rate Comparison
 Model: deep_baseline_bn
 Epochs: 40
 Batch Size: 128
 Scheduler: Cosine Annealing LR
 Weight Initialization: ✅
 
-| optimizer | Learning Rate | 최고 Val Accuracy (%) | 상태 |
-|------|------------|----------------------|------|
-| Adam | 0.01 | 84.44 | ✅ 완료 |
-| Adam | 0.001 | 84.76 | ✅ 완료 |
-| Adam | 0.0001 | 67.52 | ✅ 완료 |
-| AdamW | 0.01 | 82.67 | ✅ 완료 |
-| AdamW | 0.001 | 83.47 | ✅ 완료 |
-| AdamW | 0.0001 | 67.43 | ✅ 완료 |
-| SGD | 0.001 | 71.08 | ✅ 완료 |
-| SGD | 0.01 | 73.08 | ✅ 완료 |
-| Adagrad | 0.001 | 57.5 | ✅ 완료 |
-| Adagrad | 0.01 | 74.72 | ✅ 완료 |
-| RMSprop | 0.001 | 79.51 | ✅ 완료 |
-| RMSprop | 0.01 | 74.38 | ✅ 완료 |
+| optimizer | Learning Rate | 최고 Val Accuracy (%)
+|------|------------|----------------------|
+| Adam | 0.01 | 84.44 |
+| Adam | 0.001 | **84.76** |
+| Adam | 0.0001 | 67.52 |
+| AdamW | 0.01 | 82.67 |
+| AdamW | 0.001 | 83.47 |
+| AdamW | 0.0001 | 67.43 |
+| SGD | 0.001 | 71.08 |
+| SGD | 0.01 | 73.08 |
+| Adagrad | 0.001 | 57.5 |
+| Adagrad | 0.01 | 74.72 |
+| RMSprop | 0.001 | 79.51 |
+| RMSprop | 0.01 | 74.38 |
 
 ![image](./comparison/optimizer_lr_comparison.png)
 
@@ -143,8 +156,8 @@ uv run main.py --optimizer [optimizer] --epochs 40 --lr [learning_rate] --batch-
 ```
 </details>
 
-## 100 Epoch 기준 실험 결과
-lr: 3e-4
+# 100 Epoch 기준 실험 결과
+lr: 0.001
 batch size: 128
 scheduler: CosineAnnealingLR
 optimizer: Adam

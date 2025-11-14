@@ -127,6 +127,7 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
     elif name.lower() == 'onecyclelr':
         if max_lr is None:
             max_lr = lr * 10  # 기본값: 초기 lr의 10배
+            
         total_steps = epochs * steps_per_epoch
         schedulers['onecyclelr'] = lr_scheduler.OneCycleLR(
             optimizer, max_lr=max_lr, total_steps=total_steps
