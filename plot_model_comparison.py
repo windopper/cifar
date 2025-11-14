@@ -181,7 +181,10 @@ def plot_model_comparison_20_epoch(save_path="comparison/model_comparison_20_epo
 def plot_model_comparison_100_epoch(save_path="comparison/model_comparison_100_epoch.png"):
     file_names = [
         "deep_baseline_bn_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
+        "deep_baseline2_bn_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
         "deep_baseline2_bn_resnext_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_winit_history.json",
+        "deep_baseline2_bn_residual_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
+        "deep_baseline2_bn_residual_preact_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
     ]
     
     if not file_names:

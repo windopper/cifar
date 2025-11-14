@@ -12,6 +12,7 @@ Scheduler: Cosine Annealing LR
 Net: deep_baseline
 
 ## Augmentation, CutMix, Weight Initialization, Label Smoothing 효과 비교 20 Epoch 기준
+기본 모델: deep_baseline
 
 | 설정 | Augmentation | CutMix | Weight Init | Label Smoothing | 최고 Val Accuracy (%) |
 |------|--------------|--------|-------------|-----------------|----------------------|
@@ -22,6 +23,19 @@ Net: deep_baseline
 | Augmentation + Weight Init | ✅ | ❌ | ✅ | ❌ | 87.81 |
 | Augmentation + Weight Init + Label Smoothing(0.05) | ✅ | ❌ | ✅ | ✅ (0.05) | **88.39** |
 | Augmentation + CutMix + Weight Init | ✅ | ✅ | ✅ | ❌ | 86.83 |
+
+<details>
+<summary><small>명령어 보기</small></summary>
+
+- 기본 (모두 없음): `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline`
+- Weight Init만: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --w-init`
+- Augmentation만: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment`
+- Augmentation + CutMix: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --cutmix`
+- Augmentation + Weight Init: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --w-init`
+- Augmentation + Weight Init + Label Smoothing(0.05): `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --w-init --label-smoothing 0.05`
+- Augmentation + CutMix + Weight Init: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --cutmix --w-init`
+
+</details>
 
 ![image](./comparison/augment_winit_comparison.png)
 
@@ -44,6 +58,19 @@ Net: deep_baseline
 | deep_baseline2_bn_resnext | ✅ | ✅ | ❌ | 87.53 |
 | deep_baseline3_bn | ✅ | ❌ | ❌ | 87.9 |
 
+<details>
+<summary><small>명령어 보기</small></summary>
+
+- deep_baseline: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline`
+- deep_baseline_bn: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline_bn`
+- deep_baseline2_bn: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline2_bn`
+- deep_baseline2_bn_residual: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline2_bn_residual`
+- deep_baseline2_bn_residual_preact: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline2_bn_residual_preact`
+- deep_baseline2_bn_resnext: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline2_bn_resnext`
+- deep_baseline3_bn: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline3_bn`
+
+</details>
+
 ![image](./comparison/model_comparison.png)
 
 **결과 요약:**
@@ -63,6 +90,15 @@ Net: deep_baseline
 | deep_baseline2_bn_residual_preact | ✅ | ❌ | ✅ | ❌ | **90.84** |
 | deep_baseline2_bn_residual_preact | ✅ | ✅ | ✅ | ❌ | 90.02 |
 
+<details>
+<summary><small>명령어 보기</small></summary>
+
+- deep_baseline2_bn_residual (Augmentation + CutMix + Weight Init): `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline2_bn_residual --augment --cutmix --w-init`
+- deep_baseline2_bn_residual_preact (Augmentation + Weight Init): `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline2_bn_residual_preact --augment --w-init`
+- deep_baseline2_bn_residual_preact (Augmentation + CutMix + Weight Init): `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline2_bn_residual_preact --augment --cutmix --w-init`
+
+</details>
+
 **결과 요약:**
 - 최고 성능: deep_baseline2_bn_residual_preact (Augmentation + Weight Init) = **90.84%**
 - deep_baseline2_bn_residual_preact 모델에 Augmentation + Weight Init을 적용한 결과: **90.84%**
@@ -76,11 +112,34 @@ Net: deep_baseline
 
 ## 100 Epoch 기준 실험 결과
 
-### deep_baseline_bn 모델 (100 Epoch)
-
-| 설정 | 모델 | Optimizer | Learning Rate | Batch Size | Augmentation | CutMix | Weight Init | Label Smoothing | Scheduler | 최고 Val Accuracy (%) |
+| 모델 | Optimizer | Learning Rate | Batch Size | Augmentation | CutMix | Weight Init | Label Smoothing | Scheduler | 최고 Val Accuracy (%) |
 |------|------|-----------|---------------|------------|--------------|--------|-------------|-----------------|-----------|----------------------|
-| 최적화 조합 | deep_baseline_bn | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | **91.99** |
+| deep_baseline_bn | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | 91.99 |
+| deep_baseline2_bn | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | **92.51** |
+| deep_baseline2_bn_residual | Adam | 0.001 | 128 | ❌ | ❌ | ✅ | ❌ | CosineAnnealingLR | 대기 |
+| deep_baseline2_bn_residual | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | 대기 |
+| deep_baseline2_bn_residual_se | Adam | 0.001 | 128 | ❌ | ❌ | ✅ | ❌ | CosineAnnealingLR | 대기 |
+| deep_baseline2_bn_residual_se | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | 대기 |
+| deep_baseline2_bn_residual_preact | Adam | 0.001 | 128 | ❌ | ❌ | ✅ | ❌ | CosineAnnealingLR | 87.36 |
+| deep_baseline2_bn_residual_preact | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | 진행 중 |
+| deep_baseline2_bn_resnext | Adam | 0.001 | 128 | ❌ | ❌ | ✅ | ❌ | CosineAnnealingLR | 85.46 |
+| deep_baseline2_bn_resnext | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | **92.97** |
+| deep_baseline3_bn | Adam | 0.001 | 128 | ✅ | ✅ | ✅ | ✅ (0.05) | CosineAnnealingLR | 대기 |
+
+<details>
+<summary><small>명령어 보기</small></summary>
+
+- deep_baseline_bn: `uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net deep_baseline_bn --augment --cutmix --w-init --label-smoothing 0.05`
+- deep_baseline2_bn: `uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net deep_baseline2_bn --w-init --augment --cutmix --label-smoothing 0.05`
+- deep_baseline2_bn_resnext: `uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net deep_baseline2_bn_resnext --w-init`
+- deep_baseline2_bn_residual: `uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net deep_baseline2_bn_residual --w-init`
+- deep_baseline2_bn_residual_preact: `uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net deep_baseline2_bn_residual_preact --w-init`
+- deep_baseline3_bn: `uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net deep_baseline3_bn --w-init --augment --cutmix --label-smoothing 0.05`
+
+- deep_baseline2_bn_resnext: `uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net deep_baseline2_bn_resnext --w-init --augment --cutmix --label-smoothing 0.05`
+</details>
+
+![image](./comparison/model_comparison_100_epoch.png)
 
 **하이퍼파라미터:**
 - Epochs: 100

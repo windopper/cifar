@@ -20,6 +20,7 @@ from models.deep_baseline3_bn import DeepBaselineNetBN3
 from models.deep_baseline2_bn_residual import DeepBaselineNetBN2Residual
 from models.deep_baseline2_bn_residual_preact import DeepBaselineNetBN2ResidualPreAct
 from models.deep_baseline2_bn_resnext import DeepBaselineNetBN2ResNeXt
+from models.deep_baseline2_bn_residual_se import DeepBaselineNetBN2ResidualSE
 from models.deep_baseline_bn_dropout import DeepBaselineNetBNDropout
 from models.deep_baseline_bn_dropout_resnet import DeepBaselineNetBNDropoutResNet
 from models.deep_baseline_gap import DeepBaselineNetGAP
@@ -68,12 +69,13 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline': DeepBaselineNet(init_weights=init_weights),
         'deep_baseline_silu': DeepBaselineNetSilu(),
         'deep_baseline_bn': DeepBaselineNetBN(init_weights=init_weights),
-        'deep_baseline2_bn': DeepBaselineNetBN2(init_weights=init_weights),
-        'deep_baseline2_bn_residual': DeepBaselineNetBN2Residual(init_weights=init_weights),
-        'deep_baseline2_bn_resnext': DeepBaselineNetBN2ResNeXt(init_weights=init_weights),
         'deep_baseline_gap': DeepBaselineNetGAP(),
         'deep_baseline_bn_dropout': DeepBaselineNetBNDropout(),
         'deep_baseline_bn_dropout_resnet': DeepBaselineNetBNDropoutResNet(),
+        'deep_baseline2_bn': DeepBaselineNetBN2(init_weights=init_weights),
+        'deep_baseline2_bn_residual': DeepBaselineNetBN2Residual(init_weights=init_weights),
+        'deep_baseline2_bn_residual_se': DeepBaselineNetBN2ResidualSE(init_weights=init_weights),   
+        'deep_baseline2_bn_resnext': DeepBaselineNetBN2ResNeXt(init_weights=init_weights),
         'deep_baseline2_bn_residual_preact': DeepBaselineNetBN2ResidualPreAct(),
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline_se': DeepBaselineNetSE(),
@@ -178,7 +180,7 @@ def parse_args():
                                  'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
                                  'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
-                                 'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext'],
+                                 'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se'],
 
                         help='네트워크 모델 (default: baseline)')
     parser.add_argument('--optimizer', type=str, default='sgd',
