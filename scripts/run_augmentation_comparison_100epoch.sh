@@ -28,7 +28,7 @@
 OPTIMIZER="adam"
 EPOCHS=100
 BATCH_SIZE=128
-LR=0.001
+LR=3e-4
 SCHEDULER="cosineannealinglr"
 NET="deep_baseline_bn"
 WEIGHT_INIT="--w-init"  # Weight Initialization: ✅

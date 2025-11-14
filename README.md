@@ -122,16 +122,16 @@ Weight Initialization: ✅
 |------|------------|----------------------|------|
 | Adam | 0.01 | 84.44 | ✅ 완료 |
 | Adam | 0.001 | 84.76 | ✅ 완료 |
-| Adam | 0.0001 | 67.52 | ⏳ 코랩 |
+| Adam | 0.0001 | 67.52 | ✅ 완료 |
 | AdamW | 0.01 | 82.67 | ✅ 완료 |
 | AdamW | 0.001 | 83.47 | ✅ 완료 |
 | AdamW | 0.0001 | 67.43 | ✅ 완료 |
 | SGD | 0.001 | 71.08 | ✅ 완료 |
 | SGD | 0.01 | 73.08 | ✅ 완료 |
-| Adagrad | 0.001 | 57.98 | ✅ 완료, 다시 돌려야됨 |
+| Adagrad | 0.001 | 57.5 | ✅ 완료 |
 | Adagrad | 0.01 | 74.72 | ✅ 완료 |
-| RMSprop | 0.001 | 78.39 | ⏳ 대기, 다시 돌려야됨 |
-| RMSprop | 0.01 | - | ⏳ 대기, 다시 돌려야됨 |
+| RMSprop | 0.001 | 79.51 | ✅ 완료 |
+| RMSprop | 0.01 | 74.38 | ✅ 완료 |
 
 ![image](./comparison/optimizer_lr_comparison.png)
 
@@ -144,7 +144,7 @@ uv run main.py --optimizer [optimizer] --epochs 40 --lr [learning_rate] --batch-
 </details>
 
 ## 100 Epoch 기준 실험 결과
-lr: 0.001
+lr: 3e-4
 batch size: 128
 scheduler: CosineAnnealingLR
 optimizer: Adam
