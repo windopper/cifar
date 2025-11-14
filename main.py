@@ -134,7 +134,7 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
         )
     elif name.lower() == 'reducelronplateau':
         schedulers['reducelronplateau'] = lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode=mode, factor=factor, patience=patience, verbose=True
+            optimizer, mode=mode, factor=factor, patience=patience
         )
     elif name.lower() == 'cosineannealinglr':
         if t_max is None:

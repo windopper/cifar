@@ -10,8 +10,8 @@ Weight Initialization: ✅
 
 | Scheduler | 최고 Val Accuracy (%) |
 |------|------------|
-| Cosine Annealing LR | -- |
-| One Cycle LR | -- |
+| Cosine Annealing LR | 76.71 |
+| One Cycle LR | 87.25 |
 | Exponential LR | -- |
 | ReduceLROnPlateau | -- |
 
