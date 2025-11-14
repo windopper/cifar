@@ -30,6 +30,7 @@ from models.resnet import ResNet18
 from models.vgg import VGG
 from models.mobilenetv2 import MobileNetV2
 from models.densenet import DenseNet121
+from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from utils.cutmix import CutMixCollator, CutMixCriterion
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
@@ -83,6 +84,10 @@ def get_net(name: str, init_weights: bool = False):
         'vgg16': VGG('VGG16'),
         'mobilenetv2': MobileNetV2(),
         'densenet121': DenseNet121(),
+        'mxresnet20': MXResNet20(init_weights=init_weights),
+        'mxresnet32': MXResNet32(init_weights=init_weights),
+        'mxresnet44': MXResNet44(init_weights=init_weights),
+        'mxresnet56': MXResNet56(init_weights=init_weights),
     }
     if name.lower() not in nets:
         raise ValueError(
@@ -180,7 +185,8 @@ def parse_args():
                                  'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
                                  'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
-                                 'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se'],
+                                 'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
+                                 'mxresnet20', 'mxresnet32', 'mxresnet44', 'mxresnet56'],
 
                         help='네트워크 모델 (default: baseline)')
     parser.add_argument('--optimizer', type=str, default='sgd',
