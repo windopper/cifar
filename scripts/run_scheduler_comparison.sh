@@ -32,6 +32,8 @@ LR=3e-4
 NET="deep_baseline_bn"
 WEIGHT_INIT="--w-init"  # Weight Initialization: ✅
 
+BASE_CMD="python cifar/main.py --optimizer $OPTIMIZER --epochs $EPOCHS --batch-size $BATCH_SIZE --lr $LR --net $NET $WEIGHT_INIT"
+
 echo "=========================================="
 echo "Scheduler 비교 실험 시작"
 echo "=========================================="
@@ -52,24 +54,21 @@ TOTAL=4
 echo "[$COUNTER/$TOTAL] Cosine Annealing LR"
 echo "  - T_max: $EPOCHS (default)"
 echo "  - eta_min: 0.0 (default)"
-uv run main.py --optimizer $OPTIMIZER --epochs $EPOCHS --lr $LR --batch-size $BATCH_SIZE \
-  --scheduler cosineannealinglr --scheduler-t-max $EPOCHS --net $NET $WEIGHT_INIT
+$BASE_CMD --scheduler cosineannealinglr --scheduler-t-max $EPOCHS
 echo ""
 COUNTER=$((COUNTER+1))
 
 # 2. One Cycle LR
 echo "[$COUNTER/$TOTAL] One Cycle LR"
 echo "  - max_lr: $(echo "$LR * 10" | bc) (default: lr * 10)"
-uv run main.py --optimizer $OPTIMIZER --epochs $EPOCHS --lr $LR --batch-size $BATCH_SIZE \
-  --scheduler onecyclelr --net $NET $WEIGHT_INIT
+$BASE_CMD --scheduler onecyclelr
 echo ""
 COUNTER=$((COUNTER+1))
 
 # 3. Exponential LR
 echo "[$COUNTER/$TOTAL] Exponential LR"
 echo "  - gamma: 0.95 (default)"
-uv run main.py --optimizer $OPTIMIZER --epochs $EPOCHS --lr $LR --batch-size $BATCH_SIZE \
-  --scheduler exponentiallr --scheduler-gamma 0.95 --net $NET $WEIGHT_INIT
+$BASE_CMD --scheduler exponentiallr --scheduler-gamma 0.95
 echo ""
 COUNTER=$((COUNTER+1))
 
@@ -78,9 +77,7 @@ echo "[$COUNTER/$TOTAL] ReduceLROnPlateau"
 echo "  - factor: 0.1 (default)"
 echo "  - patience: 5 (조정됨, 60 epoch 기준)"
 echo "  - mode: min (default)"
-uv run main.py --optimizer $OPTIMIZER --epochs $EPOCHS --lr $LR --batch-size $BATCH_SIZE \
-  --scheduler reducelronplateau --scheduler-factor 0.1 --scheduler-patience 5 --scheduler-mode min \
-  --net $NET $WEIGHT_INIT
+$BASE_CMD --scheduler reducelronplateau --scheduler-factor 0.1 --scheduler-patience 5 --scheduler-mode min
 echo ""
 COUNTER=$((COUNTER+1))
 
