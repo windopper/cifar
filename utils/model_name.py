@@ -43,8 +43,14 @@ def get_model_name_parts(args):
     if args.augment:
         model_name_parts.append("aug")
     
+    if args.autoaugment and args.augment:
+        model_name_parts.append("autoaug")
+    
     if args.cutmix and args.augment:
         model_name_parts.append("cutmix")
+    
+    if args.mixup and args.augment:
+        model_name_parts.append("mixup")
     
     if args.w_init:
         model_name_parts.append("winit")

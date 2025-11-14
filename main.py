@@ -32,6 +32,7 @@ from models.mobilenetv2 import MobileNetV2
 from models.densenet import DenseNet121
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from utils.cutmix import CutMixCollator, CutMixCriterion
+from utils.mixup import MixupCollator, MixupCriterion
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
 
@@ -226,8 +227,12 @@ def parse_args():
                         help='Label smoothing 값 (0.0~1.0, 권장: 0.05~0.1, default: 0.0)')
     parser.add_argument('--augment', action='store_true',
                         help='데이터 증강 사용 (default: False)')
+    parser.add_argument('--autoaugment', action='store_true',
+                        help='AutoAugment 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
     parser.add_argument('--cutmix', action='store_true',
                         help='CutMix 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
+    parser.add_argument('--mixup', action='store_true',
+                        help='Mixup 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
     parser.add_argument('--calibrate', action='store_true',
                         help='Temperature Scaling 캘리브레이션 수행 (default: False)')
     parser.add_argument('--use-cifar-normalize', action='store_true',
@@ -277,21 +282,24 @@ def main():
         normalize_std = (0.5, 0.5, 0.5)
 
     # Train 데이터 변환: 증강 on/off에 따라 다르게 설정
+    train_transform_list = []
+    
     if args.augment:
-        # 데이터 증강: RandomCrop(32, padding=4), RandomHorizontalFlip(), 약한 ColorJitter
-        train_transform = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(15),
-            transforms.ToTensor(),
-            transforms.Normalize(normalize_mean, normalize_std)
-        ])
-    else:
-        # 데이터 증강 없이 기본 변환만
-        train_transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(normalize_mean, normalize_std)
-        ])
+        train_transform_list.append(transforms.RandomCrop(32, padding=4))
+        train_transform_list.append(transforms.RandomHorizontalFlip())
+        
+        if args.autoaugment:
+            # AutoAugment 사용: CIFAR-10 정책 적용
+            train_transform_list.append(transforms.AutoAugment(policy=transforms.AutoAugmentPolicy.CIFAR10))
+        else:
+            # 기본 데이터 증강: RandomRotation
+            train_transform_list.append(transforms.RandomRotation(15))
+    
+    # 공통 변환: ToTensor와 Normalize는 항상 적용
+    train_transform_list.append(transforms.ToTensor())
+    train_transform_list.append(transforms.Normalize(normalize_mean, normalize_std))
+    
+    train_transform = transforms.Compose(train_transform_list)
 
     # Validation: 데이터 증강 없이 기본 변환만
     val_transform = transforms.Compose([
@@ -302,16 +310,28 @@ def main():
     train_set = torchvision.datasets.CIFAR10(
         root='./data', train=True, download=True, transform=train_transform)
     
-    # CutMix 설정 (--augment가 활성화되어 있을 때만)
+    # CutMix/Mixup 설정 (--augment가 활성화되어 있을 때만)
+    # CutMix와 Mixup은 동시에 사용할 수 없음
     cutmix_collator = None
-    cutmix_criterion = None
+    cutmix_criterion = None 
+    mixup_collator = None
+    mixup_criterion = None
+    
     if args.cutmix and args.augment:
+        if args.mixup:
+            raise ValueError("CutMix와 Mixup은 동시에 사용할 수 없습니다. 하나만 선택해주세요.")
         cutmix_collator = CutMixCollator(alpha=1.0, prob=0.5)
         cutmix_criterion = CutMixCriterion(reduction='mean', label_smoothing=args.label_smoothing)
+    elif args.mixup and args.augment:
+        mixup_collator = MixupCollator(alpha=1.0, prob=0.5)
+        mixup_criterion = MixupCriterion(reduction='mean', label_smoothing=args.label_smoothing)
+    
+    # collate_fn 설정 (CutMix 또는 Mixup 중 하나)
+    collate_fn = cutmix_collator if cutmix_collator is not None else (mixup_collator if mixup_collator is not None else None)
     
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=args.batch_size, shuffle=True, num_workers=2,
-        collate_fn=cutmix_collator if cutmix_collator is not None else None)
+        collate_fn=collate_fn)
 
     val_set = torchvision.datasets.CIFAR10(
         root='./data', train=False, download=True, transform=val_transform)
@@ -352,7 +372,9 @@ def main():
             'scheduler': args.scheduler,
             'label_smoothing': args.label_smoothing,
             'data_augment': args.augment,
+            'autoaugment': args.autoaugment and args.augment,
             'cutmix': args.cutmix and args.augment,
+            'mixup': args.mixup and args.augment,
             'normalize_mean': list(normalize_mean),
             'normalize_std': list(normalize_std),
             'seed': args.seed,
@@ -404,7 +426,7 @@ def main():
             inputs, labels = data
             inputs = inputs.to(device)
             
-            # CutMix 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
+            # CutMix/Mixup 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
             if isinstance(labels, (tuple, list)):
                 targets1, targets2, lam = labels
                 labels = (targets1.to(device), targets2.to(device), lam)
@@ -414,9 +436,11 @@ def main():
             optimizer.zero_grad()
 
             outputs = net(inputs)
-            # CutMix 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
+            # CutMix/Mixup 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
             if cutmix_criterion is not None and isinstance(labels, tuple):
                 loss = cutmix_criterion(outputs, labels)
+            elif mixup_criterion is not None and isinstance(labels, tuple):
+                loss = mixup_criterion(outputs, labels)
             else:
                 loss = criterion(outputs, labels)
             loss.backward()

@@ -1,4 +1,4 @@
-
+!git clone https://colab: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@github.com/windopper/cifar.git
 
 # 시도
 `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --cutmix --w-init`
@@ -24,19 +24,6 @@ Net: deep_baseline
 | Augmentation + Weight Init + Label Smoothing(0.05) | ✅ | ❌ | ✅ | ✅ (0.05) | **88.39** |
 | Augmentation + CutMix + Weight Init | ✅ | ✅ | ✅ | ❌ | 86.83 |
 
-<details>
-<summary><small>명령어 보기</small></summary>
-
-- 기본 (모두 없음): `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline`
-- Weight Init만: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --w-init`
-- Augmentation만: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment`
-- Augmentation + CutMix: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --cutmix`
-- Augmentation + Weight Init: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --w-init`
-- Augmentation + Weight Init + Label Smoothing(0.05): `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --w-init --label-smoothing 0.05`
-- Augmentation + CutMix + Weight Init: `uv run main.py --optimizer adam --epochs 20 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline --augment --cutmix --w-init`
-
-</details>
-
 ![image](./comparison/augment_winit_comparison.png)
 
 **결과 요약:**
@@ -46,6 +33,27 @@ Net: deep_baseline
 - Label Smoothing(0.05) 추가 시 추가 +0.58%p 향상
 - CutMix는 이 실험에서 오히려 성능을 약간 저하시킴 (Augmentation만: 82.84% vs Augmentation + CutMix: 80.79%)
 
+## Augmentation 비교 100 Epoch 기준
+Model: deep_baseline_bn
+Optimizer: Adam
+Epochs: 100
+Batch Size: 128
+Learning Rate: 0.001
+Scheduler: Cosine Annealing LR
+Weight Initialization: ✅
+
+| 설정 | Augmentation | CutMix | Mixup | AutoAugment | 최고 Val Accuracy (%) |
+|------|--------------|--------|-------------|-----------------|----------------------|
+| 기본 (모두 없음) | ❌ | ❌ | ❌ | ❌ | 대기 |
+| Augmentation만 | ✅ | ❌ | ❌ | ❌ | 대기 |
+| Augmentation + CutMix | ✅ | ✅ | ❌ | ❌ | 대기 |
+| Augmentation + Mixup | ✅ | ❌ | ✅ | ❌ | 대기 |
+| Augmentation + CutMix + Mixup | ✅ | ✅ | ✅ | ❌ | 대기 |
+| Augmentation + AutoAugment | ✅ | ❌ | ❌ | ✅ | 대기 |
+| Augmentation + CutMix + AutoAugment | ✅ | ✅ | ❌ | ✅ | 대기 |
+| Augmentation + Mixup + AutoAugment | ✅ | ❌ | ✅ | ✅ | 대기 |
+| Augmentation + CutMix + Mixup + AutoAugment | ✅ | ✅ | ✅ | ✅ | 대기 |
+
 ## 모델 아키텍처 비교 20 Epoch 기준
 
 | 모델 | Batch Normalization | Residual Connection | Pre-activation | Squeeze-and-Excitation | 최고 Val Accuracy (%) |
@@ -54,7 +62,7 @@ Net: deep_baseline
 | deep_baseline_bn | ✅ | ❌ | ❌ | ❌ | 87.21 |
 | deep_baseline2_bn | ✅ | ❌ | ❌ | ❌ | 88.41 |
 | deep_baseline2_bn_residual | ✅ | ✅ | ❌ | ❌ | **88.47** |
-| deep_baseline2_bn_residual_se | ✅ | ✅ | ❌ | ✅ | 대기 |
+| deep_baseline2_bn_residual_se | ✅ | ✅ | ❌ | ✅ | 87.81 |
 | deep_baseline2_bn_residual_preact | ✅ | ✅ | ✅ | ❌ | 87.07 |
 | deep_baseline2_bn_resnext | ✅ | ✅ | ❌ | ❌ | 87.53 |
 | deep_baseline3_bn | ✅ | ❌ | ❌ | ❌ | 87.9 |
@@ -103,6 +111,38 @@ Net: deep_baseline
 - Pre-activation residual 모델이 Augmentation + Weight Init 조합에서 최고 성능 달성
 - 모든 실험 중 최고 성능 달성
 
+### Optimizer별 최적 Learning Rate 실험 계획
+Model: deep_baseline_bn
+Epochs: 40
+Batch Size: 128
+Scheduler: Cosine Annealing LR
+Weight Initialization: ✅
+
+| optimizer | Learning Rate | 최고 Val Accuracy (%) | 상태 |
+|------|------------|----------------------|------|
+| Adam | 0.01 | 84.44 | ✅ 완료 |
+| Adam | 0.001 | 84.76 | ✅ 완료 |
+| Adam | 0.0001 | 67.52 | ⏳ 코랩 |
+| AdamW | 0.01 | 82.67 | ✅ 완료 |
+| AdamW | 0.001 | 83.47 | ✅ 완료 |
+| AdamW | 0.0001 | 67.43 | ✅ 완료 |
+| SGD | 0.001 | 71.08 | ✅ 완료 |
+| SGD | 0.01 | 73.08 | ✅ 완료 |
+| Adagrad | 0.001 | 57.98 | ✅ 완료, 다시 돌려야됨 |
+| Adagrad | 0.01 | 74.72 | ✅ 완료 |
+| RMSprop | 0.001 | 78.39 | ⏳ 대기, 다시 돌려야됨 |
+| RMSprop | 0.01 | - | ⏳ 대기, 다시 돌려야됨 |
+
+![image](./comparison/optimizer_lr_comparison.png)
+
+<details>
+<summary><small>명령어 보기</small></summary>
+**기본 명령어:**
+```bash
+uv run main.py --optimizer [optimizer] --epochs 40 --lr [learning_rate] --batch-size 128 --scheduler cosineannealinglr --w-init --net deep_baseline_bn
+```
+</details>
+
 ## 100 Epoch 기준 실험 결과
 lr: 0.001
 batch size: 128
@@ -123,10 +163,11 @@ weight init: ✅
 | deep_baseline2_bn_resnext | ❌ | ❌ | ❌ | 85.46 |
 | deep_baseline2_bn_resnext | ✅ | ✅ | ✅ (0.05) | **92.97** |
 | deep_baseline3_bn | ✅ | ✅ | ✅ (0.05) | 90.73 |
+| mxresnet56 | ✅ | ✅ | ✅ (0.05) | 92.04 |
 
 <details>
 <summary><small>명령어 보기</small></summary>
-`uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net [모델이름] --augment --cutmix --label-smoothing 0.05`
+`uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --augment --cutmix --label-smoothing 0.05 --w-init --net [모델이름]`
 
 `uv run main.py --optimizer adam --epochs 100 --lr 0.001 --batch-size 128 --scheduler cosineannealinglr --net [모델이름]`
 </details>
