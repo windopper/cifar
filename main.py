@@ -232,6 +232,8 @@ def parse_args():
                         help='Early stopping 사용 (default: False)')
     parser.add_argument('--early-stopping-patience', type=int, default=5,
                         help='Early stopping patience 값 (default: 5)')
+    parser.add_argument('--output-dir', type=str, default='outputs',
+                        help='모델 및 히스토리 파일 저장 디렉토리 (default: outputs)')
     return parser.parse_args()
 
 
@@ -248,11 +250,13 @@ def main():
     # Save path에 모델 이름과 설정 정보 자동 추가
     model_name_parts = get_model_name_parts(args)
     model_name = "_".join(filter(None, model_name_parts))  # 빈 문자열 제거
-    SAVE_PATH = f"outputs/{model_name}.pth"
-    HISTORY_PATH = f"outputs/{model_name}_history.json"
-
-    # outputs 디렉토리 생성
-    os.makedirs("outputs", exist_ok=True)
+    
+    # 출력 디렉토리 설정
+    output_dir = args.output_dir
+    os.makedirs(output_dir, exist_ok=True)
+    
+    SAVE_PATH = os.path.join(output_dir, f"{model_name}.pth")
+    HISTORY_PATH = os.path.join(output_dir, f"{model_name}_history.json")
 
     # Normalize 값 설정
     if args.use_cifar_normalize:
@@ -534,7 +538,7 @@ def main():
 
     # Temperature가 있으면 별도 파일로도 저장
     if optimal_temperature is not None:
-        TEMP_PATH = f"outputs/{model_name}_temperature.json"
+        TEMP_PATH = os.path.join(output_dir, f"{model_name}_temperature.json")
         with open(TEMP_PATH, 'w') as f:
             json.dump({'temperature': optimal_temperature}, f, indent=2)
         print(f"Temperature saved to: {TEMP_PATH}")
