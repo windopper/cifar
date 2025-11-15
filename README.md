@@ -124,6 +124,7 @@ Weight Initialization: ✅
 | resnext29_4x64d | 88.51 | [History](outputs/model_comparison/resnext29_4x64d_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | deep_baseline2_bn_residual_grn | 81.54 | -- |
 | deep_baseline3_bn_residual | **88.91** | -- |
+| deep_baseline4_bn_residual | 88.67 | -- |
  
 # Inference
 ## TTA
