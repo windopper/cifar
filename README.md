@@ -39,7 +39,7 @@ Augmentation: RandomCrop(32, padding=4), RandomHorizontalFlip, RandomRotation(15
 | Augmentation | ✅ | ❌ | ❌ | ❌ | 90.01 |
 | Augmentation + CutMix | ✅ | ✅ | ❌ | ❌ | 90.26 |
 | Augmentation + CutMix (75% 에포크 시작) | ✅ | ✅ | ❌ | ❌ | 89.49 |
-| Augmentation + CutMix (75% 에포크 시작) + OneCycleLR | ✅ | ✅ | ❌ | ❌ | -- |
+| Augmentation + CutMix (75% 에포크 시작) + OneCycleLR | ✅ | ✅ | ❌ | ❌ | 90.97 |
 | Augmentation + Mixup | ✅ | ❌ | ✅ | ❌ | 89.85 |
 | Augmentation + AutoAugment | ✅ | ❌ | ❌ | ✅ | **91.17** |
 | Augmentation + CutMix + AutoAugment | ✅ | ✅ | ❌ | ✅ | 90.88 |

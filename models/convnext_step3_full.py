@@ -156,11 +156,10 @@ def convnext_tiny(
 
     return ConvNeXtCIFAR(
         num_classes=num_classes,
-        channel_list=(96, 192, 384, 768),
-        num_blocks_list=(3, 3, 9, 3),
+        channel_list=(64, 128, 256, 512),
+        num_blocks_list=(2, 2, 2, 2),
         kernel_size=7,
-        mlp_ratio=4,
-        patch_size=4,
+        patch_size=1,
         init_weights=init_weights,
         **kwargs,
     )
