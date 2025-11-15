@@ -118,7 +118,8 @@ def get_optimizer(name: str, net: nn.Module, lr: float = 0.001, momentum: float 
 def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int = 1,
                   lr: float = 0.001, gamma: float = 0.95, max_lr: float = None,
                   factor: float = 0.1, patience: int = 10, mode: str = 'min',
-                  t_max: int = None, eta_min: float = 0.0, pct_start: float = 0.3):
+                  t_max: int = None, eta_min: float = 0.0, pct_start: float = 0.3,
+                  final_lr_ratio: float = 0.07):
     """Learning Rate Scheduler 팩토리 함수"""
     if name is None or (isinstance(name, str) and name.lower() == 'none'):
         return None
@@ -131,10 +132,15 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
     elif name.lower() == 'onecyclelr':
         if max_lr is None:
             max_lr = lr * 10  # 기본값: 초기 lr의 10배
-            
+        
+        # 마지막 학습률 = base_lr / final_div_factor = lr * final_lr_ratio
+        # 따라서 final_div_factor = 1 / final_lr_ratio
+        final_div_factor = 1.0 / final_lr_ratio if final_lr_ratio > 0 else 10000.0
+        
         total_steps = epochs * steps_per_epoch
         schedulers['onecyclelr'] = lr_scheduler.OneCycleLR(
-            optimizer, max_lr=max_lr, total_steps=total_steps, pct_start=pct_start
+            optimizer, max_lr=max_lr, total_steps=total_steps, pct_start=pct_start,
+            base_lr=lr, final_div_factor=final_div_factor
         )
     elif name.lower() == 'reducelronplateau':
         schedulers['reducelronplateau'] = lr_scheduler.ReduceLROnPlateau(
@@ -219,6 +225,8 @@ def parse_args():
                         help='OneCycleLR의 max_lr 값 (default: lr * 10)')
     parser.add_argument('--scheduler-pct-start', type=float, default=0.3,
                         help='OneCycleLR의 pct_start 값 (0.0~1.0, 최고 학습률 도달 시점 비율, default: 0.3)')
+    parser.add_argument('--scheduler-final-lr-ratio', type=float, default=0.07,
+                        help='OneCycleLR의 마지막 학습률 비율 (원래 lr 대비, default: 0.07)')
     parser.add_argument('--scheduler-factor', type=float, default=0.1,
                         help='ReduceLROnPlateau의 factor 값 (default: 0.1)')
     parser.add_argument('--scheduler-patience', type=int, default=3,
@@ -363,7 +371,8 @@ def main():
         gamma=args.scheduler_gamma, max_lr=args.scheduler_max_lr,
         factor=args.scheduler_factor, patience=args.scheduler_patience,
         mode=args.scheduler_mode, t_max=args.scheduler_t_max,
-        eta_min=args.scheduler_eta_min, pct_start=args.scheduler_pct_start
+        eta_min=args.scheduler_eta_min, pct_start=args.scheduler_pct_start,
+        final_lr_ratio=args.scheduler_final_lr_ratio
     )
 
     # 학습 히스토리 저장용 리스트
@@ -403,6 +412,7 @@ def main():
         elif args.scheduler.lower() == 'onecyclelr':
             history['hyperparameters']['scheduler_max_lr'] = args.scheduler_max_lr if args.scheduler_max_lr else args.lr * 10
             history['hyperparameters']['scheduler_pct_start'] = args.scheduler_pct_start
+            history['hyperparameters']['scheduler_final_lr_ratio'] = args.scheduler_final_lr_ratio
         elif args.scheduler.lower() == 'reducelronplateau':
             history['hyperparameters']['scheduler_factor'] = args.scheduler_factor
             history['hyperparameters']['scheduler_patience'] = args.scheduler_patience

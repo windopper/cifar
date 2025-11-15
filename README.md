@@ -13,6 +13,7 @@ Weight Initialization: ✅
 | Cosine Annealing LR | 76.71 | -- |
 | One Cycle LR | 87.25 | -- |
 | One Cycle LR | -- | Pct Start 0.2, Epoch 20 |
+| One Cycle LR | -- | Pct Start 0.2, Final 
 | Exponential LR | 73.43 | -- |
 | ReduceLROnPlateau | 75.31 | -- |
 
@@ -154,7 +155,7 @@ Label Smoothing: 0.05
 | deep_baseline_bn | -- | 90.89 |
 | deep_baseline_bn | Epoch 20, Scheduler Pct Start 0.2 | -- |
 | deep_baseline_bn | Epoch 60 | 90.68 |
-| deep_baseline_bn | Epoch 100 | -- |
+| deep_baseline_bn | Epoch 100 | 90.89 |
 | deep_baseline_bn | Epoch 60, CutMix | 90.17 |
 | deep_baseline_bn | Epoch 30 | 90.38 |
 | deep_baseline_bn | Epoch 30, Batch Size 32 | 86.13 |

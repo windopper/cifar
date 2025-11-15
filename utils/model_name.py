@@ -26,9 +26,14 @@ def get_model_name_parts(args):
         model_name_parts.append(f"sch{args.scheduler}")
         if args.scheduler.lower() == 'exponentiallr':
             model_name_parts.append(f"gamma{args.scheduler_gamma}")
-        elif args.scheduler.lower() == 'onecyclelr' and args.scheduler_max_lr:
-            model_name_parts.append(f"maxlr{args.scheduler_max_lr}")
-        elif args.scheduler.lower() == 'reducelronplateau':
+        elif args.scheduler.lower() == 'onecyclelr':
+            if args.scheduler_max_lr:
+                model_name_parts.append(f"maxlr{args.scheduler_max_lr}")
+            if args.scheduler_pct_start != 0.3:  # 기본값이 아닐 때만 추가
+                model_name_parts.append(f"pct{args.scheduler_pct_start}")
+            if args.scheduler_final_lr_ratio != 0.07:  # 기본값이 아닐 때만 추가
+                model_name_parts.append(f"finalr{args.scheduler_final_lr_ratio}")
+        elif args.scheduler.lower() == 'reducelronplateau': 
             model_name_parts.append(f"factor{args.scheduler_factor}")
             model_name_parts.append(f"patience{args.scheduler_patience}")
         elif args.scheduler.lower() == 'cosineannealinglr':

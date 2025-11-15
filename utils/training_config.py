@@ -36,6 +36,10 @@ def print_training_configuration(args, normalize_mean, normalize_std, save_path,
         elif args.scheduler.lower() == 'onecyclelr':
             max_lr = args.scheduler_max_lr if args.scheduler_max_lr else args.lr * 10
             print(f"  Scheduler max_lr: {max_lr}")
+            print(f"  Scheduler pct_start: {args.scheduler_pct_start}")
+            print(f"  Scheduler final_lr_ratio: {args.scheduler_final_lr_ratio}")
+            final_lr = args.lr * args.scheduler_final_lr_ratio
+            print(f"  Scheduler final_lr: {final_lr}")
         elif args.scheduler.lower() == 'reducelronplateau':
             print(f"  Scheduler factor: {args.scheduler_factor}")
             print(f"  Scheduler patience: {args.scheduler_patience}")
