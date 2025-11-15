@@ -33,6 +33,7 @@ class DeepBaselineNetBN(nn.Module):
         super(DeepBaselineNetBN, self).__init__()
         # Conv-BN-ReLU 블록들
         self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
+
         self.bn1 = nn.BatchNorm2d(32)
         
         self.conv2 = nn.Conv2d(32, 64, 3, padding=1)

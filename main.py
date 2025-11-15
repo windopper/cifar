@@ -25,6 +25,9 @@ from models.deep_baseline_bn_dropout import DeepBaselineNetBNDropout
 from models.deep_baseline_bn_dropout_resnet import DeepBaselineNetBNDropoutResNet
 from models.deep_baseline_gap import DeepBaselineNetGAP
 from models.deep_baseline_se import DeepBaselineNetSE
+from models.convnext_step1_patchify import ConvNeXtPatchifyClassifier
+from models.convnext_step2_local_block import ConvNeXtLocalBlockClassifier
+from models.convnext_step3_full import ConvNeXtCIFAR, convnext_tiny
 from calibration import calibrate_temperature
 from models.resnet import ResNet18
 from models.vgg import VGG
@@ -83,6 +86,10 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline2_bn_residual_preact': DeepBaselineNetBN2ResidualPreAct(),
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline_se': DeepBaselineNetSE(),
+        'convnext_patchify': ConvNeXtPatchifyClassifier(init_weights=init_weights),
+        'convnext_local': ConvNeXtLocalBlockClassifier(init_weights=init_weights),
+        'convnext_cifar': ConvNeXtCIFAR(init_weights=init_weights),
+        'convnext_tiny': convnext_tiny(init_weights=init_weights),
         'resnet18': ResNet18(),
         'vgg16': VGG('VGG16'),
         'mobilenetv2': MobileNetV2(),
@@ -204,6 +211,7 @@ def parse_args():
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
                                  'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
                                  'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
+                                 'convnext_patchify', 'convnext_local', 'convnext_cifar', 'convnext_tiny',
                                  'mxresnet20', 'mxresnet32', 'mxresnet44', 'mxresnet56', 'dla', 'resnext29_4x64d'],
 
                         help='네트워크 모델 (default: baseline)')

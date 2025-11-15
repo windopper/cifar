@@ -38,10 +38,14 @@ Augmentation: RandomCrop(32, padding=4), RandomHorizontalFlip, RandomRotation(15
 | 기본 (모두 없음) | ❌ | ❌ | ❌ | ❌ | 78.43 |
 | Augmentation | ✅ | ❌ | ❌ | ❌ | 90.01 |
 | Augmentation + CutMix | ✅ | ✅ | ❌ | ❌ | 90.26 |
+| Augmentation + CutMix (75% 에포크 시작) | ✅ | ✅ | ❌ | ❌ | 89.49 |
+| Augmentation + CutMix (75% 에포크 시작) + OneCycleLR | ✅ | ✅ | ❌ | ❌ | -- |
 | Augmentation + Mixup | ✅ | ❌ | ✅ | ❌ | 89.85 |
 | Augmentation + AutoAugment | ✅ | ❌ | ❌ | ✅ | **91.17** |
 | Augmentation + CutMix + AutoAugment | ✅ | ✅ | ❌ | ✅ | 90.88 |
 | Augmentation + Mixup + AutoAugment | ✅ | ❌ | ✅ | ✅ | 90.43 |
+
+`python cifar/main.py --optimizer adam --epochs 100 --batch-size 128 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline_bn --w-init --augment --cutmix --cutmix-start-epoch-ratio 0.75`
 
 ![image](./comparison/augmentation_comparison_100epoch.png)
 
