@@ -133,14 +133,20 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
         if max_lr is None:
             max_lr = lr * 10  # 기본값: 초기 lr의 10배
         
-        # 마지막 학습률 = base_lr / final_div_factor = lr * final_lr_ratio
-        # 따라서 final_div_factor = 1 / final_lr_ratio
-        final_div_factor = 1.0 / final_lr_ratio if final_lr_ratio > 0 else 10000.0
+        # OneCycleLR의 동작 방식:
+        # 초기 학습률 = max_lr / div_factor (div_factor 기본값: 25.0)
+        # 마지막 학습률 = (max_lr / div_factor) / final_div_factor = max_lr / (div_factor * final_div_factor)
+        # 사용자가 원하는 마지막 학습률 = lr * final_lr_ratio
+        # 따라서: max_lr / (div_factor * final_div_factor) = lr * final_lr_ratio
+        # final_div_factor = max_lr / (div_factor * lr * final_lr_ratio)
+        
+        div_factor = 25.0  # PyTorch 기본값
+        final_div_factor = max_lr / (div_factor * lr * final_lr_ratio) if final_lr_ratio > 0 else 10000.0
         
         total_steps = epochs * steps_per_epoch
         schedulers['onecyclelr'] = lr_scheduler.OneCycleLR(
             optimizer, max_lr=max_lr, total_steps=total_steps, pct_start=pct_start,
-            base_lr=lr, final_div_factor=final_div_factor
+            div_factor=div_factor, final_div_factor=final_div_factor
         )
     elif name.lower() == 'reducelronplateau':
         schedulers['reducelronplateau'] = lr_scheduler.ReduceLROnPlateau(
