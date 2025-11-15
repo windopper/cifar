@@ -12,8 +12,11 @@ Weight Initialization: ✅
 |------|------------|
 | Cosine Annealing LR | 76.71 | -- |
 | One Cycle LR | 87.25 | -- |
-| One Cycle LR | -- | Pct Start 0.2, Epoch 20 |
-| One Cycle LR | -- | Pct Start 0.2, Final LR Ratio 0.07 |
+| One Cycle LR | 87.07 | Pct Start 0.2 |
+| One Cycle LR | 86.57 | Pct Start 0.2, Final LR Ratio 0.07 |
+| One Cycle LR | 85.57 | Pct Start 0.2, Epoch 20 |
+| One Cycle LR | 85.6 | Pct Start 0.2, Final LR Ratio 0.07, Epoch 20 |
+| One Cycle LR | 81.96 | Pct Start 0.2, Final LR Radio 0.07, Epoch 20, Batch Size 1024, Learning Rate: 3e-3 |
 | Exponential LR | 73.43 | -- |
 | ReduceLROnPlateau | 75.31 | -- |
 

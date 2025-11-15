@@ -252,8 +252,12 @@ def parse_args():
                         help='AutoAugment 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
     parser.add_argument('--cutmix', action='store_true',
                         help='CutMix 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
+    parser.add_argument('--cutmix-start-epoch-ratio', type=float, default=0.0,
+                        help='CutMix 시작 에포크 비율 (0.0~1.0, 예: 0.3이면 전체 에포크의 30%% 이후부터 적용, default: 0.0)')
     parser.add_argument('--mixup', action='store_true',
                         help='Mixup 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
+    parser.add_argument('--mixup-start-epoch-ratio', type=float, default=0.0,
+                        help='Mixup 시작 에포크 비율 (0.0~1.0, 예: 0.3이면 전체 에포크의 30%% 이후부터 적용, default: 0.0)')
     parser.add_argument('--calibrate', action='store_true',
                         help='Temperature Scaling 캘리브레이션 수행 (default: False)')
     parser.add_argument('--use-cifar-normalize', action='store_true',
@@ -347,8 +351,16 @@ def main():
         mixup_collator = MixupCollator(alpha=1.0, prob=0.5)
         mixup_criterion = MixupCriterion(reduction='mean', label_smoothing=args.label_smoothing)
     
-    # collate_fn 설정 (CutMix 또는 Mixup 중 하나)
-    collate_fn = cutmix_collator if cutmix_collator is not None else (mixup_collator if mixup_collator is not None else None)
+    # 시작 에포크 계산
+    cutmix_start_epoch = int(args.cutmix_start_epoch_ratio * args.epochs) if args.cutmix and args.augment else args.epochs
+    mixup_start_epoch = int(args.mixup_start_epoch_ratio * args.epochs) if args.mixup and args.augment else args.epochs
+    
+    # 초기 collate_fn 설정 (첫 에포크에서는 시작 비율에 따라 결정)
+    collate_fn = None
+    if args.cutmix and args.augment and cutmix_start_epoch == 0:
+        collate_fn = cutmix_collator
+    elif args.mixup and args.augment and mixup_start_epoch == 0:
+        collate_fn = mixup_collator
     
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=args.batch_size, shuffle=True, num_workers=2,
@@ -396,7 +408,9 @@ def main():
             'data_augment': args.augment,
             'autoaugment': args.autoaugment and args.augment,
             'cutmix': args.cutmix and args.augment,
+            'cutmix_start_epoch_ratio': args.cutmix_start_epoch_ratio if args.cutmix and args.augment else None,
             'mixup': args.mixup and args.augment,
+            'mixup_start_epoch_ratio': args.mixup_start_epoch_ratio if args.mixup and args.augment else None,
             'normalize_mean': list(normalize_mean),
             'normalize_std': list(normalize_std),
             'seed': args.seed,
@@ -444,6 +458,24 @@ def main():
     patience_counter = 0
 
     for epoch in range(args.epochs):
+        # 현재 에포크에서 cutmix/mixup 적용 여부 확인
+        use_cutmix = args.cutmix and args.augment and epoch >= cutmix_start_epoch
+        use_mixup = args.mixup and args.augment and epoch >= mixup_start_epoch
+        
+        # collate_fn 동적 설정
+        current_collate_fn = None
+        if use_cutmix:
+            current_collate_fn = cutmix_collator
+        elif use_mixup:
+            current_collate_fn = mixup_collator
+        
+        # collate_fn이 변경된 경우 DataLoader 재생성
+        if current_collate_fn != collate_fn:
+            collate_fn = current_collate_fn
+            train_loader = torch.utils.data.DataLoader(
+                train_set, batch_size=args.batch_size, shuffle=True, num_workers=2,
+                collate_fn=collate_fn)
+        
         running_loss = 0.0
         pbar = tqdm(train_loader, desc=f'Epoch {epoch + 1}/{args.epochs}')
         for i, data in enumerate(pbar, 0):
@@ -461,9 +493,9 @@ def main():
 
             outputs = net(inputs)
             # CutMix/Mixup 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
-            if cutmix_criterion is not None and isinstance(labels, tuple):
+            if use_cutmix and isinstance(labels, tuple):
                 loss = cutmix_criterion(outputs, labels)
-            elif mixup_criterion is not None and isinstance(labels, tuple):
+            elif use_mixup and isinstance(labels, tuple):
                 loss = mixup_criterion(outputs, labels)
             else:
                 loss = criterion(outputs, labels)

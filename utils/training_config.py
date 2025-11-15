@@ -23,9 +23,16 @@ def print_training_configuration(args, normalize_mean, normalize_std, save_path,
     print(f"  Data augmentation: {args.augment}")
     if args.cutmix:
         if args.augment:
-            print(f"  CutMix: Enabled")
+            cutmix_start_epoch = int(args.cutmix_start_epoch_ratio * args.epochs)
+            print(f"  CutMix: Enabled (starts from epoch {cutmix_start_epoch + 1}, ratio: {args.cutmix_start_epoch_ratio})")
         else:
             print(f"  CutMix: Disabled (--augment must be enabled)")
+    if args.mixup:
+        if args.augment:
+            mixup_start_epoch = int(args.mixup_start_epoch_ratio * args.epochs)
+            print(f"  Mixup: Enabled (starts from epoch {mixup_start_epoch + 1}, ratio: {args.mixup_start_epoch_ratio})")
+        else:
+            print(f"  Mixup: Disabled (--augment must be enabled)")
     print(f"  Weight initialization: {args.w_init}")
     print(f"  Normalize mean: {normalize_mean}")
     print(f"  Normalize std: {normalize_std}")

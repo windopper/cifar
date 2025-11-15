@@ -53,9 +53,13 @@ def get_model_name_parts(args):
     
     if args.cutmix and args.augment:
         model_name_parts.append("cutmix")
+        if args.cutmix_start_epoch_ratio > 0.0:
+            model_name_parts.append(f"cutmixstart{args.cutmix_start_epoch_ratio}")
     
     if args.mixup and args.augment:
         model_name_parts.append("mixup")
+        if args.mixup_start_epoch_ratio > 0.0:
+            model_name_parts.append(f"mixupstart{args.mixup_start_epoch_ratio}")
     
     if args.w_init:
         model_name_parts.append("winit")
