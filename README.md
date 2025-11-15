@@ -114,7 +114,7 @@ Weight Initialization: ✅
 |------|------------|----------------------|
 | deep_baseline_bn | 87.25 | [History](outputs/scheduler/deep_baseline_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | deep_baseline2_bn | 87.16 | [History](outputs/model_comparison/deep_baseline2_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
-| deep_baseline2_bn_residual | **88.73** | [History](outputs/model_comparison/deep_baseline2_bn_residual_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| deep_baseline2_bn_residual | 88.73 | [History](outputs/model_comparison/deep_baseline2_bn_residual_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | deep_baseline2_bn_residual_se | 87.88 | [History](outputs/model_comparison/deep_baseline2_bn_residual_se_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | deep_baseline2_bn_residual_preact | 87.81 | [History](outputs/model_comparison/deep_baseline2_bn_residual_preact_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | deep_baseline2_bn_resnext | 88.16 | [History](outputs/model_comparison/deep_baseline2_bn_resnext_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
@@ -123,6 +123,7 @@ Weight Initialization: ✅
 | dla | 87.3 | [History](outputs/model_comparison/dla_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | resnext29_4x64d | 88.51 | [History](outputs/model_comparison/resnext29_4x64d_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | deep_baseline2_bn_residual_grn | 81.54 | -- |
+| deep_baseline3_bn_residual | **88.91** | -- |
  
 # Inference
 ## TTA

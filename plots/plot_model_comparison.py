@@ -1,5 +1,6 @@
 import json
 import os
+import glob
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -8,9 +9,23 @@ plt.rcParams['font.family'] = 'Malgun Gothic'  # Windows
 plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
 
 
-def load_histories(file_names, output_dir="outputs"):
-    """특정 파일명들의 history를 로드"""
+def find_history_files(output_dir="outputs/model_comparison"):
+    """디렉토리 내의 모든 *_history.json 파일을 찾아 반환"""
+    pattern = os.path.join(output_dir, "*_history.json")
+    files = glob.glob(pattern)
+    # 파일명만 반환 (상대 경로)
+    file_names = [os.path.basename(f) for f in files]
+    return sorted(file_names)
+
+
+def load_histories(file_names=None, output_dir="outputs/model_comparison"):
+    """특정 파일명들의 history를 로드. file_names가 None이면 디렉토리 내의 모든 파일을 로드"""
     histories = []
+    
+    # file_names가 None이면 디렉토리에서 자동으로 찾기
+    if file_names is None:
+        file_names = find_history_files(output_dir)
+        print(f"디렉토리에서 {len(file_names)}개의 history 파일을 찾았습니다.")
 
     for file_name in file_names:
         # _history.json이 없으면 추가
@@ -152,6 +167,19 @@ def plot_model_comparison(histories, save_path="comparison/model_comparison.png"
     plt.close()
 
 
+def plot_model_comparison_from_dir(output_dir="outputs/model_comparison", save_path="comparison/model_comparison.png"):
+    """디렉토리 내의 모든 history 파일을 자동으로 찾아 모델 성능 비교 그래프 작성"""
+    # History 파일 자동 로드 (file_names=None이면 디렉토리에서 자동으로 찾음)
+    histories = load_histories(file_names=None, output_dir=output_dir)
+
+    if not histories:
+        print("로드된 history 파일이 없습니다.")
+        return
+
+    # 그래프 작성
+    plot_model_comparison(histories, save_path=save_path)
+
+
 def plot_model_comparison_20_epoch(save_path="comparison/model_comparison_20_epoch.png"):
     """20 Epoch 기준 모델 성능 비교 그래프 작성"""
     file_names = [
@@ -180,11 +208,12 @@ def plot_model_comparison_20_epoch(save_path="comparison/model_comparison_20_epo
     
 def plot_model_comparison_100_epoch(save_path="comparison/model_comparison_100_epoch.png"):
     file_names = [
-        "deep_baseline_bn_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
-        "deep_baseline2_bn_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
-        "deep_baseline2_bn_resnext_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_winit_history.json",
-        "deep_baseline2_bn_residual_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
-        "deep_baseline2_bn_residual_preact_adam_crossentropy_bs128_ep100_lr0.001_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
+        "deep_baseline_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
+        "deep_baseline2_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
+        "deep_baseline2_bn_resnext_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_winit_history.json",
+        "deep_baseline2_bn_residual_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
+        "deep_baseline2_bn_residual_preact_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
+        "deep_baseline3_bn_residual_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
     ]
     
     if not file_names:
@@ -198,5 +227,9 @@ def plot_model_comparison_100_epoch(save_path="comparison/model_comparison_100_e
 
 
 if __name__ == "__main__":
-    plot_model_comparison_20_epoch()
-    plot_model_comparison_100_epoch()
+    # outputs/model_comparison 디렉토리 내의 모든 파일에 대한 플롯 생성
+    plot_model_comparison_from_dir()
+    
+    # 기존 함수들도 사용 가능
+    # plot_model_comparison_20_epoch()
+    # plot_model_comparison_100_epoch()
