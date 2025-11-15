@@ -13,7 +13,7 @@ Weight Initialization: ✅
 | Cosine Annealing LR | 76.71 | -- |
 | One Cycle LR | 87.25 | -- |
 | One Cycle LR | -- | Pct Start 0.2, Epoch 20 |
-| One Cycle LR | -- | Pct Start 0.2, Final 
+| One Cycle LR | -- | Pct Start 0.2, Final LR Ratio 0.07 |
 | Exponential LR | 73.43 | -- |
 | ReduceLROnPlateau | 75.31 | -- |
 

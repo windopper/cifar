@@ -119,7 +119,7 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
                   lr: float = 0.001, gamma: float = 0.95, max_lr: float = None,
                   factor: float = 0.1, patience: int = 10, mode: str = 'min',
                   t_max: int = None, eta_min: float = 0.0, pct_start: float = 0.3,
-                  final_lr_ratio: float = 0.07):
+                  final_lr_ratio: float = 0.0001):
     """Learning Rate Scheduler 팩토리 함수"""
     if name is None or (isinstance(name, str) and name.lower() == 'none'):
         return None
@@ -225,8 +225,8 @@ def parse_args():
                         help='OneCycleLR의 max_lr 값 (default: lr * 10)')
     parser.add_argument('--scheduler-pct-start', type=float, default=0.3,
                         help='OneCycleLR의 pct_start 값 (0.0~1.0, 최고 학습률 도달 시점 비율, default: 0.3)')
-    parser.add_argument('--scheduler-final-lr-ratio', type=float, default=0.07,
-                        help='OneCycleLR의 마지막 학습률 비율 (원래 lr 대비, default: 0.07)')
+    parser.add_argument('--scheduler-final-lr-ratio', type=float, default=0.0001,
+                        help='OneCycleLR의 마지막 학습률 비율 (원래 lr 대비, PyTorch 기본값: 0.0001, final_div_factor=10000)')
     parser.add_argument('--scheduler-factor', type=float, default=0.1,
                         help='ReduceLROnPlateau의 factor 값 (default: 0.1)')
     parser.add_argument('--scheduler-patience', type=int, default=3,

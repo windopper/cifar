@@ -31,7 +31,7 @@ def get_model_name_parts(args):
                 model_name_parts.append(f"maxlr{args.scheduler_max_lr}")
             if args.scheduler_pct_start != 0.3:  # 기본값이 아닐 때만 추가
                 model_name_parts.append(f"pct{args.scheduler_pct_start}")
-            if args.scheduler_final_lr_ratio != 0.07:  # 기본값이 아닐 때만 추가
+            if args.scheduler_final_lr_ratio != 0.0001:  # 기본값이 아닐 때만 추가
                 model_name_parts.append(f"finalr{args.scheduler_final_lr_ratio}")
         elif args.scheduler.lower() == 'reducelronplateau': 
             model_name_parts.append(f"factor{args.scheduler_factor}")
