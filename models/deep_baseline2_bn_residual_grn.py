@@ -6,11 +6,16 @@ DeepBaselineNetBN2Residual에 2024/2025년 CNN 이미지 분류 SOTA 계열(Conv
 모델에서 핵심적으로 사용하는 Global Response Normalization(GRN)과
 대규모 depthwise-separable Conv 블록을 결합한 변형을 도입한 버전입니다.
 
-도입된 최신 기술: ConvNeXt V2 스타일의 GRN + LayerScale + DropPath
+도입된 최신 기술: ConvNeXt V2 스타일의 GRN + LayerScale + DropPath + SE
 - Depthwise Conv (k=7)로 지역적 문맥을 넓게 포착
 - GRN(Global Response Normalization)은 ConvNeXt V2 (Meta AI, CVPR 2023)에서 제안되어
   2024/2025년 ImageNet Top-1 챔피언 CNN 계열에서 표준으로 사용됨
 - LayerScale과 DropPath(Stochastic Depth)는 깊은 네트워크에서도 안정적인 학습을 제공
+
+- CIFAR-10 특화 개선 사항
+  - Stage 간 Shortcut 경로에 BatchNorm을 더해 분포 차이를 보정하고 안정적인 Residual 학습 지원
+  - Squeeze-and-Excitation(SE) 블록으로 채널별 응답을 재보정해 작은 입력 해상도에서도 표현력 확보
+  - LayerScale 초기값을 1e-2로 키워 소형 네트워크에서도 GRN 블록이 초반부터 충분한 기여를 할 수 있게 구성
 """
 
 import torch
@@ -76,6 +81,30 @@ class GlobalResponseNorm(nn.Module):
         return self.gamma * (x * nx) + self.beta + x
 
 
+class SqueezeExcite(nn.Module):
+    """
+    Squeeze-and-Excitation 모듈
+    - CIFAR-10처럼 채널 수 대비 공간 크기가 작은 입력에서 채널 중요도 재조정에 효과적
+    """
+
+    def __init__(self, channels: int, reduction: int = 4):
+        super().__init__()
+        reduced_channels = max(1, channels // reduction)
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.fc1 = nn.Conv2d(channels, reduced_channels, kernel_size=1)
+        self.act = nn.SiLU(inplace=True)
+        self.fc2 = nn.Conv2d(reduced_channels, channels, kernel_size=1)
+        self.gate = nn.Sigmoid()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        scale = self.pool(x)
+        scale = self.fc1(scale)
+        scale = self.act(scale)
+        scale = self.fc2(scale)
+        scale = self.gate(scale)
+        return x * scale
+
+
 class ConvNeXtV2ResidualBlock(nn.Module):
     """
     ConvNeXt V2 스타일 Residual Block
@@ -91,7 +120,8 @@ class ConvNeXtV2ResidualBlock(nn.Module):
         stride: int = 1,
         expansion: int = 4,
         drop_path: float = 0.0,
-        layer_scale_init_value: float = 1e-5,
+        layer_scale_init_value: float = 1e-2,
+        se_reduction: int = 4,
     ):
         super().__init__()
         self.dwconv = nn.Conv2d(
@@ -110,6 +140,7 @@ class ConvNeXtV2ResidualBlock(nn.Module):
         self.act = nn.GELU()
         self.grn = GlobalResponseNorm(hidden_dim)
         self.pwconv2 = nn.Conv2d(hidden_dim, out_channels, kernel_size=1)
+        self.se = SqueezeExcite(out_channels, reduction=se_reduction)
 
         if layer_scale_init_value > 0:
             self.layer_scale = nn.Parameter(
@@ -119,12 +150,15 @@ class ConvNeXtV2ResidualBlock(nn.Module):
             self.layer_scale = None
 
         if stride != 1 or in_channels != out_channels:
-            self.shortcut = nn.Conv2d(
-                in_channels,
-                out_channels,
-                kernel_size=1,
-                stride=stride,
-                bias=False,
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
+                ),
+                nn.BatchNorm2d(out_channels),
             )
         else:
             self.shortcut = nn.Identity()
@@ -140,6 +174,7 @@ class ConvNeXtV2ResidualBlock(nn.Module):
         out = self.act(out)
         out = self.grn(out)
         out = self.pwconv2(out)
+        out = self.se(out)
 
         if self.layer_scale is not None:
             out = out * self.layer_scale.view(1, -1, 1, 1)
@@ -160,7 +195,8 @@ class DeepBaselineNetBN2ResidualGRN(nn.Module):
         self,
         init_weights: bool = False,
         drop_path_rate: float = 0.1,
-        layer_scale_init_value: float = 1e-5,
+        layer_scale_init_value: float = 1e-2,
+        se_reduction: int = 4,
     ):
         super().__init__()
         self.stem = nn.Sequential(
@@ -197,6 +233,7 @@ class DeepBaselineNetBN2ResidualGRN(nn.Module):
                         stride=block_stride,
                         drop_path=drop_rates[dp_idx],
                         layer_scale_init_value=layer_scale_init_value,
+                        se_reduction=se_reduction,
                     )
                 )
                 dp_idx += 1

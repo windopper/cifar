@@ -122,7 +122,7 @@ Weight Initialization: ✅
 | mxresnet56 | 87.57 | [History](outputs/model_comparison/mxresnet56_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | dla | 87.3 | [History](outputs/model_comparison/dla_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
 | resnext29_4x64d | 88.51 | [History](outputs/model_comparison/resnext29_4x64d_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
-
+| deep_baseline2_bn_residual_grn | 81.54 | -- |
  
 # Inference
 ## TTA
