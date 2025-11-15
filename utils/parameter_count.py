@@ -16,10 +16,12 @@ from models.deep_baseline2_bn_residual import DeepBaselineNetBN2Residual
 from models.deep_baseline2_bn_residual_preact import DeepBaselineNetBN2ResidualPreAct
 from models.deep_baseline2_bn_resnext import DeepBaselineNetBN2ResNeXt
 from models.deep_baseline2_bn_residual_se import DeepBaselineNetBN2ResidualSE
+from models.deep_baseline2_bn_residual_grn import DeepBaselineNetBN2ResidualGRN
 from models.deep_baseline3_bn import DeepBaselineNetBN3
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, ResNeXt29_32x4d
 from models.dla import DLA
+from models.convnext_step3_full import ConvNeXtCIFAR
 
 
 def count_parameters(model):
@@ -50,7 +52,7 @@ def count_parameters_all(model):
 
 def get_deep_baseline2_parameter_counts(init_weights=False):
     """
-    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt 및 DLA 모델의 파라미터 개수를 계산합니다.
+    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA 및 ConvNeXt 모델의 파라미터 개수를 계산합니다.
     
     Args:
         init_weights: 가중치 초기화 여부 (기본값: False)
@@ -83,6 +85,10 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     # DeepBaselineNetBN2ResidualSE (기본값 사용: se_reduction=16)
     model_se = DeepBaselineNetBN2ResidualSE(init_weights=init_weights)
     results['deep_baseline2_bn_residual_se'] = count_parameters(model_se)
+    
+    # DeepBaselineNetBN2ResidualGRN (기본값 사용: drop_path_rate=0.1, layer_scale_init_value=1e-5)
+    model_grn = DeepBaselineNetBN2ResidualGRN(init_weights=init_weights)
+    results['deep_baseline2_bn_residual_grn'] = count_parameters(model_grn)
     
     # DeepBaselineNetBN3
     model_bn3 = DeepBaselineNetBN3(init_weights=init_weights)
@@ -118,12 +124,16 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     model_dla = DLA()
     results['dla'] = count_parameters(model_dla)
     
+    # ConvNeXtCIFAR model
+    model_convnext = ConvNeXtCIFAR(init_weights=init_weights)
+    results['convnext_step3_full'] = count_parameters(model_convnext)
+    
     return results
 
 
 def print_deep_baseline2_parameter_counts(init_weights=False):
     """
-    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt 및 DLA 모델의 파라미터 개수를 출력합니다.
+    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA 및 ConvNeXt 모델의 파라미터 개수를 출력합니다.
     
     Args:
         init_weights: 가중치 초기화 여부 (기본값: False)
@@ -131,7 +141,7 @@ def print_deep_baseline2_parameter_counts(init_weights=False):
     results = get_deep_baseline2_parameter_counts(init_weights=init_weights)
     
     print("=" * 70)
-    print("deep_baseline, deep_baseline2/3, MXResNet, ResNeXt 및 DLA 모델 파라미터 개수")
+    print("deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA 및 ConvNeXt 모델 파라미터 개수")
     print("=" * 70)
     
     # 파라미터 개수로 정렬
