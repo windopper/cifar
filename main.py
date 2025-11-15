@@ -118,7 +118,7 @@ def get_optimizer(name: str, net: nn.Module, lr: float = 0.001, momentum: float 
 def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int = 1,
                   lr: float = 0.001, gamma: float = 0.95, max_lr: float = None,
                   factor: float = 0.1, patience: int = 10, mode: str = 'min',
-                  t_max: int = None, eta_min: float = 0.0):
+                  t_max: int = None, eta_min: float = 0.0, pct_start: float = 0.3):
     """Learning Rate Scheduler 팩토리 함수"""
     if name is None or (isinstance(name, str) and name.lower() == 'none'):
         return None
@@ -134,7 +134,7 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
             
         total_steps = epochs * steps_per_epoch
         schedulers['onecyclelr'] = lr_scheduler.OneCycleLR(
-            optimizer, max_lr=max_lr, total_steps=total_steps
+            optimizer, max_lr=max_lr, total_steps=total_steps, pct_start=pct_start
         )
     elif name.lower() == 'reducelronplateau':
         schedulers['reducelronplateau'] = lr_scheduler.ReduceLROnPlateau(
@@ -217,6 +217,8 @@ def parse_args():
                         help='ExponentialLR의 gamma 값 (default: 0.95)')
     parser.add_argument('--scheduler-max-lr', type=float, default=None,
                         help='OneCycleLR의 max_lr 값 (default: lr * 10)')
+    parser.add_argument('--scheduler-pct-start', type=float, default=0.3,
+                        help='OneCycleLR의 pct_start 값 (0.0~1.0, 최고 학습률 도달 시점 비율, default: 0.3)')
     parser.add_argument('--scheduler-factor', type=float, default=0.1,
                         help='ReduceLROnPlateau의 factor 값 (default: 0.1)')
     parser.add_argument('--scheduler-patience', type=int, default=3,
@@ -361,7 +363,7 @@ def main():
         gamma=args.scheduler_gamma, max_lr=args.scheduler_max_lr,
         factor=args.scheduler_factor, patience=args.scheduler_patience,
         mode=args.scheduler_mode, t_max=args.scheduler_t_max,
-        eta_min=args.scheduler_eta_min
+        eta_min=args.scheduler_eta_min, pct_start=args.scheduler_pct_start
     )
 
     # 학습 히스토리 저장용 리스트
@@ -400,6 +402,7 @@ def main():
             history['hyperparameters']['scheduler_gamma'] = args.scheduler_gamma
         elif args.scheduler.lower() == 'onecyclelr':
             history['hyperparameters']['scheduler_max_lr'] = args.scheduler_max_lr if args.scheduler_max_lr else args.lr * 10
+            history['hyperparameters']['scheduler_pct_start'] = args.scheduler_pct_start
         elif args.scheduler.lower() == 'reducelronplateau':
             history['hyperparameters']['scheduler_factor'] = args.scheduler_factor
             history['hyperparameters']['scheduler_patience'] = args.scheduler_patience

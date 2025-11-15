@@ -8,12 +8,13 @@ Learning Rate: 3e-4
 Net: deep_baseline_bn
 Weight Initialization: ✅
 
-| Scheduler | 최고 Val Accuracy (%) |
+| Scheduler | 최고 Val Accuracy (%) | 세부 사항 |
 |------|------------|
-| Cosine Annealing LR | 76.71 |
-| One Cycle LR | 87.25 |
-| Exponential LR | 73.43 |
-| ReduceLROnPlateau | 75.31 |
+| Cosine Annealing LR | 76.71 | -- |
+| One Cycle LR | 87.25 | -- |
+| One Cycle LR | -- | Pct Start 0.2, Epoch 20 |
+| Exponential LR | 73.43 | -- |
+| ReduceLROnPlateau | 75.31 | -- |
 
 ![scheduler_comparison.png](./comparison/scheduler_comparison.png)
 
@@ -72,6 +73,25 @@ uv run main.py --optimizer [optimizer] --epochs 40 --lr [learning_rate] --batch-
 ```
 </details>
 
+# Regularization And Post-hoc Calibration
+model: deep_baseline_bn
+lr: 3e-4
+batch size: 128
+epoch: 60
+scheduler: One Cycle LR
+optimizer: Adam
+Weight Initialization: ✅
+
+| Label Smoothing | Temperature Scaling | 최고 Val Accuracy (%) | Model History |
+|------|------------|----------------------|------------|
+| ❌ | ❌ | 87.25 | [History](outputs/scheduler/deep_baseline_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.jsonson) |
+| ✅ | ❌ | 87.12 | [History](outputs/regularization_calibration/deep_baseline_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_ls0.05_winit_history.json) |
+| ❌ | ✅ | 86.81 | [History](outputs/regularization_calibration/deep_baseline_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_calibrated_history.json) |
+| ✅ | ✅ | -- | -- |
+
+`python cifar/main.py --optimizer adam --epochs 60 --lr 3e-4 --batch-size 128 --scheduler onecyclelr --w-init --net deep_baseline_bn --calibrate
+
+
 # Model Comparison
 lr: 3e-4
 batch size: 128
@@ -82,18 +102,39 @@ Weight Initialization: ✅
 
 `uv run main.py --optimizer adam --epochs 60 --lr 3e-4 --batch-size 128 --scheduler onecyclelr --w-init --net [모델이름]`
 
-| Model | 최고 Val Accuracy (%) |
-|------|------------|
-| deep_baseline_bn | 87.25 |
-| deep_baseline2_bn | 87.16 |
-| deep_baseline2_bn_residual | 88.73 |
-| deep_baseline2_bn_residual_se | 87.88 |
-| deep_baseline2_bn_residual_preact | 87.81 |
-| deep_baseline2_bn_resnext | 88.16 |
-| deep_baseline3_bn | 86.07 |
-| mxresnet56 | 87.57 |
-| dla | -- |
-| resnext29_4x64d | -- |
+| Model | 최고 Val Accuracy (%) | Model History |
+|------|------------|----------------------|
+| deep_baseline_bn | 87.25 | [History](outputs/scheduler/deep_baseline_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| deep_baseline2_bn | 87.16 | [History](outputs/model_comparison/deep_baseline2_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| deep_baseline2_bn_residual | **88.73** | [History](outputs/model_comparison/deep_baseline2_bn_residual_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| deep_baseline2_bn_residual_se | 87.88 | [History](outputs/model_comparison/deep_baseline2_bn_residual_se_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| deep_baseline2_bn_residual_preact | 87.81 | [History](outputs/model_comparison/deep_baseline2_bn_residual_preact_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| deep_baseline2_bn_resnext | 88.16 | [History](outputs/model_comparison/deep_baseline2_bn_resnext_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| deep_baseline3_bn | 86.07 | [History](outputs/model_comparison/deep_baseline3_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| mxresnet56 | 87.57 | [History](outputs/model_comparison/mxresnet56_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| dla | 87.3 | [History](outputs/model_comparison/dla_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+| resnext29_4x64d | 88.51 | [History](outputs/model_comparison/resnext29_4x64d_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schonecyclelr_winit_history.json)
+
+ 
+# Inference
+## TTA
+model: deep_baseline_bn
+lr: 3e-4
+batch size: 128
+epoch: 60
+scheduler: One Cycle LR
+optimizer: Adam
+Weight Initialization: ✅
+
+| TTA | Ensemble | Temperature Scaling | Details | 최고 Val Accuracy (%) |
+|------------|----------------------|----------------------|----------------------|------------|
+| ❌ | ❌ | ❌ | -- | 87.25 |
+| ✅ | ❌ | ❌ | -- | 88.39 |
+| ❌ | ✅ | ❌ | deep_baseline_bn, deep_baseline2_bn, deep_baseline2_bn_residual | 90.27 |
+| ✅ | ✅ | ❌ | deep_baseline_bn, deep_baseline2_bn, deep_baseline2_bn_residual | 90.84 |
+| ❌ | ✅ | ❌ | deep_baseline_bn, deep_baseline2_bn, deep_baseline2_bn_residual, deep_baseline2_bn_residual_se, deep_baseline2_bn_resnext | 90.97 |
+| ✅ | ✅ | ❌ | deep_baseline_bn, deep_baseline2_bn, deep_baseline2_bn_residual, deep_baseline2_bn_residual_se, deep_baseline2_bn_resnext | **91.06** |
+
 
 # Final Comparison
 lr: 3e-4
@@ -111,7 +152,9 @@ Label Smoothing: 0.05
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) |
 |------|------------|----------------------|
 | deep_baseline_bn | -- | 90.89 |
+| deep_baseline_bn | Epoch 20, Scheduler Pct Start 0.2 | -- |
 | deep_baseline_bn | Epoch 60 | 90.68 |
+| deep_baseline_bn | Epoch 100 | -- |
 | deep_baseline_bn | Epoch 60, CutMix | 90.17 |
 | deep_baseline_bn | Epoch 30 | 90.38 |
 | deep_baseline_bn | Epoch 30, Batch Size 32 | 86.13 |
@@ -140,6 +183,7 @@ weight init: ✅
 | deep_baseline2_bn_resnext | ✅ | ✅ | ✅ (0.05) | **92.97** |
 | deep_baseline3_bn | ✅ | ✅ | ✅ (0.05) | 90.73 |
 | mxresnet56 | ✅ | ✅ | ✅ (0.05) | 92.04 |
+ 
 
 <details>
 <summary><small>명령어 보기</small></summary>
