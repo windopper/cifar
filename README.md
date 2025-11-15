@@ -80,17 +80,44 @@ scheduler: One Cycle LR
 optimizer: Adam
 Weight Initialization: ✅
 
+`uv run main.py --optimizer adam --epochs 60 --lr 3e-4 --batch-size 128 --scheduler onecyclelr --w-init --net [모델이름]`
+
 | Model | 최고 Val Accuracy (%) |
 |------|------------|
 | deep_baseline_bn | 87.25 |
-| deep_baseline2_bn | -- |
-| deep_baseline2_bn_residual | -- |
-| deep_baseline2_bn_residual_se | -- |
-| deep_baseline2_bn_residual_preact | -- |
-| deep_baseline2_bn_resnext | -- |
-| deep_baseline3_bn | -- |
-| mxresnet56 | -- |
+| deep_baseline2_bn | 87.16 |
+| deep_baseline2_bn_residual | 88.73 |
+| deep_baseline2_bn_residual_se | 87.88 |
+| deep_baseline2_bn_residual_preact | 87.81 |
+| deep_baseline2_bn_resnext | 88.16 |
+| deep_baseline3_bn | 86.07 |
+| mxresnet56 | 87.57 |
+| dla | -- |
+| resnext29_4x64d | -- |
 
+# Final Comparison
+lr: 3e-4
+batch size: 128
+epoch: 180
+scheduler: One Cycle LR
+optimizer: Adam
+Weight Initialization: ✅
+Augmentation: ✅
+AutoAugment: ✅
+Label Smoothing: 0.05
+
+`python cifar/main.py --optimizer adam --epochs 180 --lr 3e-4 --batch-size 128 --scheduler onecyclelr --w-init --augment --autoaugment --label-smoothing 0.05 --net [모델이름]`
+
+| 모델 | 세부 사항 | 최고 Val Accuracy (%) |
+|------|------------|----------------------|
+| deep_baseline_bn | -- | 90.89 |
+| deep_baseline_bn | Epoch 60 | 90.68 |
+| deep_baseline_bn | Epoch 60, CutMix | 90.17 |
+| deep_baseline_bn | Epoch 30 | 90.38 |
+| deep_baseline_bn | Epoch 30, Batch Size 32 | 86.13 |
+| deep_baseline_bn | Epoch 30, Batch Size 256 | 88.54 |
+| deep_baseline2_bn_resnext | Epoch 60 | 91.86 |
+| deep_baseline2_bn_resnext | -- | 92.27 |
 
 # BaseModel
 lr: 0.001
