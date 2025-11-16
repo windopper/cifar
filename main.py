@@ -311,6 +311,8 @@ def parse_args():
                         help='Early stopping patience 값 (default: 5)')
     parser.add_argument('--output-dir', type=str, default='outputs',
                         help='모델 및 히스토리 파일 저장 디렉토리 (default: outputs)')
+    parser.add_argument('--num-workers', type=int, default=None,
+                        help='DataLoader의 워커 수 (None이면 자동 설정: AutoAugment 사용 시 4, 그 외 2, default: None)')
     return parser.parse_args()
 
 
@@ -401,14 +403,29 @@ def main():
     elif args.mixup and args.augment and mixup_start_epoch == 0:
         collate_fn = mixup_collator
     
+    # num_workers 자동 설정: AutoAugment 사용 시 더 많은 워커 필요
+    if args.num_workers is None:
+        # AutoAugment는 CPU에서 무거운 작업이므로 더 많은 워커 사용
+        num_workers = 4 if args.autoaugment and args.augment else 2
+    else:
+        num_workers = args.num_workers
+    
+    # GPU 사용 시 pin_memory 활성화로 전송 속도 향상
+    pin_memory = torch.cuda.is_available()
+    # persistent_workers로 워커 재생성 오버헤드 감소 (num_workers > 0일 때만)
+    persistent_workers = num_workers > 0
+    
     train_loader = torch.utils.data.DataLoader(
-        train_set, batch_size=args.batch_size, shuffle=True, num_workers=2,
-        collate_fn=collate_fn)
+        train_set, batch_size=args.batch_size, shuffle=True, 
+        num_workers=num_workers, pin_memory=pin_memory,
+        persistent_workers=persistent_workers, collate_fn=collate_fn)
 
     val_set = torchvision.datasets.CIFAR10(
         root='./data', train=False, download=True, transform=val_transform)
     val_loader = torch.utils.data.DataLoader(
-        val_set, batch_size=args.batch_size, shuffle=False, num_workers=2)
+        val_set, batch_size=args.batch_size, shuffle=False, 
+        num_workers=num_workers, pin_memory=pin_memory,
+        persistent_workers=persistent_workers)
 
     dataiter = iter(train_loader)
     images, labels = next(dataiter)
@@ -456,7 +473,9 @@ def main():
             'weight_init': args.w_init,
             'device': str(device),
             'early_stopping': args.early_stopping,
-            'early_stopping_patience': args.early_stopping_patience if args.early_stopping else None
+            'early_stopping_patience': args.early_stopping_patience if args.early_stopping else None,
+            'num_workers': num_workers,
+            'pin_memory': pin_memory
         },
         'train_loss': [],
         'val_loss': [],
@@ -512,8 +531,9 @@ def main():
         if current_collate_fn != collate_fn:
             collate_fn = current_collate_fn
             train_loader = torch.utils.data.DataLoader(
-                train_set, batch_size=args.batch_size, shuffle=True, num_workers=2,
-                collate_fn=collate_fn)
+                train_set, batch_size=args.batch_size, shuffle=True, 
+                num_workers=num_workers, pin_memory=pin_memory,
+                persistent_workers=persistent_workers, collate_fn=collate_fn)
         
         running_loss = 0.0
         pbar = tqdm(train_loader, desc=f'Epoch {epoch + 1}/{args.epochs}')
