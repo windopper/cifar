@@ -179,56 +179,10 @@ def plot_model_comparison_from_dir(output_dir="outputs/model_comparison", save_p
     # 그래프 작성
     plot_model_comparison(histories, save_path=save_path)
 
-
-def plot_model_comparison_20_epoch(save_path="comparison/model_comparison_20_epoch.png"):
-    """20 Epoch 기준 모델 성능 비교 그래프 작성"""
-    file_names = [
-        "deep_baseline2_bn_residual_preact_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
-        "deep_baseline_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
-        "deep_baseline_bn_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
-        "deep_baseline2_bn_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
-        "deep_baseline2_bn_residual_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
-        "deep_baseline2_bn_resnext_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
-        "deep_baseline3_bn_adam_crossentropy_bs16_ep20_lr0.0003_mom0.9_schcosineannealinglr_tmax20_history.json",
-    ]
-
-    if not file_names:
-        print("비교할 파일 리스트가 비어있습니다. file_names 리스트에 파일명을 추가하세요.")
-        return
-
-    # History 파일 로드
-    histories = load_histories(file_names)
-
-    if not histories:
-        print("로드된 history 파일이 없습니다.")
-        return
-
-    # 그래프 작성
-    plot_model_comparison(histories, save_path=save_path)
-    
-def plot_model_comparison_100_epoch(save_path="comparison/model_comparison_100_epoch.png"):
-    file_names = [
-        "deep_baseline_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
-        "deep_baseline2_bn_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
-        "deep_baseline2_bn_resnext_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_winit_history.json",
-        "deep_baseline2_bn_residual_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
-        "deep_baseline2_bn_residual_preact_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
-        "deep_baseline3_bn_residual_adam_crossentropy_bs128_ep60_lr0.0003_mom0.9_schcosineannealinglr_tmax100_ls0.05_aug_cutmix_winit_history.json",
-    ]
-    
-    if not file_names:
-        print("로드된 history 파일이 없습니다.")
-        return
-    
-    histories = load_histories(file_names)
-    
-    # 100 Epoch 기준 모델 성능 비교 그래프 작성
-    plot_model_comparison(histories, save_path=save_path)
-
-
 if __name__ == "__main__":
     # outputs/model_comparison 디렉토리 내의 모든 파일에 대한 플롯 생성
-    plot_model_comparison_from_dir()
+    # plot_model_comparison_from_dir()
+    plot_model_comparison_from_dir(output_dir="outputs/final2", save_path="comparison/final_comparison_2.png")
     
     # 기존 함수들도 사용 가능
     # plot_model_comparison_20_epoch()

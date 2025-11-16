@@ -175,7 +175,22 @@ Label Smoothing: 0.05
 | deep_baseline2_bn_resnext | -- | 92.27 |
 | deep_baseline2_bn_resnext | Epoch 60 | 91.86 |
 | deep_baseline3_bn_residual | Label Smoothing 0 | 92.92 |
-| deep_baseline3_bn_residual | Epoch 100, Cosine Annealing LR, Label Smoothing 0 | **94.65** |
+
+
+# Final Comparison 2
+lr: 3e-4
+batch size: 128
+epoch: 100
+scheduler: Cosine Annealing LR
+optimizer: Adam
+Weight Initialization: ✅
+
+| 모델 | 세부 사항 | 최고 Val Accuracy (%) |
+|------|------------|----------------------|
+| deep_baseline3_bn_residual | -- | 94.65 |
+| deep_baseline3_bn_residual_dla | -- | **94.96** |
+
+
 
 # BaseModel
 lr: 0.001

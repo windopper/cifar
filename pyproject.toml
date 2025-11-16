@@ -11,6 +11,9 @@ dependencies = [
     "numpy==1.26.4",
     "matplotlib>=3.10.7",
     "seaborn>=0.13.0",
+    "torchsummary>=1.5.1",
+    "torchviz>=0.0.3",
+    "setuptools>=80.9.0",
 ]
 
 [[tool.uv.index]]
