@@ -21,6 +21,7 @@ from models.deep_baseline2_bn_residual_se import DeepBaselineNetBN2ResidualSE
 from models.deep_baseline2_bn_residual_grn import DeepBaselineNetBN2ResidualGRN
 from models.deep_baseline3_bn import DeepBaselineNetBN3
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
+from models.deep_baseline3_bn_residual_dla import DeepBaselineNetBN3ResidualDLA
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, ResNeXt29_32x4d
 from models.dla import DLA
@@ -107,6 +108,10 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     # DeepBaselineNetBN3Residual
     model_bn3_residual = DeepBaselineNetBN3Residual(init_weights=init_weights)
     results['deep_baseline3_bn_residual'] = count_parameters(model_bn3_residual)
+    
+    # DeepBaselineNetBN3ResidualDLA
+    model_bn3_residual_dla = DeepBaselineNetBN3ResidualDLA(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_dla'] = count_parameters(model_bn3_residual_dla)
     
     # MXResNet models
     model_mxresnet20 = MXResNet20(init_weights=init_weights)
