@@ -189,6 +189,8 @@ Weight Initialization: ✅
 |------|------------|----------------------|----------------------|
 | baseline_bn | 86.75 | 0.7 M |
 | deep_baseline3_bn_residual | -- | 94.65 | 10.4 M |
+| deep_baseline3_bn_residual_deep | -- | -- | 32.7 M |
+| deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |
 | deep_baseline3_bn_residual_shakedrop | -- | 92.14 | 10.4 M |
 | deep_baseline3_bn_residual_mish | -- | 94.03 | -- |
 | deep_baseline3_bn_residual_dla_tree | -- | **95.59** | 42.6 M |
