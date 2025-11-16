@@ -9,6 +9,7 @@
 5. 계산 그래프 시각화 (선택적)
 """
 import sys
+import argparse
 from pathlib import Path
 from typing import Optional, Tuple, List
 
@@ -321,25 +322,62 @@ def print_model_architecture(model: nn.Module, indent: int = 0):
         print_model_architecture(child, indent + 2)
 
 
+def parse_args():
+    """커맨드라인 인자 파싱"""
+    parser = argparse.ArgumentParser(description='CIFAR-10 모델 시각화')
+    parser.add_argument('--net', type=str, default='resnet18',
+                        choices=['baseline', 'baseline_bn', 'deep_baseline', 'deep_baseline_silu',
+                                 'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
+                                 'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
+                                 'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
+                                 'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
+                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual', 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu', 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_group', 'deep_baseline4_bn_residual',
+                                 'convnext_patchify', 'convnext_local', 'convnext_cifar', 'convnext_tiny',
+                                 'mxresnet20', 'mxresnet32', 'mxresnet44', 'mxresnet56', 'dla', 'resnext29_4x64d'],
+                        help='네트워크 모델 (default: resnet18)')
+    parser.add_argument('--w-init', action='store_true',
+                        help='Weight initialization 사용 (default: False)')
+    parser.add_argument('--input-size', type=int, nargs=3, default=[3, 32, 32],
+                        metavar=('C', 'H', 'W'),
+                        help='입력 크기 (C, H, W) (default: 3 32 32)')
+    parser.add_argument('--device', type=str, default='cpu',
+                        choices=['cpu', 'cuda'],
+                        help='디바이스 (default: cpu)')
+    parser.add_argument('--no-detailed', action='store_true',
+                        help='상세 정보 출력 비활성화 (default: False)')
+    parser.add_argument('--save-graph', type=str, default=None,
+                        help='계산 그래프 저장 경로 (저장하지 않으려면 지정하지 않음)')
+    parser.add_argument('--show-architecture', action='store_true',
+                        help='계층 구조 트리 출력 (default: False)')
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    # 테스트 코드
-    from models.deep_baseline3_bn_residual_dla import DeepBaselineNetBN3ResidualDLA
+    args = parse_args()
     
-    print("DeepBaselineNetBN3ResidualDLA 모델 시각화 테스트\n")
+    # main.py에서 get_net 함수 import
+    from main import get_net
     
-    model = DeepBaselineNetBN3ResidualDLA(init_weights=False)
+    # 모델 로드
+    print(f"모델 로드 중: {args.net}\n")
+    model = get_net(args.net, init_weights=args.w_init)
+    
+    # 입력 크기 설정
+    input_size = tuple(args.input_size)
     
     # 모델 시각화
     visualize_model(
         model,
-        input_size=(3, 32, 32),
-        device='cpu',
-        detailed=True,
-        save_graph='model_graph'  # 'model_graph'로 설정하면 그래프 저장
+        input_size=input_size,
+        device=args.device,
+        detailed=not args.no_detailed,
+        save_graph=args.save_graph
     )
     
-    print("\n" + "=" * 80)
-    print("계층 구조 트리")
-    print("=" * 80)
-    print_model_architecture(model)
+    # 계층 구조 트리 출력 (옵션)
+    if args.show_architecture:
+        print("\n" + "=" * 80)
+        print("계층 구조 트리")
+        print("=" * 80)
+        print_model_architecture(model)
 

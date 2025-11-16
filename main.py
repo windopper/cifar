@@ -47,7 +47,7 @@ from models.deep_baseline3_bn_residual_swish import DeepBaselineNetBN3ResidualSw
 from models.deep_baseline3_bn_residual_swiglu import DeepBaselineNetBN3ResidualSwiGLU
 from models.deep_baseline3_bn_residual_dla import DeepBaselineNetBN3ResidualDLA
 from models.deep_baseline3_bn_residual_group import DeepBaselineNetBN3ResidualGroup
-from models.deep_baseline4_bn_residual import DeepBaselineNetBN4Residual
+from models.deep_baseline4_bn_residual import ResNet18 as DeepBaselineNetBN4Residual
 
 CLASS_NAMES = ('plane', 'car', 'bird', 'cat', 'deer',
                'dog', 'frog', 'horse', 'ship', 'truck')
