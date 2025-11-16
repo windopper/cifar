@@ -196,6 +196,7 @@ AutoAugment: ✅
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
+| deep_baseline3_bn_residual_gap_gmp | -- | -- | 0.46 M |
 | deep_baseline3_bn_residual | -- | 94.65 | 10.4 M |
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
 | deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |

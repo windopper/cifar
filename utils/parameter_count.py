@@ -26,7 +26,14 @@ from models.deep_baseline3_bn_residual_deep import DeepBaselineNetBN3ResidualDee
 from models.deep_baseline3_bn_residual_dla import DeepBaselineNetBN3ResidualDLA
 from models.deep_baseline3_bn_residual_dla_tree import DeepBaselineNetBN3ResidualDLATree
 from models.deep_baseline3_bn_residual_shakedrop import DeepBaselineNetBN3ResidualShakeDrop
-from models.deep_baseline3_bn_residual_gap_gmp import DeepBaselineNetBN3ResidualGAPGMP
+from models.deep_baseline3_bn_residual_gap_gmp import (
+    DeepBaselineNetBN3ResidualGAPGMP,
+    DeepBaselineNetBN3ResidualGAPGMP_S3_F8_16_32_B2,
+    DeepBaselineNetBN3ResidualGAPGMP_S3_F16_32_64_B3,
+    DeepBaselineNetBN3ResidualGAPGMP_S3_F32_64_128_B5,
+    DeepBaselineNetBN3ResidualGAPGMP_S3_F64_128_256_B5,
+    DeepBaselineNetBN3ResidualGAPGMP_S4_F64_128_256_512_B5
+)
 from models.deep_baseline4_bn_residual import ResNet18
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, ResNeXt29_32x4d
@@ -136,6 +143,22 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     # DeepBaselineNetBN3ResidualGAPGMP
     model_bn3_residual_gap_gmp = DeepBaselineNetBN3ResidualGAPGMP(init_weights=init_weights)
     results['deep_baseline3_bn_residual_gap_gmp'] = count_parameters(model_bn3_residual_gap_gmp)
+    
+    # DeepBaselineNetBN3ResidualGAPGMP 프리셋 모델들
+    model_bn3_residual_gap_gmp_s3_f8_16_32_b2 = DeepBaselineNetBN3ResidualGAPGMP_S3_F8_16_32_B2(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_gap_gmp_s3_f8_16_32_b2'] = count_parameters(model_bn3_residual_gap_gmp_s3_f8_16_32_b2)
+    
+    model_bn3_residual_gap_gmp_s3_f16_32_64_b3 = DeepBaselineNetBN3ResidualGAPGMP_S3_F16_32_64_B3(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_gap_gmp_s3_f16_32_64_b3'] = count_parameters(model_bn3_residual_gap_gmp_s3_f16_32_64_b3)
+    
+    model_bn3_residual_gap_gmp_s3_f32_64_128_b5 = DeepBaselineNetBN3ResidualGAPGMP_S3_F32_64_128_B5(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_gap_gmp_s3_f32_64_128_b5'] = count_parameters(model_bn3_residual_gap_gmp_s3_f32_64_128_b5)
+    
+    model_bn3_residual_gap_gmp_s3_f64_128_256_b5 = DeepBaselineNetBN3ResidualGAPGMP_S3_F64_128_256_B5(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5'] = count_parameters(model_bn3_residual_gap_gmp_s3_f64_128_256_b5)
+    
+    model_bn3_residual_gap_gmp_s4_f64_128_256_512_b5 = DeepBaselineNetBN3ResidualGAPGMP_S4_F64_128_256_512_B5(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_gap_gmp_s4_f64_128_256_512_b5'] = count_parameters(model_bn3_residual_gap_gmp_s4_f64_128_256_512_b5)
     
     # DeepBaselineNetBN4Residual
     model_bn4_residual = ResNet18(init_weights=init_weights)

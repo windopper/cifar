@@ -54,7 +54,15 @@ from models.deep_baseline3_bn_residual_dla_tree import DeepBaselineNetBN3Residua
 from models.deep_baseline3_bn_residual_group import DeepBaselineNetBN3ResidualGroup
 from models.deep_baseline3_bn_residual_shakedrop import DeepBaselineNetBN3ResidualShakeDrop
 from models.deep_baseline3_bn_residual_mish import DeepBaselineNetBN3ResidualMish
-from models.deep_baseline3_bn_residual_gap_gmp import DeepBaselineNetBN3ResidualGAPGMP
+from models.deep_baseline3_bn_residual_gap_gmp import (
+    DeepBaselineNetBN3ResidualGAPGMP, 
+    make_deep_baseline3_bn_residual_gap_gmp,
+    DeepBaselineNetBN3ResidualGAPGMP_S3_F8_16_32_B2,
+    DeepBaselineNetBN3ResidualGAPGMP_S3_F16_32_64_B3,
+    DeepBaselineNetBN3ResidualGAPGMP_S3_F32_64_128_B5,
+    DeepBaselineNetBN3ResidualGAPGMP_S3_F64_128_256_B5,
+    DeepBaselineNetBN3ResidualGAPGMP_S4_F64_128_256_512_B5
+)
 from models.deep_baseline4_bn_residual import ResNet18 as DeepBaselineNetBN4Residual
 from models.deep_baseline4_bn_residual_shakedrop import ResNet18ShakeDrop as DeepBaselineNetBN4ResidualShakeDrop
 
@@ -116,6 +124,11 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline3_bn_residual_shakedrop': DeepBaselineNetBN3ResidualShakeDrop(init_weights=init_weights),
         'deep_baseline3_bn_residual_mish': DeepBaselineNetBN3ResidualMish(init_weights=init_weights),
         'deep_baseline3_bn_residual_gap_gmp': DeepBaselineNetBN3ResidualGAPGMP(init_weights=init_weights),
+        'deep_baseline3_bn_residual_gap_gmp_s3_f8_16_32_b2': DeepBaselineNetBN3ResidualGAPGMP_S3_F8_16_32_B2(init_weights=init_weights),
+        'deep_baseline3_bn_residual_gap_gmp_s3_f16_32_64_b3': DeepBaselineNetBN3ResidualGAPGMP_S3_F16_32_64_B3(init_weights=init_weights),
+        'deep_baseline3_bn_residual_gap_gmp_s3_f32_64_128_b5': DeepBaselineNetBN3ResidualGAPGMP_S3_F32_64_128_B5(init_weights=init_weights),
+        'deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5': DeepBaselineNetBN3ResidualGAPGMP_S3_F64_128_256_B5(init_weights=init_weights),
+        'deep_baseline3_bn_residual_gap_gmp_s4_f64_128_256_512_b5': DeepBaselineNetBN3ResidualGAPGMP_S4_F64_128_256_512_B5(init_weights=init_weights),
         'deep_baseline4_bn_residual': DeepBaselineNetBN4Residual(init_weights=init_weights),
         'deep_baseline4_bn_residual_shakedrop': DeepBaselineNetBN4ResidualShakeDrop(init_weights=init_weights),
         'deep_baseline_se': DeepBaselineNetSE(),
@@ -248,7 +261,13 @@ def parse_args():
                                  'deep_baseline3_bn_residual_preact', 'deep_baseline3_bn_residual_wide', 'deep_baseline3_bn_residual_deep', 
                                  'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu', 
                                  'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_dla_tree', 'deep_baseline3_bn_residual_group', 
-                                 'deep_baseline3_bn_residual_mish', 'deep_baseline3_bn_residual_gap_gmp', 'deep_baseline4_bn_residual',
+                                 'deep_baseline3_bn_residual_mish', 'deep_baseline3_bn_residual_gap_gmp', 
+                                 'deep_baseline3_bn_residual_gap_gmp_s3_f8_16_32_b2', 
+                                 'deep_baseline3_bn_residual_gap_gmp_s3_f16_32_64_b3', 
+                                 'deep_baseline3_bn_residual_gap_gmp_s3_f32_64_128_b5', 
+                                 'deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5', 
+                                 'deep_baseline3_bn_residual_gap_gmp_s4_f64_128_256_512_b5', 
+                                 'deep_baseline4_bn_residual',
                                  'deep_baseline3_bn_residual_shakedrop',
                                  'deep_baseline4_bn_residual_shakedrop',
                                  'convnext_patchify', 'convnext_local', 'convnext_cifar', 'convnext_tiny',
