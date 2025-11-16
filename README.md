@@ -192,8 +192,6 @@ Weight Initialization: ✅
 | deep_baseline3_bn_residual_group | -- | 93.22 |
 | deep_baseline3_bn_residual_dla | -- | **94.96** |
 | deep_baseline4_bn_residual | -- | 94.73 |
-| deep_baseline4_bn_residual_shakedrop | -- |  |
-
 
 # BaseModel
 lr: 0.001

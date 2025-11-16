@@ -46,8 +46,10 @@ from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_swish import DeepBaselineNetBN3ResidualSwish
 from models.deep_baseline3_bn_residual_swiglu import DeepBaselineNetBN3ResidualSwiGLU
 from models.deep_baseline3_bn_residual_dla import DeepBaselineNetBN3ResidualDLA
+from models.deep_baseline3_bn_residual_dla_tree import DeepBaselineNetBN3ResidualDLATree
 from models.deep_baseline3_bn_residual_group import DeepBaselineNetBN3ResidualGroup
 from models.deep_baseline3_bn_residual_shakedrop import DeepBaselineNetBN3ResidualShakeDrop
+from models.deep_baseline3_bn_residual_mish import DeepBaselineNetBN3ResidualMish
 from models.deep_baseline4_bn_residual import ResNet18 as DeepBaselineNetBN4Residual
 from models.deep_baseline4_bn_residual_shakedrop import ResNet18ShakeDrop as DeepBaselineNetBN4ResidualShakeDrop
 
@@ -101,8 +103,10 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline3_bn_residual_swish': DeepBaselineNetBN3ResidualSwish(init_weights=init_weights),
         'deep_baseline3_bn_residual_swiglu': DeepBaselineNetBN3ResidualSwiGLU(init_weights=init_weights),
         'deep_baseline3_bn_residual_dla': DeepBaselineNetBN3ResidualDLA(init_weights=init_weights),
+        'deep_baseline3_bn_residual_dla_tree': DeepBaselineNetBN3ResidualDLATree(init_weights=init_weights),
         'deep_baseline3_bn_residual_group': DeepBaselineNetBN3ResidualGroup(init_weights=init_weights),
         'deep_baseline3_bn_residual_shakedrop': DeepBaselineNetBN3ResidualShakeDrop(init_weights=init_weights),
+        'deep_baseline3_bn_residual_mish': DeepBaselineNetBN3ResidualMish(init_weights=init_weights),
         'deep_baseline4_bn_residual': DeepBaselineNetBN4Residual(init_weights=init_weights),
         'deep_baseline4_bn_residual_shakedrop': DeepBaselineNetBN4ResidualShakeDrop(init_weights=init_weights),
         'deep_baseline_se': DeepBaselineNetSE(),
@@ -231,7 +235,7 @@ def parse_args():
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
                                  'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
                                  'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
-                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual', 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu', 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_group', 'deep_baseline4_bn_residual',
+                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual', 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu', 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_group', 'deep_baseline3_bn_residual_mish', 'deep_baseline4_bn_residual',
                                  'deep_baseline3_bn_residual_shakedrop',
                                  'deep_baseline4_bn_residual_shakedrop',
                                  'convnext_patchify', 'convnext_local', 'convnext_cifar', 'convnext_tiny',
