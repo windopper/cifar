@@ -184,18 +184,26 @@ epoch: 100
 scheduler: Cosine Annealing LR
 optimizer: Adam
 Weight Initialization: ✅
+Augmentation: ✅
+AutoAugment: ✅
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
-| baseline_bn | 86.75 | 0.7 M |
+| baseline_bn | -- | 86.75 | 0.7 M |
+| baseline_bn | Criterion SupCon | -- | 0.7 M |
+| baseline_bn | Label Smoothing 0.1 | 86.57 | 0.7 M |
+| baseline_bn | CutMix | 85.39 | 0.7 M |
+
+| 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
+|------|------------|----------------------|----------------------|
 | deep_baseline3_bn_residual | -- | 94.65 | 10.4 M |
-| deep_baseline3_bn_residual_deep | -- | -- | 32.7 M |
+| deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
 | deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |
 | deep_baseline3_bn_residual_shakedrop | -- | 92.14 | 10.4 M |
 | deep_baseline3_bn_residual_mish | -- | 94.03 | -- |
 | deep_baseline3_bn_residual_dla_tree | -- | **95.59** | 42.6 M |
 | deep_baseline3_bn_residual_group | -- | 93.22 | -- |
-| deep_baseline3_bn_residual_dla | -- | 94.96 | 11 M |
+| deep_baseline3_bn_residual_dla | -- | 94.96 | 11 M |  
 | deep_baseline4_bn_residual | -- | 94.73 | 11.1 M |
 | DLA | -- | 94.9 | 16.2M |
 

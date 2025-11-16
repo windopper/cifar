@@ -42,6 +42,7 @@ from utils.cutmix import CutMixCollator, CutMixCriterion
 from utils.mixup import MixupCollator, MixupCriterion
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
+from utils.supcon import SupConLoss
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_wide import DeepBaselineNetBN3ResidualWide
 from models.deep_baseline3_bn_residual_deep import DeepBaselineNetBN3ResidualDeep
@@ -233,7 +234,7 @@ def parse_args():
     parser.add_argument('--batch-size', type=int,
                         default=16, help='배치 크기 (default: 16)')
     parser.add_argument('--criterion', type=str, default='crossentropy',
-                        choices=['crossentropy', 'mse', 'nll'],
+                        choices=['crossentropy', 'mse', 'nll', 'supcon_ce'],
                         help='손실 함수 (default: crossentropy)')
     parser.add_argument('--net', type=str, default='baseline',
                         choices=['baseline', 'baseline_bn', 'deep_baseline', 'deep_baseline_silu',
@@ -359,6 +360,7 @@ def main():
     if args.augment:
         train_transform_list.append(transforms.RandomCrop(32, padding=4))
         train_transform_list.append(transforms.RandomHorizontalFlip())
+        train_transform_list.append(transforms.RandomVerticalFlip())
         
         if args.autoaugment:
             # AutoAugment 사용: CIFAR-10 정책 적용
@@ -438,8 +440,20 @@ def main():
 
     net = get_net(args.net, init_weights=args.w_init)
     net = net.to(device)
-    criterion = get_criterion(
-        args.criterion, label_smoothing=args.label_smoothing)
+
+    # Criterion 설정
+    supcon_criterion = None
+    supcon_weight = 0.1
+    if args.criterion.lower() == 'supcon_ce':
+        # SupCon + CrossEntropy 조합
+        criterion = get_criterion('crossentropy', label_smoothing=args.label_smoothing)
+        supcon_criterion = SupConLoss(temperature=0.07)
+        # SupCon은 현재 baseline_bn 모델에서만 정식 지원
+        if args.net != 'baseline_bn':
+            print("[경고] --criterion supcon_ce는 현재 baseline_bn 모델에 최적화되어 있습니다.")
+    else:
+        criterion = get_criterion(
+            args.criterion, label_smoothing=args.label_smoothing)
     optimizer = get_optimizer(args.optimizer, net, lr=args.lr,
                               momentum=args.momentum, weight_decay=args.weight_decay)
 
@@ -555,15 +569,31 @@ def main():
                 labels = labels.to(device)
 
             optimizer.zero_grad()
-
+            
             outputs = net(inputs)
-            # CutMix/Mixup 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
+
+            # 기본 CrossEntropy / CutMix / Mixup 손실
             if use_cutmix and isinstance(labels, tuple):
-                loss = cutmix_criterion(outputs, labels)
+                loss_ce = cutmix_criterion(outputs, labels)
             elif use_mixup and isinstance(labels, tuple):
-                loss = mixup_criterion(outputs, labels)
+                loss_ce = mixup_criterion(outputs, labels)
             else:
-                loss = criterion(outputs, labels)
+                loss_ce = criterion(outputs, labels)
+
+            # SupCon 손실 추가 (--criterion supcon_ce, CutMix/Mixup 미사용 시)
+            if supcon_criterion is not None:
+                if use_cutmix or use_mixup:
+                    raise ValueError("SupCon CE(--criterion supcon_ce)는 CutMix/Mixup과 함께 사용할 수 없습니다.")
+                if hasattr(net, "forward_features"):
+                    features = net.forward_features(inputs)
+                else:
+                    # 안전 장치: 별도 feature 추출 메서드가 없을 경우 logits를 그대로 사용
+                    features = outputs
+                # SupCon은 hard label만 사용
+                supcon_loss = supcon_criterion(features, labels)
+                loss = loss_ce + supcon_weight * supcon_loss
+            else:
+                loss = loss_ce
             loss.backward()
             optimizer.step()
 
