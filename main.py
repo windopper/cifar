@@ -43,6 +43,8 @@ from utils.mixup import MixupCollator, MixupCriterion
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
+from models.deep_baseline3_bn_residual_wide import DeepBaselineNetBN3ResidualWide
+from models.deep_baseline3_bn_residual_deep import DeepBaselineNetBN3ResidualDeep
 from models.deep_baseline3_bn_residual_preact import DeepBaselineNetBN3ResidualPreAct
 from models.deep_baseline3_bn_residual_swish import DeepBaselineNetBN3ResidualSwish
 from models.deep_baseline3_bn_residual_swiglu import DeepBaselineNetBN3ResidualSwiGLU
@@ -101,6 +103,8 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline2_bn_residual_grn': DeepBaselineNetBN2ResidualGRN(init_weights=init_weights),
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline3_bn_residual': DeepBaselineNetBN3Residual(init_weights=init_weights),
+        'deep_baseline3_bn_residual_wide': DeepBaselineNetBN3ResidualWide(init_weights=init_weights),
+        'deep_baseline3_bn_residual_deep': DeepBaselineNetBN3ResidualDeep(init_weights=init_weights),
         'deep_baseline3_bn_residual_preact': DeepBaselineNetBN3ResidualPreAct(init_weights=init_weights),
         'deep_baseline3_bn_residual_swish': DeepBaselineNetBN3ResidualSwish(init_weights=init_weights),
         'deep_baseline3_bn_residual_swiglu': DeepBaselineNetBN3ResidualSwiGLU(init_weights=init_weights),

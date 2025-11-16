@@ -187,7 +187,7 @@ Weight Initialization: ✅
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
-| baseline_bn | -- | 0.7 M |
+| baseline_bn | 86.75 | 0.7 M |
 | deep_baseline3_bn_residual | -- | 94.65 | 10.4 M |
 | deep_baseline3_bn_residual_shakedrop | -- | 92.14 | 10.4 M |
 | deep_baseline3_bn_residual_mish | -- | 94.03 | -- |
