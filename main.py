@@ -381,7 +381,6 @@ def main():
     if args.augment:
         train_transform_list.append(transforms.RandomCrop(32, padding=4))
         train_transform_list.append(transforms.RandomHorizontalFlip())
-        train_transform_list.append(transforms.RandomVerticalFlip())
         
         if args.autoaugment:
             # AutoAugment 사용: CIFAR-10 정책 적용
