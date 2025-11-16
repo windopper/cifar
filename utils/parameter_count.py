@@ -26,6 +26,7 @@ from models.deep_baseline3_bn_residual_deep import DeepBaselineNetBN3ResidualDee
 from models.deep_baseline3_bn_residual_dla import DeepBaselineNetBN3ResidualDLA
 from models.deep_baseline3_bn_residual_dla_tree import DeepBaselineNetBN3ResidualDLATree
 from models.deep_baseline3_bn_residual_shakedrop import DeepBaselineNetBN3ResidualShakeDrop
+from models.deep_baseline3_bn_residual_gap_gmp import DeepBaselineNetBN3ResidualGAPGMP
 from models.deep_baseline4_bn_residual import ResNet18
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, ResNeXt29_32x4d
@@ -131,6 +132,10 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     # DeepBaselineNetBN3ResidualDLATree
     model_bn3_residual_dla_tree = DeepBaselineNetBN3ResidualDLATree(init_weights=init_weights)
     results['deep_baseline3_bn_residual_dla_tree'] = count_parameters(model_bn3_residual_dla_tree)
+    
+    # DeepBaselineNetBN3ResidualGAPGMP
+    model_bn3_residual_gap_gmp = DeepBaselineNetBN3ResidualGAPGMP(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_gap_gmp'] = count_parameters(model_bn3_residual_gap_gmp)
     
     # DeepBaselineNetBN4Residual
     model_bn4_residual = ResNet18(init_weights=init_weights)

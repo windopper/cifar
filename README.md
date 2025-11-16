@@ -190,7 +190,7 @@ AutoAugment: ✅
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
 | baseline_bn | -- | 86.75 | 0.7 M |
-| baseline_bn | Criterion SupCon | -- | 0.7 M |
+| baseline_bn | Criterion SupCon | 81.46 | 0.7 M |
 | baseline_bn | Label Smoothing 0.1 | 86.57 | 0.7 M |
 | baseline_bn | CutMix | 85.39 | 0.7 M |
 

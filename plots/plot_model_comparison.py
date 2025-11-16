@@ -182,7 +182,9 @@ def plot_model_comparison_from_dir(output_dir="outputs/model_comparison", save_p
 if __name__ == "__main__":
     # outputs/model_comparison 디렉토리 내의 모든 파일에 대한 플롯 생성
     # plot_model_comparison_from_dir()
-    plot_model_comparison_from_dir(output_dir="outputs/final2", save_path="comparison/final_comparison_2.png")
+    # plot_model_comparison_from_dir(output_dir="outputs/final2", save_path="comparison/final_comparison_2.png")
+    
+    plot_model_comparison_from_dir(output_dir="outputs/final2/baseline", save_path="comparison/final_baseline_comparison_2.png")
     
     # 기존 함수들도 사용 가능
     # plot_model_comparison_20_epoch()
