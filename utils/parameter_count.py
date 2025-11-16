@@ -10,6 +10,8 @@ sys.path.insert(0, str(project_root))
 
 import torch
 import torch.nn as nn
+from models.baseline import BaselineNet
+from models.baseline_bn import BaselineNetBN
 from models.deep_baseline_bn import DeepBaselineNetBN
 from models.deep_baseline2_bn import DeepBaselineNetBN2
 from models.deep_baseline2_bn_residual import DeepBaselineNetBN2Residual
@@ -18,6 +20,7 @@ from models.deep_baseline2_bn_resnext import DeepBaselineNetBN2ResNeXt
 from models.deep_baseline2_bn_residual_se import DeepBaselineNetBN2ResidualSE
 from models.deep_baseline2_bn_residual_grn import DeepBaselineNetBN2ResidualGRN
 from models.deep_baseline3_bn import DeepBaselineNetBN3
+from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, ResNeXt29_32x4d
 from models.dla import DLA
@@ -62,6 +65,13 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     """
     results = {}
     
+    model_baseline = BaselineNet()
+    results['baseline'] = count_parameters(model_baseline)
+    
+    # BaselineNetBN
+    model_baseline_bn = BaselineNetBN(init_weights=init_weights)
+    results['baseline_bn'] = count_parameters(model_baseline_bn)
+    
     # DeepBaselineNetBN
     model_bn = DeepBaselineNetBN(init_weights=init_weights)
     results['deep_baseline_bn'] = count_parameters(model_bn)
@@ -93,6 +103,10 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     # DeepBaselineNetBN3
     model_bn3 = DeepBaselineNetBN3(init_weights=init_weights)
     results['deep_baseline3_bn'] = count_parameters(model_bn3)
+    
+    # DeepBaselineNetBN3Residual
+    model_bn3_residual = DeepBaselineNetBN3Residual(init_weights=init_weights)
+    results['deep_baseline3_bn_residual'] = count_parameters(model_bn3_residual)
     
     # MXResNet models
     model_mxresnet20 = MXResNet20(init_weights=init_weights)

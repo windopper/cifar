@@ -12,6 +12,7 @@ from tqdm import tqdm
 import json
 import os
 from models.baseline import BaselineNet
+from models.baseline_bn import BaselineNetBN
 from models.deep_baseline import DeepBaselineNet
 from models.deep_baseline_silu import DeepBaselineNetSilu
 from models.deep_baseline_bn import DeepBaselineNetBN
@@ -78,6 +79,7 @@ def get_net(name: str, init_weights: bool = False):
     """Network 팩토리 함수"""
     nets = {
         'baseline': BaselineNet(),
+        'baseline_bn': BaselineNetBN(init_weights=init_weights),
         'deep_baseline': DeepBaselineNet(init_weights=init_weights),
         'deep_baseline_silu': DeepBaselineNetSilu(),
         'deep_baseline_bn': DeepBaselineNetBN(init_weights=init_weights),
@@ -216,7 +218,7 @@ def parse_args():
                         choices=['crossentropy', 'mse', 'nll'],
                         help='손실 함수 (default: crossentropy)')
     parser.add_argument('--net', type=str, default='baseline',
-                        choices=['baseline', 'deep_baseline', 'deep_baseline_silu',
+                        choices=['baseline', 'baseline_bn', 'deep_baseline', 'deep_baseline_silu',
                                  'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
                                  'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',

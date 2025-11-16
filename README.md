@@ -8,6 +8,8 @@ Learning Rate: 3e-4
 Net: deep_baseline_bn
 Weight Initialization: ✅
 
+`uv run main.py --optimizer adam --epochs 200 --lr 3e-4 --batch-size 128 --scheduler onecyclelr --w-init --net baseline_bn`
+
 | Scheduler | 최고 Val Accuracy (%) | 세부 사항 |
 |------|------------|
 | Cosine Annealing LR | 76.71 | -- |
@@ -158,7 +160,7 @@ Augmentation: ✅
 AutoAugment: ✅
 Label Smoothing: 0.05
 
-`python cifar/main.py --optimizer adam --epochs 180 --lr 3e-4 --batch-size 128 --scheduler onecyclelr --w-init --augment --autoaugment --label-smoothing 0.05 --net [모델이름]`
+`python cifar/main.py --optimizer adam --epochs 180 --lr 3e-4 --batch-size 128 --scheduler onecyclelr --w-init --augment --autoaugment --net deep_baseline3_bn_residual`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) |
 |------|------------|----------------------|
@@ -170,8 +172,10 @@ Label Smoothing: 0.05
 | deep_baseline_bn | Epoch 30 | 90.38 |
 | deep_baseline_bn | Epoch 30, Batch Size 32 | 86.13 |
 | deep_baseline_bn | Epoch 30, Batch Size 256 | 88.54 |
-| deep_baseline2_bn_resnext | Epoch 60 | 91.86 |
 | deep_baseline2_bn_resnext | -- | 92.27 |
+| deep_baseline2_bn_resnext | Epoch 60 | 91.86 |
+| deep_baseline3_bn_residual | Label Smoothing 0 | 92.92 |
+| deep_baseline3_bn_residual | Epoch 100, Cosine Annealing LR, Label Smoothing 0 | **94.65** |
 
 # BaseModel
 lr: 0.001
