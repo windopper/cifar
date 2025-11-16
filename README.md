@@ -188,7 +188,9 @@ Weight Initialization: ✅
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) |
 |------|------------|----------------------|
 | deep_baseline3_bn_residual | -- | 94.65 |
-| deep_baseline3_bn_residual_shakedrop | -- | -- |
+| deep_baseline3_bn_residual_shakedrop | -- | 92.14 |
+| deep_baseline3_bn_residual_mish | -- | 94.03 |
+| deep_baseline3_bn_residual_dla_tree | -- | -- |
 | deep_baseline3_bn_residual_group | -- | 93.22 |
 | deep_baseline3_bn_residual_dla | -- | **94.96** |
 | deep_baseline4_bn_residual | -- | 94.73 |
