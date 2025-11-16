@@ -185,6 +185,10 @@
       CIFAR-10에서 **상당히 강력한 성능을 내는 조합**임을 확인.
   - 다만, 여전히 다른 특화 구조들(DLA, ResNeXt 계열)과의 미세한 성능 차이를 줄이기 위해
     **백본 내부의 feature aggregation 방식**을 개선할 여지가 있다고 판단.
+- **변형 실험**
+  - ShakeDrop을 각 Residual Block에 적용한 `deep_baseline3_bn_residual_shakedrop`을 추가 도입.
+  - 초기 블록에서는 drop 확률을 낮게, 후반 블록에서는 높게 주어 학습 안정성과 일반화를 동시에 노림.
+  - 정규화 효과 검증을 위해 Model Comparison / Final Comparison 2 설정에 추후 기록 예정.
 
 ---
 

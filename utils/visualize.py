@@ -331,7 +331,8 @@ def parse_args():
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
                                  'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
                                  'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
-                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual', 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu', 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_group', 'deep_baseline4_bn_residual',
+                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual', 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu', 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_group', 'deep_baseline3_bn_residual_shakedrop', 'deep_baseline4_bn_residual',
+                                 'deep_baseline4_bn_residual_shakedrop',
                                  'convnext_patchify', 'convnext_local', 'convnext_cifar', 'convnext_tiny',
                                  'mxresnet20', 'mxresnet32', 'mxresnet44', 'mxresnet56', 'dla', 'resnext29_4x64d'],
                         help='네트워크 모델 (default: resnet18)')
