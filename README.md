@@ -12,7 +12,7 @@ Weight Initialization: ✅
 
 | Scheduler | 최고 Val Accuracy (%) | 세부 사항 |
 |------|------------|----------------------|
-| Cosine Annealing LR | 76.71 | -- |
+| Cosine Annealing LR | 76.71 | -- |    
 | One Cycle LR | 87.25 | -- |
 | One Cycle LR | 87.07 | Pct Start 0.2 |
 | One Cycle LR | 86.57 | Pct Start 0.2, Final LR Ratio 0.07 |
@@ -192,6 +192,7 @@ AutoAugment: ✅
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
 | baseline_bn | -- | 86.75 | 0.7 M |
+| baseline_bn | Warmup 10 Epochs | -- | 0.7 M |
 | baseline_bn | Normalize | 86.96 | 0.7 M |
 | baseline_bn | Criterion SupCon | 81.46 | 0.7 M |
 | baseline_bn | Label Smoothing 0.1 | 86.57 | 0.7 M |
@@ -200,14 +201,14 @@ AutoAugment: ✅
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
 | deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5 | -- | 92.82 | 7.8 M |
-| deep_baseline3_bn_residual | -- | 94.65 | 10.4 M |
+| deep_baseline3_bn_residual | -- | **94.65** | 10.4 M |
 | deep_baseline3_bn_residual_bottleneck | -- | 89.69 | 10.3 M |
 | deep_baseline3_bn_residual_convnext_stride | -- | -- | 10.8 M |
-| deep_baseline3_bn_residual_15 | -- | 94.84 | 13.5 M |
+| deep_baseline3_bn_residual_15 | -- | **94.84** | 13.5 M |
 | deep_baseline3_bn_residual_15_ln | -- | 92.40 | 13.5 M |
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
-| residual_attention_92_32input_gelu_tiny | -- | -- | 14.5 M |
+| residual_attention_92_32input_gelu_tiny | -- | **95.47** | 14.5 M |
 | residual_attention_92_32input_se_tiny | -- | 94.96 | 14.6 M |
 | residual_attention_92_32input_preact_tiny | -- | 94.82 | 14.5 M |
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
