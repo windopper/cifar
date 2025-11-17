@@ -44,6 +44,7 @@ from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
 from utils.supcon import SupConLoss
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
+from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_bn_residual_wide import DeepBaselineNetBN3ResidualWide
 from models.deep_baseline3_bn_residual_4x import DeepBaselineNetBN3Residual4X
 from models.deep_baseline3_bn_residual_deep import DeepBaselineNetBN3ResidualDeep
@@ -56,7 +57,7 @@ from models.deep_baseline3_bn_residual_group import DeepBaselineNetBN3ResidualGr
 from models.deep_baseline3_bn_residual_shakedrop import DeepBaselineNetBN3ResidualShakeDrop
 from models.deep_baseline3_bn_residual_mish import DeepBaselineNetBN3ResidualMish
 from models.deep_baseline3_bn_residual_gap_gmp import (
-    DeepBaselineNetBN3ResidualGAPGMP, 
+    DeepBaselineNetBN3ResidualGAPGMP,
     make_deep_baseline3_bn_residual_gap_gmp,
     DeepBaselineNetBN3ResidualGAPGMP_S3_F8_16_32_B2,
     DeepBaselineNetBN3ResidualGAPGMP_S3_F16_32_64_B3,
@@ -108,12 +109,13 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline_bn_dropout_resnet': DeepBaselineNetBNDropoutResNet(),
         'deep_baseline2_bn': DeepBaselineNetBN2(init_weights=init_weights),
         'deep_baseline2_bn_residual': DeepBaselineNetBN2Residual(init_weights=init_weights),
-        'deep_baseline2_bn_residual_se': DeepBaselineNetBN2ResidualSE(init_weights=init_weights),   
+        'deep_baseline2_bn_residual_se': DeepBaselineNetBN2ResidualSE(init_weights=init_weights),
         'deep_baseline2_bn_resnext': DeepBaselineNetBN2ResNeXt(init_weights=init_weights),
         'deep_baseline2_bn_residual_preact': DeepBaselineNetBN2ResidualPreAct(),
         'deep_baseline2_bn_residual_grn': DeepBaselineNetBN2ResidualGRN(init_weights=init_weights),
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline3_bn_residual': DeepBaselineNetBN3Residual(init_weights=init_weights),
+        'deep_baseline3_bn_residual_bottleneck': DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights),
         'deep_baseline3_bn_residual_wide': DeepBaselineNetBN3ResidualWide(init_weights=init_weights),
         'deep_baseline3_bn_residual_4x': DeepBaselineNetBN3Residual4X(init_weights=init_weights),
         'deep_baseline3_bn_residual_deep': DeepBaselineNetBN3ResidualDeep(init_weights=init_weights),
@@ -187,17 +189,18 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
     elif name.lower() == 'onecyclelr':
         if max_lr is None:
             max_lr = lr * 10  # 기본값: 초기 lr의 10배
-        
+
         # OneCycleLR의 동작 방식:
         # 초기 학습률 = max_lr / div_factor (div_factor 기본값: 25.0)
         # 마지막 학습률 = (max_lr / div_factor) / final_div_factor = max_lr / (div_factor * final_div_factor)
         # 사용자가 원하는 마지막 학습률 = lr * final_lr_ratio
         # 따라서: max_lr / (div_factor * final_div_factor) = lr * final_lr_ratio
         # final_div_factor = max_lr / (div_factor * lr * final_lr_ratio)
-        
+
         div_factor = 25.0  # PyTorch 기본값
-        final_div_factor = max_lr / (div_factor * lr * final_lr_ratio) if final_lr_ratio > 0 else 10000.0
-        
+        final_div_factor = max_lr / \
+            (div_factor * lr * final_lr_ratio) if final_lr_ratio > 0 else 10000.0
+
         total_steps = epochs * steps_per_epoch
         schedulers['onecyclelr'] = lr_scheduler.OneCycleLR(
             optimizer, max_lr=max_lr, total_steps=total_steps, pct_start=pct_start,
@@ -259,16 +262,17 @@ def parse_args():
                                  'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
                                  'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
                                  'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
-                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual', 
-                                 'deep_baseline3_bn_residual_preact', 'deep_baseline3_bn_residual_wide', 'deep_baseline3_bn_residual_4x', 'deep_baseline3_bn_residual_deep', 
-                                 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu', 
-                                 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_dla_tree', 'deep_baseline3_bn_residual_group', 
-                                 'deep_baseline3_bn_residual_mish', 'deep_baseline3_bn_residual_gap_gmp', 
-                                 'deep_baseline3_bn_residual_gap_gmp_s3_f8_16_32_b2', 
-                                 'deep_baseline3_bn_residual_gap_gmp_s3_f16_32_64_b3', 
-                                 'deep_baseline3_bn_residual_gap_gmp_s3_f32_64_128_b5', 
-                                 'deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5', 
-                                 'deep_baseline3_bn_residual_gap_gmp_s4_f64_128_256_512_b5', 
+                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual',
+                                 'deep_baseline3_bn_residual_bottleneck',
+                                 'deep_baseline3_bn_residual_preact', 'deep_baseline3_bn_residual_wide', 'deep_baseline3_bn_residual_4x', 'deep_baseline3_bn_residual_deep',
+                                 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu',
+                                 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_dla_tree', 'deep_baseline3_bn_residual_group',
+                                 'deep_baseline3_bn_residual_mish', 'deep_baseline3_bn_residual_gap_gmp',
+                                 'deep_baseline3_bn_residual_gap_gmp_s3_f8_16_32_b2',
+                                 'deep_baseline3_bn_residual_gap_gmp_s3_f16_32_64_b3',
+                                 'deep_baseline3_bn_residual_gap_gmp_s3_f32_64_128_b5',
+                                 'deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5',
+                                 'deep_baseline3_bn_residual_gap_gmp_s4_f64_128_256_512_b5',
                                  'deep_baseline4_bn_residual',
                                  'deep_baseline3_bn_residual_shakedrop',
                                  'deep_baseline4_bn_residual_shakedrop',
@@ -359,11 +363,11 @@ def main():
     # Save path에 모델 이름과 설정 정보 자동 추가
     model_name_parts = get_model_name_parts(args)
     model_name = "_".join(filter(None, model_name_parts))  # 빈 문자열 제거
-    
+
     # 출력 디렉토리 설정
     output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
-    
+
     SAVE_PATH = os.path.join(output_dir, f"{model_name}.pth")
     HISTORY_PATH = os.path.join(output_dir, f"{model_name}_history.json")
 
@@ -379,22 +383,24 @@ def main():
 
     # Train 데이터 변환: 증강 on/off에 따라 다르게 설정
     train_transform_list = []
-    
+
     if args.augment:
         train_transform_list.append(transforms.RandomCrop(32, padding=4))
         train_transform_list.append(transforms.RandomHorizontalFlip())
-        
+
         if args.autoaugment:
             # AutoAugment 사용: CIFAR-10 정책 적용
-            train_transform_list.append(transforms.AutoAugment(policy=transforms.AutoAugmentPolicy.CIFAR10))
+            train_transform_list.append(transforms.AutoAugment(
+                policy=transforms.AutoAugmentPolicy.CIFAR10))
         else:
             # 기본 데이터 증강: RandomRotation
             train_transform_list.append(transforms.RandomRotation(15))
-    
+
     # 공통 변환: ToTensor와 Normalize는 항상 적용
     train_transform_list.append(transforms.ToTensor())
-    train_transform_list.append(transforms.Normalize(normalize_mean, normalize_std))
-    
+    train_transform_list.append(
+        transforms.Normalize(normalize_mean, normalize_std))
+
     train_transform = transforms.Compose(train_transform_list)
 
     # Validation: 데이터 증강 없이 기본 변환만
@@ -405,55 +411,59 @@ def main():
 
     train_set = torchvision.datasets.CIFAR10(
         root='./data', train=True, download=True, transform=train_transform)
-    
+
     # CutMix/Mixup 설정 (--augment가 활성화되어 있을 때만)
     # CutMix와 Mixup은 동시에 사용할 수 없음
     cutmix_collator = None
-    cutmix_criterion = None 
+    cutmix_criterion = None
     mixup_collator = None
     mixup_criterion = None
-    
+
     if args.cutmix and args.augment:
         if args.mixup:
             raise ValueError("CutMix와 Mixup은 동시에 사용할 수 없습니다. 하나만 선택해주세요.")
         cutmix_collator = CutMixCollator(alpha=1.0, prob=0.5)
-        cutmix_criterion = CutMixCriterion(reduction='mean', label_smoothing=args.label_smoothing)
+        cutmix_criterion = CutMixCriterion(
+            reduction='mean', label_smoothing=args.label_smoothing)
     elif args.mixup and args.augment:
         mixup_collator = MixupCollator(alpha=1.0, prob=0.5)
-        mixup_criterion = MixupCriterion(reduction='mean', label_smoothing=args.label_smoothing)
-    
+        mixup_criterion = MixupCriterion(
+            reduction='mean', label_smoothing=args.label_smoothing)
+
     # 시작 에포크 계산
-    cutmix_start_epoch = int(args.cutmix_start_epoch_ratio * args.epochs) if args.cutmix and args.augment else args.epochs
-    mixup_start_epoch = int(args.mixup_start_epoch_ratio * args.epochs) if args.mixup and args.augment else args.epochs
-    
+    cutmix_start_epoch = int(args.cutmix_start_epoch_ratio *
+                             args.epochs) if args.cutmix and args.augment else args.epochs
+    mixup_start_epoch = int(args.mixup_start_epoch_ratio *
+                            args.epochs) if args.mixup and args.augment else args.epochs
+
     # 초기 collate_fn 설정 (첫 에포크에서는 시작 비율에 따라 결정)
     collate_fn = None
     if args.cutmix and args.augment and cutmix_start_epoch == 0:
         collate_fn = cutmix_collator
     elif args.mixup and args.augment and mixup_start_epoch == 0:
         collate_fn = mixup_collator
-    
+
     # num_workers 자동 설정: AutoAugment 사용 시 더 많은 워커 필요
     if args.num_workers is None:
         # AutoAugment는 CPU에서 무거운 작업이므로 더 많은 워커 사용
         num_workers = 4 if args.autoaugment and args.augment else 2
     else:
         num_workers = args.num_workers
-    
+
     # GPU 사용 시 pin_memory 활성화로 전송 속도 향상
     pin_memory = torch.cuda.is_available()
     # persistent_workers로 워커 재생성 오버헤드 감소 (num_workers > 0일 때만)
     persistent_workers = num_workers > 0
-    
+
     train_loader = torch.utils.data.DataLoader(
-        train_set, batch_size=args.batch_size, shuffle=True, 
+        train_set, batch_size=args.batch_size, shuffle=True,
         num_workers=num_workers, pin_memory=pin_memory,
         persistent_workers=persistent_workers, collate_fn=collate_fn)
 
     val_set = torchvision.datasets.CIFAR10(
         root='./data', train=False, download=True, transform=val_transform)
     val_loader = torch.utils.data.DataLoader(
-        val_set, batch_size=args.batch_size, shuffle=False, 
+        val_set, batch_size=args.batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=pin_memory,
         persistent_workers=persistent_workers)
 
@@ -468,7 +478,8 @@ def main():
     supcon_weight = 0.1
     if args.criterion.lower() == 'supcon_ce':
         # SupCon + CrossEntropy 조합
-        criterion = get_criterion('crossentropy', label_smoothing=args.label_smoothing)
+        criterion = get_criterion(
+            'crossentropy', label_smoothing=args.label_smoothing)
         supcon_criterion = SupConLoss(temperature=0.07)
         # SupCon은 현재 baseline_bn 모델에서만 정식 지원
         if args.net != 'baseline_bn':
@@ -547,11 +558,12 @@ def main():
         history['hyperparameters']['weight_decay'] = args.weight_decay
 
     # Training configuration 출력
-    print_training_configuration(args, normalize_mean, normalize_std, SAVE_PATH, HISTORY_PATH)
+    print_training_configuration(
+        args, normalize_mean, normalize_std, SAVE_PATH, HISTORY_PATH)
 
     # 최고 검증 정확도 추적
     best_val_acc = -1.0
-    
+
     # Early stopping 설정
     early_stopping_enabled = args.early_stopping
     early_stopping_patience = args.early_stopping_patience if early_stopping_enabled else None
@@ -561,28 +573,28 @@ def main():
         # 현재 에포크에서 cutmix/mixup 적용 여부 확인
         use_cutmix = args.cutmix and args.augment and epoch >= cutmix_start_epoch
         use_mixup = args.mixup and args.augment and epoch >= mixup_start_epoch
-        
+
         # collate_fn 동적 설정
         current_collate_fn = None
         if use_cutmix:
             current_collate_fn = cutmix_collator
         elif use_mixup:
             current_collate_fn = mixup_collator
-        
+
         # collate_fn이 변경된 경우 DataLoader 재생성
         if current_collate_fn != collate_fn:
             collate_fn = current_collate_fn
             train_loader = torch.utils.data.DataLoader(
-                train_set, batch_size=args.batch_size, shuffle=True, 
+                train_set, batch_size=args.batch_size, shuffle=True,
                 num_workers=num_workers, pin_memory=pin_memory,
                 persistent_workers=persistent_workers, collate_fn=collate_fn)
-        
+
         running_loss = 0.0
         pbar = tqdm(train_loader, desc=f'Epoch {epoch + 1}/{args.epochs}')
         for i, data in enumerate(pbar, 0):
             inputs, labels = data
             inputs = inputs.to(device)
-            
+
             # CutMix/Mixup 사용 시 labels는 (targets1, targets2, lam) 튜플 형태
             if isinstance(labels, (tuple, list)):
                 targets1, targets2, lam = labels
@@ -591,7 +603,7 @@ def main():
                 labels = labels.to(device)
 
             optimizer.zero_grad()
-            
+
             outputs = net(inputs)
 
             # 기본 CrossEntropy / CutMix / Mixup 손실
@@ -605,7 +617,8 @@ def main():
             # SupCon 손실 추가 (--criterion supcon_ce, CutMix/Mixup 미사용 시)
             if supcon_criterion is not None:
                 if use_cutmix or use_mixup:
-                    raise ValueError("SupCon CE(--criterion supcon_ce)는 CutMix/Mixup과 함께 사용할 수 없습니다.")
+                    raise ValueError(
+                        "SupCon CE(--criterion supcon_ce)는 CutMix/Mixup과 함께 사용할 수 없습니다.")
                 if hasattr(net, "forward_features"):
                     features = net.forward_features(inputs)
                 else:
@@ -672,17 +685,19 @@ def main():
         print(f"  Val Accuracy: {val_acc:.2f}%")
         print(f"  Learning Rate: {current_lr:.6f}")
         if early_stopping_enabled and patience_counter > 0:
-            print(f"  Early Stopping: {patience_counter}/{early_stopping_patience} (no improvement)")
+            print(
+                f"  Early Stopping: {patience_counter}/{early_stopping_patience} (no improvement)")
         print()
 
         # 매 epoch마다 히스토리 저장 (중간에 중단되어도 데이터 보존)
         with open(HISTORY_PATH, 'w') as f:
             json.dump(history, f, indent=2)
-        
+
         # Early stopping 체크 (활성화된 경우에만)
         if early_stopping_enabled and patience_counter >= early_stopping_patience:
             print(f"\nEarly stopping triggered after {epoch + 1} epochs")
-            print(f"No improvement in validation accuracy for {early_stopping_patience} consecutive epochs")
+            print(
+                f"No improvement in validation accuracy for {early_stopping_patience} consecutive epochs")
             history['early_stopped'] = True
             history['early_stopped_epoch'] = epoch + 1
             history['early_stopping_patience'] = early_stopping_patience
@@ -698,7 +713,7 @@ def main():
             history['early_stopping_patience'] = early_stopping_patience
         with open(HISTORY_PATH, 'w') as f:
             json.dump(history, f, indent=2)
-    
+
     print('Finished Training')
 
     # Temperature Scaling 캘리브레이션 수행

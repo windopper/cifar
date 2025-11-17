@@ -199,6 +199,7 @@ AutoAugment: ✅
 |------|------------|----------------------|----------------------|
 | deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5 | -- | 92.82 | 7.8 M |
 | deep_baseline3_bn_residual | -- | 94.65 | 10.4 M |
+| deep_baseline3_bn_residual_bottleneck | -- | -- | 10.3 M |
 | deep_baseline3_bn_residual_4x | Epoch 800 TMax 200 | 95.46 | 41.6 M |
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
 | deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |
