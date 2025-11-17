@@ -22,6 +22,7 @@ from models.deep_baseline2_bn_residual_grn import DeepBaselineNetBN2ResidualGRN
 from models.deep_baseline3_bn import DeepBaselineNetBN3
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
+from models.deep_baseline3_bn_residual_15_ln import DeepBaselineNetBN3Residual15LN
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
 from models.deep_baseline3_bn_residual_wide import DeepBaselineNetBN3ResidualWide
@@ -129,6 +130,10 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     # DeepBaselineNetBN3Residual15
     model_bn3_residual_15 = DeepBaselineNetBN3Residual15(init_weights=init_weights)
     results['deep_baseline3_bn_residual_15'] = count_parameters(model_bn3_residual_15)
+    
+    # DeepBaselineNetBN3Residual15LN
+    model_bn3_residual_15_ln = DeepBaselineNetBN3Residual15LN(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_15_ln'] = count_parameters(model_bn3_residual_15_ln)
     
     # DeepBaselineNetBN3ResidualBottleneck
     model_bn3_residual_bottleneck = DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights)

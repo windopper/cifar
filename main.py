@@ -45,6 +45,7 @@ from utils.training_config import print_training_configuration
 from utils.supcon import SupConLoss
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
+from models.deep_baseline3_bn_residual_15_ln import DeepBaselineNetBN3Residual15LN
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
 from models.deep_baseline3_bn_residual_wide import DeepBaselineNetBN3ResidualWide
@@ -118,6 +119,7 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline3_bn_residual': DeepBaselineNetBN3Residual(init_weights=init_weights),
         'deep_baseline3_bn_residual_15': DeepBaselineNetBN3Residual15(init_weights=init_weights),
+        'deep_baseline3_bn_residual_15_ln': DeepBaselineNetBN3Residual15LN(init_weights=init_weights),
         'deep_baseline3_bn_residual_bottleneck': DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights),
         'deep_baseline3_bn_residual_convnext_stride': DeepBaselineNetBN3ResidualConvNeXt(init_weights=init_weights),
         'deep_baseline3_bn_residual_convnext_stride_k3': DeepBaselineNetBN3ResidualConvNeXt(kernel_size=3, init_weights=init_weights),
@@ -269,6 +271,7 @@ def parse_args():
                                  'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
                                  'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual',
                                  'deep_baseline3_bn_residual_15',
+                                 'deep_baseline3_bn_residual_15_ln',
                                  'deep_baseline3_bn_residual_bottleneck',
                                  'deep_baseline3_bn_residual_convnext_stride',
                                  'deep_baseline3_bn_residual_convnext_stride_k3',

@@ -203,10 +203,11 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual | -- | 94.65 | 10.4 M |
 | deep_baseline3_bn_residual_bottleneck | -- | 89.69 | 10.3 M |
 | deep_baseline3_bn_residual_convnext_stride | -- | -- | 10.8 M |
-| deep_baseline3_bn_residual_4x | Epoch 800 TMax 200 | 95.46 | 41.6 M |
-| deep_baseline3_bn_residual_15 | -- | -- | 13.5 M |
+| deep_baseline3_bn_residual_15 | -- | 94.84 | 13.5 M |
+| deep_baseline3_bn_residual_15_ln | -- | -- | 13.5 M |
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
 | deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |
+| deep_baseline3_bn_residual_4x | Epoch 800 TMax 200 | 95.46 | 41.6 M |
 | deep_baseline3_bn_residual_shakedrop | -- | 92.14 | 10.4 M |
 | deep_baseline3_bn_residual_mish | -- | 94.03 | -- |
 | deep_baseline3_bn_residual_dla_tree | -- | **95.59** | 42.6 M |
