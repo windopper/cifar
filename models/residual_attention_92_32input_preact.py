@@ -184,11 +184,7 @@ class ResidualAttentionModel_92_32input_PreAct_Tiny(nn.Module):
         super(ResidualAttentionModel_92_32input_PreAct_Tiny, self).__init__()
 
         # 초기 feature extraction: 3 -> 32, 32x32 유지
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True)
-        )  # 32*32
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False),
 
         # Stage 1: 32 -> 64, 32x32 유지
         self.residual_block1 = PreActivationResidualBlock(32, 64)  # 32*32
