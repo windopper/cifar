@@ -41,6 +41,11 @@ from models.residual_attention_92_32input_se import (
     ResidualAttentionModel_92_32input_SE_Tiny,
     make_residual_attention_92_32input_se_tiny,
 )
+from models.residual_attention_92_32input_gelu import (
+    ResidualAttentionModel_92_32input_GELU,
+    ResidualAttentionModel_92_32input_GELU_Tiny,
+    make_residual_attention_92_32input_gelu_tiny,
+)
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
 from models.deep_baseline3_bn_residual_wide import DeepBaselineNetBN3ResidualWide
@@ -180,6 +185,13 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     
     model_residual_attention_92_32input_se_tiny = make_residual_attention_92_32input_se_tiny(init_weights=init_weights)
     results['residual_attention_92_32input_se_tiny'] = count_parameters(model_residual_attention_92_32input_se_tiny)
+    
+    # ResidualAttentionModel_92_32input_GELU
+    model_residual_attention_92_32input_gelu = ResidualAttentionModel_92_32input_GELU(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu'] = count_parameters(model_residual_attention_92_32input_gelu)
+    
+    model_residual_attention_92_32input_gelu_tiny = make_residual_attention_92_32input_gelu_tiny(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_tiny'] = count_parameters(model_residual_attention_92_32input_gelu_tiny)
     
     # DeepBaselineNetBN3ResidualBottleneck
     model_bn3_residual_bottleneck = DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights)

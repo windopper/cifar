@@ -5,6 +5,7 @@ Residual Block, Attention Module, SE Layer 등 여러 모델에서 공통으로 
 """
 
 from .residual_block import ResidualBlock, _make_layer
+from .residual_block_gelu import ResidualBlock as ResidualBlockGELU
 from .preactivation_residual_block import PreActivationResidualBlock
 from .attention_modules import (
     AttentionModuleStage1CIFAR,
@@ -18,6 +19,7 @@ from .se_layer import SELayer
 
 __all__ = [
     "ResidualBlock",
+    "ResidualBlockGELU",
     "_make_layer",
     "PreActivationResidualBlock",
     "AttentionModuleStage1CIFAR",

@@ -63,6 +63,11 @@ from models.residual_attention_92_32input_se import (
     ResidualAttentionModel_92_32input_SE_Tiny,
     make_residual_attention_92_32input_se_tiny,
 )
+from models.residual_attention_92_32input_gelu import (
+    ResidualAttentionModel_92_32input_GELU,
+    ResidualAttentionModel_92_32input_GELU_Tiny,
+    make_residual_attention_92_32input_gelu_tiny,
+)
 from models.deep_baseline3_bn_residual_15_ln import DeepBaselineNetBN3Residual15LN
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
@@ -145,6 +150,8 @@ def get_net(name: str, init_weights: bool = False):
         'residual_attention_92_32input_preact_tiny': make_residual_attention_92_32input_preact_tiny(init_weights=init_weights),
         'residual_attention_92_32input_se': ResidualAttentionModel_92_32input_SE(init_weights=init_weights),
         'residual_attention_92_32input_se_tiny': make_residual_attention_92_32input_se_tiny(init_weights=init_weights),
+        'residual_attention_92_32input_gelu': ResidualAttentionModel_92_32input_GELU(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_tiny': make_residual_attention_92_32input_gelu_tiny(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_ln': DeepBaselineNetBN3Residual15LN(init_weights=init_weights),
         'deep_baseline3_bn_residual_bottleneck': DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights),
         'deep_baseline3_bn_residual_convnext_stride': DeepBaselineNetBN3ResidualConvNeXt(init_weights=init_weights),
@@ -302,6 +309,7 @@ def parse_args():
                                  'residual_attention_92_32input', 'residual_attention_92_32input_tiny',
                                  'residual_attention_92_32input_preact', 'residual_attention_92_32input_preact_tiny',
                                  'residual_attention_92_32input_se', 'residual_attention_92_32input_se_tiny',
+                                 'residual_attention_92_32input_gelu', 'residual_attention_92_32input_gelu_tiny',
                                  'deep_baseline3_bn_residual_bottleneck',
                                  'deep_baseline3_bn_residual_convnext_stride',
                                  'deep_baseline3_bn_residual_convnext_stride_k3',
