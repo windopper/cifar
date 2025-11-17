@@ -53,6 +53,11 @@ from models.residual_attention_92_32input import (
     ResidualAttentionModel_92_32input,
     make_residual_attention_92_32input_tiny,
 )
+from models.residual_attention_92_32input_se import (
+    ResidualAttentionModel_92_32input_SE,
+    ResidualAttentionModel_92_32input_SE_Tiny,
+    make_residual_attention_92_32input_se_tiny,
+)
 from models.deep_baseline3_bn_residual_15_ln import DeepBaselineNetBN3Residual15LN
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
@@ -131,6 +136,8 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline3_bn_residual_15_attention_tiny': make_deep_baseline3_bn_residual_15_attention_tiny(init_weights=init_weights),
         'residual_attention_92_32input': ResidualAttentionModel_92_32input(init_weights=init_weights),
         'residual_attention_92_32input_tiny': make_residual_attention_92_32input_tiny(init_weights=init_weights),
+        'residual_attention_92_32input_se': ResidualAttentionModel_92_32input_SE(init_weights=init_weights),
+        'residual_attention_92_32input_se_tiny': make_residual_attention_92_32input_se_tiny(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_ln': DeepBaselineNetBN3Residual15LN(init_weights=init_weights),
         'deep_baseline3_bn_residual_bottleneck': DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights),
         'deep_baseline3_bn_residual_convnext_stride': DeepBaselineNetBN3ResidualConvNeXt(init_weights=init_weights),
@@ -286,6 +293,7 @@ def parse_args():
                                  'deep_baseline3_bn_residual_15_ln',
                                  'deep_baseline3_bn_residual_15_attention', 'deep_baseline3_bn_residual_15_attention_tiny',
                                  'residual_attention_92_32input', 'residual_attention_92_32input_tiny',
+                                 'residual_attention_92_32input_se', 'residual_attention_92_32input_se_tiny',
                                  'deep_baseline3_bn_residual_bottleneck',
                                  'deep_baseline3_bn_residual_convnext_stride',
                                  'deep_baseline3_bn_residual_convnext_stride_k3',
