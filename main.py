@@ -278,6 +278,7 @@ def parse_args():
                                  'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual',
                                  'deep_baseline3_bn_residual_15',
                                  'deep_baseline3_bn_residual_15_ln',
+                                 'deep_baseline3_bn_residual_15_attention', 'deep_baseline3_bn_residual_15_attention_tiny',
                                  'deep_baseline3_bn_residual_bottleneck',
                                  'deep_baseline3_bn_residual_convnext_stride',
                                  'deep_baseline3_bn_residual_convnext_stride_k3',
