@@ -31,6 +31,11 @@ from models.residual_attention_92_32input import (
     ResidualAttentionModel_92_32input,
     make_residual_attention_92_32input_tiny,
 )
+from models.residual_attention_92_32input_preact import (
+    ResidualAttentionModel_92_32input_PreAct,
+    ResidualAttentionModel_92_32input_PreAct_Tiny,
+    make_residual_attention_92_32input_preact_tiny,
+)
 from models.residual_attention_92_32input_se import (
     ResidualAttentionModel_92_32input_SE,
     ResidualAttentionModel_92_32input_SE_Tiny,
@@ -161,6 +166,13 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     
     model_residual_attention_92_32input_tiny = make_residual_attention_92_32input_tiny(init_weights=init_weights)
     results['residual_attention_92_32input_tiny'] = count_parameters(model_residual_attention_92_32input_tiny)
+    
+    # ResidualAttentionModel_92_32input_PreAct
+    model_residual_attention_92_32input_preact = ResidualAttentionModel_92_32input_PreAct(init_weights=init_weights)
+    results['residual_attention_92_32input_preact'] = count_parameters(model_residual_attention_92_32input_preact)
+    
+    model_residual_attention_92_32input_preact_tiny = make_residual_attention_92_32input_preact_tiny(init_weights=init_weights)
+    results['residual_attention_92_32input_preact_tiny'] = count_parameters(model_residual_attention_92_32input_preact_tiny)
     
     # ResidualAttentionModel_92_32input_SE
     model_residual_attention_92_32input_se = ResidualAttentionModel_92_32input_SE(init_weights=init_weights)

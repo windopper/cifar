@@ -5,19 +5,27 @@ Residual Block, Attention Module, SE Layer 등 여러 모델에서 공통으로 
 """
 
 from .residual_block import ResidualBlock, _make_layer
+from .preactivation_residual_block import PreActivationResidualBlock
 from .attention_modules import (
     AttentionModuleStage1CIFAR,
     AttentionModuleStage2CIFAR,
     AttentionModuleStage3CIFAR,
+    AttentionModuleStage1CIFAR_PreAct,
+    AttentionModuleStage2CIFAR_PreAct,
+    AttentionModuleStage3CIFAR_PreAct,
 )
 from .se_layer import SELayer
 
 __all__ = [
     "ResidualBlock",
     "_make_layer",
+    "PreActivationResidualBlock",
     "AttentionModuleStage1CIFAR",
     "AttentionModuleStage2CIFAR",
     "AttentionModuleStage3CIFAR",
+    "AttentionModuleStage1CIFAR_PreAct",
+    "AttentionModuleStage2CIFAR_PreAct",
+    "AttentionModuleStage3CIFAR_PreAct",
     "SELayer",
 ]
 

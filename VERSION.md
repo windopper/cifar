@@ -1,7 +1,8 @@
 # 모델 버전 변화 내역
 
 이 문서는 `baseline` → `baseline_bn` → `deep_baseline_bn` → `deep_baseline2_bn` →  
-`deep_baseline2_bn_residual` → `deep_baseline3_bn_residual` → `deep_baseline3_bn_residual_dla`  
+`deep_baseline2_bn_residual` → `deep_baseline3_bn_residual` → `deep_baseline3_bn_residual_15`  
+→ `residual_attention_92_32input`
 로 이어지는 모델 구조 변화 과정을 정리하고, 각 단계에서 어떤 설계 의도와 실험 결과를 통해
 다음 버전을 선택하게 되었는지를 상세히 기록한 문서입니다.
 

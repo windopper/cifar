@@ -207,7 +207,8 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_15_ln | -- | 92.40 | 13.5 M |
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
-| residual_attention_92_32input_se_tiny | -- | -- | 14.6 M |
+| residual_attention_92_32input_se_tiny | -- | 94.96 | 14.6 M |
+| residual_attention_92_32input_preact_tiny | -- | -- | 14.5 M |
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
 | deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |
 | deep_baseline3_bn_residual_4x | Epoch 800 TMax 200 | 95.46 | 41.6 M |
