@@ -45,6 +45,7 @@ from utils.training_config import print_training_configuration
 from utils.supcon import SupConLoss
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
+from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
 from models.deep_baseline3_bn_residual_wide import DeepBaselineNetBN3ResidualWide
 from models.deep_baseline3_bn_residual_4x import DeepBaselineNetBN3Residual4X
 from models.deep_baseline3_bn_residual_deep import DeepBaselineNetBN3ResidualDeep
@@ -116,6 +117,7 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline3_bn_residual': DeepBaselineNetBN3Residual(init_weights=init_weights),
         'deep_baseline3_bn_residual_bottleneck': DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights),
+        'deep_baseline3_bn_residual_convnext_stride': DeepBaselineNetBN3ResidualConvNeXt(init_weights=init_weights),
         'deep_baseline3_bn_residual_wide': DeepBaselineNetBN3ResidualWide(init_weights=init_weights),
         'deep_baseline3_bn_residual_4x': DeepBaselineNetBN3Residual4X(init_weights=init_weights),
         'deep_baseline3_bn_residual_deep': DeepBaselineNetBN3ResidualDeep(init_weights=init_weights),
@@ -264,6 +266,7 @@ def parse_args():
                                  'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
                                  'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual',
                                  'deep_baseline3_bn_residual_bottleneck',
+                                 'deep_baseline3_bn_residual_convnext_stride',
                                  'deep_baseline3_bn_residual_preact', 'deep_baseline3_bn_residual_wide', 'deep_baseline3_bn_residual_4x', 'deep_baseline3_bn_residual_deep',
                                  'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu',
                                  'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_dla_tree', 'deep_baseline3_bn_residual_group',
