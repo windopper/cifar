@@ -11,7 +11,7 @@ Weight Initialization: ✅
 `uv run main.py --optimizer adam --epochs 200 --lr 3e-4 --batch-size 128 --scheduler onecyclelr --w-init --net baseline_bn`
 
 | Scheduler | 최고 Val Accuracy (%) | 세부 사항 |
-|------|------------|
+|------|------------|----------------------|
 | Cosine Annealing LR | 76.71 | -- |
 | One Cycle LR | 87.25 | -- |
 | One Cycle LR | 87.07 | Pct Start 0.2 |
@@ -197,15 +197,16 @@ AutoAugment: ✅
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
-| deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5 | -- | -- | 7.8 M |
+| deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5 | -- | 92.82 | 7.8 M |
 | deep_baseline3_bn_residual | -- | 94.65 | 10.4 M |
+| deep_baseline3_bn_residual_4x | Epoch 800 TMax 200 | 95.46 | 41.6 M |
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
 | deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |
 | deep_baseline3_bn_residual_shakedrop | -- | 92.14 | 10.4 M |
 | deep_baseline3_bn_residual_mish | -- | 94.03 | -- |
 | deep_baseline3_bn_residual_dla_tree | -- | **95.59** | 42.6 M |
 | deep_baseline3_bn_residual_group | -- | 93.22 | -- |
-| deep_baseline3_bn_residual_dla | -- | 94.96 | 11 M |  
+| deep_baseline3_bn_residual_dla | -- | 94.96 | 11 M |
 | deep_baseline4_bn_residual | -- | 94.73 | 11.1 M |
 | DLA | -- | 94.9 | 16.2M |
 
