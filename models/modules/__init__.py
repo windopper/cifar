@@ -15,6 +15,11 @@ from .attention_modules import (
     AttentionModuleStage2CIFAR_PreAct,
     AttentionModuleStage3CIFAR_PreAct,
 )
+from .attention_modules_gelu import (
+    AttentionModuleStage1CIFAR_GELU,
+    AttentionModuleStage2CIFAR_GELU,
+    AttentionModuleStage3CIFAR_GELU,
+)
 from .se_layer import SELayer
 
 __all__ = [
@@ -28,6 +33,9 @@ __all__ = [
     "AttentionModuleStage1CIFAR_PreAct",
     "AttentionModuleStage2CIFAR_PreAct",
     "AttentionModuleStage3CIFAR_PreAct",
+    "AttentionModuleStage1CIFAR_GELU",
+    "AttentionModuleStage2CIFAR_GELU",
+    "AttentionModuleStage3CIFAR_GELU",
     "SELayer",
 ]
 

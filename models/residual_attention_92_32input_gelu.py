@@ -32,9 +32,9 @@ import torch.nn.functional as F
 
 from .modules.residual_block_gelu import ResidualBlock
 from .modules import (
-    AttentionModuleStage1CIFAR,
-    AttentionModuleStage2CIFAR,
-    AttentionModuleStage3CIFAR,
+    AttentionModuleStage1CIFAR_GELU,
+    AttentionModuleStage2CIFAR_GELU,
+    AttentionModuleStage3CIFAR_GELU,
 )
 
 
@@ -59,24 +59,24 @@ class ResidualAttentionModel_92_32input_GELU(nn.Module):
 
         # Stage 1: 32 -> 128, 32x32 유지
         self.residual_block1 = ResidualBlock(32, 128)  # 32*32
-        self.attention_module1 = AttentionModuleStage1CIFAR(
+        self.attention_module1 = AttentionModuleStage1CIFAR_GELU(
             128, 128, size1=(32, 32), size2=(16, 16)
         )  # 32*32
 
         # Stage 2: 128 -> 256, 16x16
         self.residual_block2 = ResidualBlock(128, 256, stride=2)  # 16*16
-        self.attention_module2 = AttentionModuleStage2CIFAR(
+        self.attention_module2 = AttentionModuleStage2CIFAR_GELU(
             256, 256, size=(16, 16)
         )  # 16*16
-        self.attention_module2_2 = AttentionModuleStage2CIFAR(
+        self.attention_module2_2 = AttentionModuleStage2CIFAR_GELU(
             256, 256, size=(16, 16)
         )  # 16*16
 
         # Stage 3: 256 -> 512, 8x8
         self.residual_block3 = ResidualBlock(256, 512, stride=2)  # 8*8
-        self.attention_module3 = AttentionModuleStage3CIFAR(512, 512)  # 8*8
-        self.attention_module3_2 = AttentionModuleStage3CIFAR(512, 512)  # 8*8
-        self.attention_module3_3 = AttentionModuleStage3CIFAR(512, 512)  # 8*8
+        self.attention_module3 = AttentionModuleStage3CIFAR_GELU(512, 512)  # 8*8
+        self.attention_module3_2 = AttentionModuleStage3CIFAR_GELU(512, 512)  # 8*8
+        self.attention_module3_3 = AttentionModuleStage3CIFAR_GELU(512, 512)  # 8*8
 
         # Stage 4: 512 -> 1024, 8x8 유지
         self.residual_block4 = ResidualBlock(512, 1024)  # 8*8
@@ -185,19 +185,19 @@ class ResidualAttentionModel_92_32input_GELU_Tiny(nn.Module):
 
         # Stage 1: 32 -> 64, 32x32 유지
         self.residual_block1 = ResidualBlock(32, 64)  # 32*32
-        self.attention_module1 = AttentionModuleStage1CIFAR(
+        self.attention_module1 = AttentionModuleStage1CIFAR_GELU(
             64, 64, size1=(32, 32), size2=(16, 16)
         )  # 32*32
 
         # Stage 2: 64 -> 128, 16x16
         self.residual_block2 = ResidualBlock(64, 128, stride=2)  # 16*16
-        self.attention_module2 = AttentionModuleStage2CIFAR(
+        self.attention_module2 = AttentionModuleStage2CIFAR_GELU(
             128, 128, size=(16, 16)
         )  # 16*16
 
         # Stage 3: 128 -> 256, 8x8
         self.residual_block3 = ResidualBlock(128, 256, stride=2)  # 8*8
-        self.attention_module3 = AttentionModuleStage3CIFAR(256, 256)  # 8*8
+        self.attention_module3 = AttentionModuleStage3CIFAR_GELU(256, 256)  # 8*8
 
         # Stage 4: 256 -> 512, 8x8 유지
         self.residual_block4 = ResidualBlock(256, 512)  # 8*8
