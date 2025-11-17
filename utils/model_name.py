@@ -41,6 +41,19 @@ def get_model_name_parts(args):
             model_name_parts.append(f"tmax{t_max}")
             if args.scheduler_eta_min > 0.0:
                 model_name_parts.append(f"etamin{args.scheduler_eta_min}")
+        elif args.scheduler.lower() == 'cosineannealingwarmuprestarts':
+            if args.scheduler_first_cycle_steps:
+                model_name_parts.append(f"firstcycle{args.scheduler_first_cycle_steps}")
+            if args.scheduler_cycle_mult != 1.0:  # 기본값이 아닐 때만 추가
+                model_name_parts.append(f"cyclemult{args.scheduler_cycle_mult}")
+            if args.scheduler_max_lr:
+                model_name_parts.append(f"maxlr{args.scheduler_max_lr}")
+            if args.scheduler_min_lr:
+                model_name_parts.append(f"minlr{args.scheduler_min_lr}")
+            if args.scheduler_warmup_epochs > 0:
+                model_name_parts.append(f"warmup{args.scheduler_warmup_epochs}")
+            if args.scheduler_gamma_restarts != 1.0:  # 기본값이 아닐 때만 추가
+                model_name_parts.append(f"gammar{args.scheduler_gamma_restarts}")
     
     if args.label_smoothing > 0.0:
         model_name_parts.append(f"ls{args.label_smoothing}")

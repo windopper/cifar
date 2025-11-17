@@ -43,6 +43,7 @@ from utils.mixup import MixupCollator, MixupCriterion
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
 from utils.supcon import SupConLoss
+from utils.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
 from models.deep_baseline3_bn_residual_15_attention import (
@@ -216,7 +217,9 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
                   lr: float = 0.001, gamma: float = 0.95, max_lr: float = None,
                   factor: float = 0.1, patience: int = 10, mode: str = 'min',
                   t_max: int = None, eta_min: float = 0.0, pct_start: float = 0.3,
-                  final_lr_ratio: float = 0.0001, warmup_epochs: int = 0):
+                  final_lr_ratio: float = 0.0001, warmup_epochs: int = 0,
+                  first_cycle_steps: int = None, cycle_mult: float = 1.0,
+                  scheduler_min_lr: float = None, scheduler_gamma: float = 1.0):
     """Learning Rate Scheduler 팩토리 함수"""
     if name is None or (isinstance(name, str) and name.lower() == 'none'):
         return None
@@ -254,44 +257,40 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
         if t_max is None:
             t_max = epochs  # 기본값: 전체 epochs 수
         
-        if warmup_epochs > 0:
-            # Warmup epochs 검증
-            if warmup_epochs >= t_max:
-                raise ValueError(
-                    f"warmup_epochs ({warmup_epochs})는 t_max ({t_max})보다 작아야 합니다.")
-            
-            # Warmup이 있는 경우: LambdaLR을 사용하여 warmup + cosine annealing 구현
-            cosine_t_max = t_max - warmup_epochs  # Cosine annealing 기간
-            
-            def lr_lambda(epoch):
-                if epoch < warmup_epochs:
-                    # Warmup 기간: 선형적으로 0에서 1까지 증가
-                    return (epoch + 1) / warmup_epochs
-                else:
-                    # Cosine annealing 적용 (warmup 이후 epoch부터 시작)
-                    cosine_epoch = epoch - warmup_epochs
-                    # Cosine annealing 공식: eta_min + (lr - eta_min) * (1 + cos(pi * cosine_epoch / cosine_t_max)) / 2
-                    # LambdaLR은 비율을 반환하므로, eta_min을 고려한 비율 계산
-                    if cosine_t_max > 0:
-                        cosine_factor = (1 + np.cos(np.pi * cosine_epoch / cosine_t_max)) / 2
-                        # eta_min이 있으면 최종 학습률이 eta_min보다 작아질 수 있음
-                        min_ratio = eta_min / lr if lr > 0 else 0
-                        return min_ratio + (1 - min_ratio) * cosine_factor
-                    else:
-                        return eta_min / lr if lr > 0 else 0
-            
-            schedulers['cosineannealinglr'] = lr_scheduler.LambdaLR(
-                optimizer, lr_lambda=lr_lambda
-            )
-        else:
-            # Warmup이 없는 경우: 기본 CosineAnnealingLR 사용
-            schedulers['cosineannealinglr'] = lr_scheduler.CosineAnnealingLR(
-                optimizer, T_max=t_max, eta_min=eta_min
-            )
+        # 기본 CosineAnnealingLR 사용
+        schedulers['cosineannealinglr'] = lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=t_max, eta_min=eta_min
+        )
+    elif name.lower() == 'cosineannealingwarmuprestarts':
+        # CosineAnnealingWarmupRestarts 스케줄러
+        if first_cycle_steps is None:
+            first_cycle_steps = epochs * steps_per_epoch  # 기본값: 전체 steps
+        if max_lr is None:
+            max_lr = lr  # 기본값: 초기 lr
+        if scheduler_min_lr is None:
+            scheduler_min_lr = eta_min if eta_min > 0 else lr * 0.001  # 기본값: eta_min 또는 lr의 0.1%
+        
+        # warmup_steps는 warmup_epochs를 steps로 변환
+        warmup_steps = warmup_epochs * steps_per_epoch
+        
+        # warmup_steps가 first_cycle_steps보다 작은지 검증
+        if warmup_steps >= first_cycle_steps:
+            raise ValueError(
+                f"warmup_steps ({warmup_steps})는 first_cycle_steps ({first_cycle_steps})보다 작아야 합니다.")
+        
+        schedulers['cosineannealingwarmuprestarts'] = CosineAnnealingWarmupRestarts(
+            optimizer,
+            first_cycle_steps=first_cycle_steps,
+            cycle_mult=cycle_mult,
+            max_lr=max_lr,
+            min_lr=scheduler_min_lr,
+            warmup_steps=warmup_steps,
+            gamma=scheduler_gamma
+        )
 
     if name.lower() not in schedulers:
         raise ValueError(
-            f"Unknown scheduler: {name}. Available: ['exponentiallr', 'onecyclelr', 'reducelronplateau', 'cosineannealinglr', 'none']")
+            f"Unknown scheduler: {name}. Available: ['exponentiallr', 'onecyclelr', 'reducelronplateau', 'cosineannealinglr', 'cosineannealingwarmuprestarts', 'none']")
 
     return schedulers[name.lower()]
 
@@ -377,7 +376,7 @@ def parse_args():
                         help='Weight decay (default: 5e-4)')
     parser.add_argument('--scheduler', type=str, default='none',
                         choices=['none', 'exponentiallr', 'onecyclelr',
-                                 'reducelronplateau', 'cosineannealinglr'],
+                                 'reducelronplateau', 'cosineannealinglr', 'cosineannealingwarmuprestarts'],
                         help='Learning rate scheduler (default: none)')
     parser.add_argument('--scheduler-gamma', type=float, default=0.95,
                         help='ExponentialLR의 gamma 값 (default: 0.95)')
@@ -399,7 +398,15 @@ def parse_args():
     parser.add_argument('--scheduler-eta-min', type=float, default=0.0,
                         help='CosineAnnealingLR의 eta_min 값 (default: 0.0)')
     parser.add_argument('--scheduler-warmup-epochs', type=int, default=0,
-                        help='CosineAnnealingLR의 warmup 에포크 수 (default: 0, warmup 비활성화)')
+                        help='CosineAnnealingWarmupRestarts의 warmup 에포크 수 (default: 0, warmup 비활성화)')
+    parser.add_argument('--scheduler-first-cycle-steps', type=int, default=None,
+                        help='CosineAnnealingWarmupRestarts의 first_cycle_steps 값 (default: epochs * steps_per_epoch)')
+    parser.add_argument('--scheduler-cycle-mult', type=float, default=1.0,
+                        help='CosineAnnealingWarmupRestarts의 cycle_mult 값 (default: 1.0)')
+    parser.add_argument('--scheduler-min-lr', type=float, default=None,
+                        help='CosineAnnealingWarmupRestarts의 min_lr 값 (default: scheduler-eta-min 또는 lr * 0.001)')
+    parser.add_argument('--scheduler-gamma-restarts', type=float, default=1.0,
+                        help='CosineAnnealingWarmupRestarts의 gamma 값 (default: 1.0)')
     parser.add_argument('--label-smoothing', type=float, default=0.0,
                         help='Label smoothing 값 (0.0~1.0, 권장: 0.05~0.1, default: 0.0)')
     parser.add_argument('--augment', action='store_true',
@@ -583,7 +590,11 @@ def main():
         mode=args.scheduler_mode, t_max=args.scheduler_t_max,
         eta_min=args.scheduler_eta_min, pct_start=args.scheduler_pct_start,
         final_lr_ratio=args.scheduler_final_lr_ratio,
-        warmup_epochs=args.scheduler_warmup_epochs
+        warmup_epochs=args.scheduler_warmup_epochs,
+        first_cycle_steps=args.scheduler_first_cycle_steps,
+        cycle_mult=args.scheduler_cycle_mult,
+        scheduler_min_lr=args.scheduler_min_lr,
+        scheduler_gamma=args.scheduler_gamma_restarts
     )
 
     # 학습 히스토리 저장용 리스트
@@ -636,7 +647,13 @@ def main():
         elif args.scheduler.lower() == 'cosineannealinglr':
             history['hyperparameters']['scheduler_t_max'] = args.scheduler_t_max if args.scheduler_t_max else args.epochs
             history['hyperparameters']['scheduler_eta_min'] = args.scheduler_eta_min
+        elif args.scheduler.lower() == 'cosineannealingwarmuprestarts':
+            history['hyperparameters']['scheduler_first_cycle_steps'] = args.scheduler_first_cycle_steps if args.scheduler_first_cycle_steps else args.epochs * steps_per_epoch
+            history['hyperparameters']['scheduler_cycle_mult'] = args.scheduler_cycle_mult
+            history['hyperparameters']['scheduler_max_lr'] = args.scheduler_max_lr if args.scheduler_max_lr else args.lr
+            history['hyperparameters']['scheduler_min_lr'] = args.scheduler_min_lr if args.scheduler_min_lr else (args.scheduler_eta_min if args.scheduler_eta_min > 0 else args.lr * 0.001)
             history['hyperparameters']['scheduler_warmup_epochs'] = args.scheduler_warmup_epochs
+            history['hyperparameters']['scheduler_gamma_restarts'] = args.scheduler_gamma_restarts
 
     # Optimizer 관련 하이퍼파라미터 추가
     if args.optimizer.lower() == 'adamw':
@@ -717,8 +734,10 @@ def main():
             loss.backward()
             optimizer.step()
 
-            # OneCycleLR은 각 step마다 업데이트
+            # OneCycleLR과 CosineAnnealingWarmupRestarts는 각 step마다 업데이트
             if scheduler is not None and isinstance(scheduler, lr_scheduler.OneCycleLR):
+                scheduler.step()
+            if scheduler is not None and isinstance(scheduler, CosineAnnealingWarmupRestarts):
                 scheduler.step()
 
             running_loss += loss.item()
@@ -734,12 +753,10 @@ def main():
         # Validation 수행
         val_loss, val_acc = validate(net, criterion, val_loader, device)
 
-        # ExponentialLR, CosineAnnealingLR, LambdaLR(warmup 포함)은 각 epoch마다 업데이트
+        # ExponentialLR, CosineAnnealingLR은 각 epoch마다 업데이트
         if scheduler is not None and isinstance(scheduler, lr_scheduler.ExponentialLR):
             scheduler.step()
         if scheduler is not None and isinstance(scheduler, lr_scheduler.CosineAnnealingLR):
-            scheduler.step()
-        if scheduler is not None and isinstance(scheduler, lr_scheduler.LambdaLR):
             scheduler.step()
 
         # ReduceLROnPlateau는 validation loss를 기반으로 각 epoch마다 업데이트

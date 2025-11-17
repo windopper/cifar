@@ -187,7 +187,7 @@ Weight Initialization: ✅
 Augmentation: ✅
 AutoAugment: ✅
 
-`python cifar/main.py --optimizer adam --epochs 100 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --net deep_baseline3_bn_residual_bottleneck`
+`python cifar/main.py --optimizer adam --epochs 100 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --scheduler-warmup-epochs 10 --net baseline_bn`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
