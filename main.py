@@ -45,6 +45,10 @@ from utils.training_config import print_training_configuration
 from utils.supcon import SupConLoss
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
+from models.deep_baseline3_bn_residual_15_attention import (
+    DeepBaselineNetBN3Residual15Attention,
+    make_deep_baseline3_bn_residual_15_attention_tiny,
+)
 from models.deep_baseline3_bn_residual_15_ln import DeepBaselineNetBN3Residual15LN
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
@@ -119,6 +123,8 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline3_bn_residual': DeepBaselineNetBN3Residual(init_weights=init_weights),
         'deep_baseline3_bn_residual_15': DeepBaselineNetBN3Residual15(init_weights=init_weights),
+        'deep_baseline3_bn_residual_15_attention': DeepBaselineNetBN3Residual15Attention(init_weights=init_weights),
+        'deep_baseline3_bn_residual_15_attention_tiny': make_deep_baseline3_bn_residual_15_attention_tiny(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_ln': DeepBaselineNetBN3Residual15LN(init_weights=init_weights),
         'deep_baseline3_bn_residual_bottleneck': DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights),
         'deep_baseline3_bn_residual_convnext_stride': DeepBaselineNetBN3ResidualConvNeXt(init_weights=init_weights),
