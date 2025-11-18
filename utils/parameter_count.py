@@ -49,6 +49,16 @@ from models.residual_attention_92_32input_gelu import (
     ResidualAttentionModel_92_32input_GELU_Tiny,
     make_residual_attention_92_32input_gelu_tiny,
 )
+from models.residual_attention_92_32input_gelu_tiny_dla import (
+    ResidualAttentionModel_92_32input_GELU_Tiny_DLA,
+    make_residual_attention_92_32input_gelu_tiny_dla,
+    make_residual_attention_92_32input_gelu_tiny_dla_tiny,
+    make_residual_attention_92_32input_gelu_tiny_dla_small,
+    make_residual_attention_92_32input_gelu_tiny_dla_base,
+    make_residual_attention_92_32input_gelu_tiny_dla_large,
+    make_residual_attention_92_32input_gelu_tiny_dla_wide,
+    make_residual_attention_92_32input_gelu_tiny_dla_deep,
+)
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
 from models.deep_baseline3_bn_residual_wide import DeepBaselineNetBN3ResidualWide
@@ -208,6 +218,27 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     
     model_residual_attention_92_32input_gelu_tiny = make_residual_attention_92_32input_gelu_tiny(init_weights=init_weights)
     results['residual_attention_92_32input_gelu_tiny'] = count_parameters(model_residual_attention_92_32input_gelu_tiny)
+    
+    model_residual_attention_92_32input_gelu_tiny_dla = make_residual_attention_92_32input_gelu_tiny_dla(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_tiny_dla'] = count_parameters(model_residual_attention_92_32input_gelu_tiny_dla)
+    
+    model_residual_attention_92_32input_gelu_tiny_dla_tiny = make_residual_attention_92_32input_gelu_tiny_dla_tiny(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_tiny_dla_tiny'] = count_parameters(model_residual_attention_92_32input_gelu_tiny_dla_tiny)
+    
+    model_residual_attention_92_32input_gelu_tiny_dla_small = make_residual_attention_92_32input_gelu_tiny_dla_small(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_tiny_dla_small'] = count_parameters(model_residual_attention_92_32input_gelu_tiny_dla_small)
+    
+    model_residual_attention_92_32input_gelu_tiny_dla_base = make_residual_attention_92_32input_gelu_tiny_dla_base(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_tiny_dla_base'] = count_parameters(model_residual_attention_92_32input_gelu_tiny_dla_base)
+    
+    model_residual_attention_92_32input_gelu_tiny_dla_large = make_residual_attention_92_32input_gelu_tiny_dla_large(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_tiny_dla_large'] = count_parameters(model_residual_attention_92_32input_gelu_tiny_dla_large)
+    
+    model_residual_attention_92_32input_gelu_tiny_dla_wide = make_residual_attention_92_32input_gelu_tiny_dla_wide(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_tiny_dla_wide'] = count_parameters(model_residual_attention_92_32input_gelu_tiny_dla_wide)
+    
+    model_residual_attention_92_32input_gelu_tiny_dla_deep = make_residual_attention_92_32input_gelu_tiny_dla_deep(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_tiny_dla_deep'] = count_parameters(model_residual_attention_92_32input_gelu_tiny_dla_deep)
     
     # DeepBaselineNetBN3ResidualBottleneck
     model_bn3_residual_bottleneck = DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights)

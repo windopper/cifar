@@ -74,6 +74,16 @@ from models.residual_attention_92_32input_gelu import (
     ResidualAttentionModel_92_32input_GELU_Tiny,
     make_residual_attention_92_32input_gelu_tiny,
 )
+from models.residual_attention_92_32input_gelu_tiny_dla import (
+    ResidualAttentionModel_92_32input_GELU_Tiny_DLA,
+    make_residual_attention_92_32input_gelu_tiny_dla,
+    make_residual_attention_92_32input_gelu_tiny_dla_tiny,
+    make_residual_attention_92_32input_gelu_tiny_dla_small,
+    make_residual_attention_92_32input_gelu_tiny_dla_base,
+    make_residual_attention_92_32input_gelu_tiny_dla_large,
+    make_residual_attention_92_32input_gelu_tiny_dla_wide,
+    make_residual_attention_92_32input_gelu_tiny_dla_deep,
+)
 from models.deep_baseline3_bn_residual_15_ln import DeepBaselineNetBN3Residual15LN
 from models.deep_baseline3_bn_residual_bottleneck import DeepBaselineNetBN3ResidualBottleneck
 from models.deep_baseline3_convnext_stride import DeepBaselineNetBN3ResidualConvNeXt
@@ -161,6 +171,13 @@ def _get_nets_dict(init_weights: bool = False):
         'residual_attention_92_32input_se_tiny': make_residual_attention_92_32input_se_tiny(init_weights=init_weights),
         'residual_attention_92_32input_gelu': ResidualAttentionModel_92_32input_GELU(init_weights=init_weights),
         'residual_attention_92_32input_gelu_tiny': make_residual_attention_92_32input_gelu_tiny(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_tiny_dla': make_residual_attention_92_32input_gelu_tiny_dla(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_tiny_dla_tiny': make_residual_attention_92_32input_gelu_tiny_dla_tiny(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_tiny_dla_small': make_residual_attention_92_32input_gelu_tiny_dla_small(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_tiny_dla_base': make_residual_attention_92_32input_gelu_tiny_dla_base(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_tiny_dla_large': make_residual_attention_92_32input_gelu_tiny_dla_large(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_tiny_dla_wide': make_residual_attention_92_32input_gelu_tiny_dla_wide(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_tiny_dla_deep': make_residual_attention_92_32input_gelu_tiny_dla_deep(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_ln': DeepBaselineNetBN3Residual15LN(init_weights=init_weights),
         'deep_baseline3_bn_residual_bottleneck': DeepBaselineNetBN3ResidualBottleneck(init_weights=init_weights),
         'deep_baseline3_bn_residual_convnext_stride': DeepBaselineNetBN3ResidualConvNeXt(init_weights=init_weights),
