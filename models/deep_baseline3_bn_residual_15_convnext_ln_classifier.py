@@ -104,7 +104,7 @@ class DeepBaselineNetBN3Residual15ConvNeXtLNClassifier(nn.Module):
         
         # ConvNeXt Blocks - 각 stage를 3, 3, 9, 3으로 구성 (총 15개)
         # Depthwise convolution 커널 크기: 3x3
-        kernel_size = 3
+        kernel_size = 7
         
         self.stage1 = _make_layer(64, 64, num_blocks=3, stride=1, kernel_size=kernel_size)
         # 32x32 -> 32x32
