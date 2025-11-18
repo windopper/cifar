@@ -48,6 +48,7 @@ from utils.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
 from models.deep_baseline3_bn_residual_15_convnext import DeepBaselineNetBN3Residual15ConvNeXt
+from models.deep_baseline3_bn_residual_15_convnext_ln_classifier import DeepBaselineNetBN3Residual15ConvNeXtLNClassifier
 from models.deep_baseline3_bn_residual_15_attention import (
     DeepBaselineNetBN3Residual15Attention,
     make_deep_baseline3_bn_residual_15_attention_tiny,
@@ -146,6 +147,7 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline3_bn_residual': DeepBaselineNetBN3Residual(init_weights=init_weights),
         'deep_baseline3_bn_residual_15': DeepBaselineNetBN3Residual15(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_convnext': DeepBaselineNetBN3Residual15ConvNeXt(init_weights=init_weights),
+        'deep_baseline3_bn_residual_15_convnext_ln_classifier': DeepBaselineNetBN3Residual15ConvNeXtLNClassifier(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_attention': DeepBaselineNetBN3Residual15Attention(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_attention_tiny': make_deep_baseline3_bn_residual_15_attention_tiny(init_weights=init_weights),
         'residual_attention_92_32input': ResidualAttentionModel_92_32input(init_weights=init_weights),
@@ -339,6 +341,7 @@ def parse_args():
                                  'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual',
                                  'deep_baseline3_bn_residual_15',
                                  'deep_baseline3_bn_residual_15_convnext',
+                                 'deep_baseline3_bn_residual_15_convnext_ln_classifier',
                                  'deep_baseline3_bn_residual_15_ln',
                                  'deep_baseline3_bn_residual_15_attention', 'deep_baseline3_bn_residual_15_attention_tiny',
                                  'residual_attention_92_32input', 'residual_attention_92_32input_tiny',

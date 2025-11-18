@@ -196,7 +196,7 @@ Weight Initialization: ✅
 Augmentation: ✅
 AutoAugment: ✅
 
-`python cifar/main.py --optimizer adam --epochs 100 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --scheduler-warmup-epochs 10 --net baseline_bn`
+`python cifar/main.py --optimizer adam --epochs 100 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --net deep_baseline3_bn_residual_15_convnext`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
@@ -215,6 +215,7 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_convnext_stride | -- | -- | 10.8 M |
 | deep_baseline3_bn_residual_15 | -- | **94.84** | 13.5 M |
 | deep_baseline3_bn_residual_15_convnext | -- | -- | 11.0 M |
+| deep_baseline3_bn_residual_15_convnext_in_classifier | -- | 11.0 M | 
 | deep_baseline3_bn_residual_15_ln | -- | 92.40 | 13.5 M |
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
