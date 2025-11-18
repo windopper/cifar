@@ -180,7 +180,7 @@ class DeepBaselineNetBN3Residual18(nn.Module):
         self.stage4 = _make_layer(256, 512, num_blocks=3, stride=2)
 
         self.classifier = nn.Sequential(
-            nn.Linear(1024, 10),
+            nn.Linear(512, 10),
         )
 
         if init_weights:
