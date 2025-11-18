@@ -75,6 +75,10 @@ from models.residual_attention_92_32input_gelu import (
     ResidualAttentionModel_92_32input_GELU_Tiny,
     make_residual_attention_92_32input_gelu_tiny,
 )
+from models.residual_attention_92_32input_gelu_medium import (
+    ResidualAttentionModel_92_32input_GELU_Medium,
+    make_residual_attention_92_32input_gelu_medium,
+)
 from models.residual_attention_92_32input_gelu_tiny_dla import (
     ResidualAttentionModel_92_32input_GELU_Tiny_DLA,
     make_residual_attention_92_32input_gelu_tiny_dla,
@@ -173,6 +177,7 @@ def _get_nets_dict(init_weights: bool = False):
         'residual_attention_92_32input_se_tiny': make_residual_attention_92_32input_se_tiny(init_weights=init_weights),
         'residual_attention_92_32input_gelu': ResidualAttentionModel_92_32input_GELU(init_weights=init_weights),
         'residual_attention_92_32input_gelu_tiny': make_residual_attention_92_32input_gelu_tiny(init_weights=init_weights),
+        'residual_attention_92_32input_gelu_medium': make_residual_attention_92_32input_gelu_medium(init_weights=init_weights),
         'residual_attention_92_32input_gelu_tiny_dla': make_residual_attention_92_32input_gelu_tiny_dla(init_weights=init_weights),
         'residual_attention_92_32input_gelu_tiny_dla_tiny': make_residual_attention_92_32input_gelu_tiny_dla_tiny(init_weights=init_weights),
         'residual_attention_92_32input_gelu_tiny_dla_small': make_residual_attention_92_32input_gelu_tiny_dla_small(init_weights=init_weights),

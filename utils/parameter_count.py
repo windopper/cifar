@@ -50,6 +50,10 @@ from models.residual_attention_92_32input_gelu import (
     ResidualAttentionModel_92_32input_GELU_Tiny,
     make_residual_attention_92_32input_gelu_tiny,
 )
+from models.residual_attention_92_32input_gelu_medium import (
+    ResidualAttentionModel_92_32input_GELU_Medium,
+    make_residual_attention_92_32input_gelu_medium,
+)
 from models.residual_attention_92_32input_gelu_tiny_dla import (
     ResidualAttentionModel_92_32input_GELU_Tiny_DLA,
     make_residual_attention_92_32input_gelu_tiny_dla,
@@ -223,6 +227,9 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     
     model_residual_attention_92_32input_gelu_tiny = make_residual_attention_92_32input_gelu_tiny(init_weights=init_weights)
     results['residual_attention_92_32input_gelu_tiny'] = count_parameters(model_residual_attention_92_32input_gelu_tiny)
+    
+    model_residual_attention_92_32input_gelu_medium = make_residual_attention_92_32input_gelu_medium(init_weights=init_weights)
+    results['residual_attention_92_32input_gelu_medium'] = count_parameters(model_residual_attention_92_32input_gelu_medium)
     
     model_residual_attention_92_32input_gelu_tiny_dla = make_residual_attention_92_32input_gelu_tiny_dla(init_weights=init_weights)
     results['residual_attention_92_32input_gelu_tiny_dla'] = count_parameters(model_residual_attention_92_32input_gelu_tiny_dla)

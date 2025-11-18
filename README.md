@@ -214,7 +214,7 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_bottleneck | -- | 89.69 | 10.3 M |
 | deep_baseline3_bn_residual_convnext_stride | -- | -- | 10.8 M |
 | deep_baseline3_bn_residual_15 | -- | **94.84** | 13.5 M |
-| deep_baseline3_bn_residual_18 | -- | -- | 24.5 M |
+| deep_baseline3_bn_residual_18 | -- | **95.08** | 24.5 M |
 | deep_baseline3_bn_residual_15 | AdamW | 94.39 | 13.5 M |
 | deep_baseline3_bn_residual_15_convnext | -- | 83.76 | 11.0 M |
 | deep_baseline3_bn_residual_15_convnext | AdamW, Weight Decay 5e-5 | 92.82 | 11.0 M | 
@@ -224,6 +224,7 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_15_ln | -- | 92.40 | 13.5 M |
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
+| residual_attention_92_32input_gelu_medium | -- | -- | 25.5 M |
 | residual_attention_92_32input | Epoch 200 | -- | 160.9 M |
 | residual_attention_92_32input_gelu_tiny | -- | **95.47** | 14.5 M |
 | residual_attention_92_32input_gelu_tiny | AdamW | 94.99 | 14.5 M |
