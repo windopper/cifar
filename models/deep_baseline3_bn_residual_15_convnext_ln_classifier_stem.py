@@ -132,11 +132,11 @@ class DeepBaselineNetBN3Residual15ConvNeXtLNClassifierStem(nn.Module):
         
         self.stage1 = _make_layer(64, 64, num_blocks=3, stride=1, kernel_size=kernel_size)
         # spatial_size_after_stem x spatial_size_after_stem -> spatial_size_after_stem x spatial_size_after_stem
-        self.stage2 = _make_layer(64, 128, num_blocks=3, stride=2, kernel_size=kernel_size)
+        self.stage2 = _make_layer(64, 128, num_blocks=3, stride=1, kernel_size=kernel_size)
         # spatial_size_after_stem x spatial_size_after_stem -> (spatial_size_after_stem//2) x (spatial_size_after_stem//2)
-        self.stage3 = _make_layer(128, 256, num_blocks=9, stride=2, kernel_size=kernel_size)
+        self.stage3 = _make_layer(128, 256, num_blocks=9, stride=1, kernel_size=kernel_size)
         # (spatial_size_after_stem//2) x (spatial_size_after_stem//2) -> (spatial_size_after_stem//4) x (spatial_size_after_stem//4)
-        self.stage4 = _make_layer(256, 512, num_blocks=3, stride=2, kernel_size=kernel_size)
+        self.stage4 = _make_layer(256, 512, num_blocks=3, stride=1, kernel_size=kernel_size)
         # (spatial_size_after_stem//4) x (spatial_size_after_stem//4) -> (spatial_size_after_stem//8) x (spatial_size_after_stem//8)
         
         # Classifier: AdaptiveAvgPool2d(1) -> Flatten -> LayerNorm -> Linear
