@@ -221,13 +221,16 @@ class ResidualAttentionModel_92_32input_GELU_Tiny_DLA(nn.Module):
             level = dla_levels[i]
             stride = dla_strides[i]
             
-            # Attention module 생성
+            # DLA Tree 출력 후의 실제 크기 계산 (stride 적용 후)
+            output_size_after_stride = current_size // stride if stride > 1 else current_size
+            
+            # Attention module 생성 (DLA Tree 출력 후의 실제 크기 사용)
             attention_module = None
             if use_attention[1 + i]:
-                if current_size == 32 or current_size == 16:
-                    # Stage2 Attention (16x16)
+                if output_size_after_stride == 32 or output_size_after_stride == 16:
+                    # Stage2 Attention (16x16 또는 32x32)
                     attention_module = AttentionModuleStage2CIFAR_GELU(
-                        out_channels, out_channels, size=(current_size, current_size)
+                        out_channels, out_channels, size=(output_size_after_stride, output_size_after_stride)
                     )
                 else:
                     # Stage3 Attention (8x8 이하)
@@ -247,8 +250,7 @@ class ResidualAttentionModel_92_32input_GELU_Tiny_DLA(nn.Module):
             
             # 다음 stage를 위한 채널 및 크기 업데이트
             current_channels = out_channels
-            if stride > 1:
-                current_size = current_size // stride
+            current_size = output_size_after_stride
 
         # Global pooling 및 분류기
         final_channels = dla_stage_channels[-1]
