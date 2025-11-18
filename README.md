@@ -216,7 +216,7 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_15 | -- | **94.84** | 13.5 M |
 | deep_baseline3_bn_residual_15_convnext | -- | 83.76 | 11.0 M |
 | deep_baseline3_bn_residual_15_convnext_ln_classifier | -- | 11.0 M | 
-| deep_baseline3_bn_residual_15_convnext_ln_classifier_stem | 11.2 M | 
+| deep_baseline3_bn_residual_15_convnext_ln_classifier_stem | -- | 11.2 M | 
 | deep_baseline3_bn_residual_15_ln | -- | 92.40 | 13.5 M |
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |

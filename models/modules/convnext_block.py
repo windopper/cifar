@@ -50,7 +50,7 @@ class ConvNeXtBlock(nn.Module):
         kernel_size: Depthwise convolution의 커널 크기 (기본값=7)
         mlp_ratio: MLP 확장 비율 (기본값=4, hidden_channels = channels * mlp_ratio)
         drop_prob: Dropout 확률 (기본값=0.0)
-        layer_scale_init_value: Layer scale 초기화 값 (기본값=1e-6, 0이면 사용 안 함)
+        layer_scale_init_value: Layer scale 초기화 값 (기본값=0.0, 0이면 사용 안 함)
     """
 
     def __init__(
@@ -60,7 +60,7 @@ class ConvNeXtBlock(nn.Module):
         kernel_size: int = 7,
         mlp_ratio: int = 4,
         drop_prob: float = 0.0,
-        layer_scale_init_value: float = 1e-6,
+        layer_scale_init_value: float = 0.0,
     ):
         super().__init__()
         padding = (kernel_size - 1) // 2
@@ -92,11 +92,13 @@ class ConvNeXtBlock(nn.Module):
         self.dropout = nn.Dropout(drop_prob) if drop_prob > 0 else nn.Identity()
 
         # Layer Scale (선택적)
-        if layer_scale_init_value > 0:
-            gamma = layer_scale_init_value * torch.ones(channels)
+        # Residual 클래스 패턴 참고: gamma를 0으로 초기화하여 초기에는 identity mapping에 가깝게 시작
+        if layer_scale_init_value != 0:
+            gamma = torch.full((channels,), layer_scale_init_value)
             self.gamma = nn.Parameter(gamma.view(1, -1, 1, 1))
         else:
-            self.gamma = None
+            # 0으로 초기화: 학습 중에 gamma가 증가하면서 residual path의 기여도 증가
+            self.gamma = nn.Parameter(torch.zeros(1, channels, 1, 1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -129,8 +131,8 @@ class ConvNeXtBlock(nn.Module):
         out = self.dropout(out)
 
         # Layer Scale (선택적)
-        if self.gamma is not None:
-            out = self.gamma * out
+        # gamma가 None이 아닌 경우 항상 적용 (초기값이 0이어도 학습 가능)
+        out = self.gamma * out
 
         # Residual connection
         return residual + out
@@ -150,7 +152,7 @@ class StridedConvNeXtBlock(nn.Module):
         kernel_size: Depthwise convolution의 커널 크기 (기본값=7)
         mlp_ratio: MLP 확장 비율 (기본값=4)
         drop_prob: Dropout 확률 (기본값=0.0)
-        layer_scale_init_value: Layer scale 초기화 값 (기본값=1e-6)
+        layer_scale_init_value: Layer scale 초기화 값 (기본값=0.0)
     """
     
     def __init__(
@@ -162,7 +164,7 @@ class StridedConvNeXtBlock(nn.Module):
         kernel_size: int = 7,
         mlp_ratio: int = 4,
         drop_prob: float = 0.0,
-        layer_scale_init_value: float = 1e-6,
+        layer_scale_init_value: float = 0.0,
     ):
         super().__init__()
         padding = (kernel_size - 1) // 2
@@ -195,11 +197,13 @@ class StridedConvNeXtBlock(nn.Module):
         self.dropout = nn.Dropout(drop_prob) if drop_prob > 0 else nn.Identity()
         
         # Layer Scale (선택적)
-        if layer_scale_init_value > 0:
-            gamma = layer_scale_init_value * torch.ones(out_channels)
+        # Residual 클래스 패턴 참고: gamma를 0으로 초기화하여 초기에는 identity mapping에 가깝게 시작
+        if layer_scale_init_value != 0:
+            gamma = torch.full((out_channels,), layer_scale_init_value)
             self.gamma = nn.Parameter(gamma.view(1, -1, 1, 1))
         else:
-            self.gamma = None
+            # 0으로 초기화: 학습 중에 gamma가 증가하면서 residual path의 기여도 증가
+            self.gamma = nn.Parameter(torch.zeros(1, out_channels, 1, 1))
         
         # Shortcut connection
         # 채널 수가 다르거나 stride가 1이 아닌 경우 projection 필요
@@ -241,8 +245,8 @@ class StridedConvNeXtBlock(nn.Module):
         out = self.dropout(out)
         
         # Layer Scale (선택적)
-        if self.gamma is not None:
-            out = self.gamma * out
+        # gamma가 None이 아닌 경우 항상 적용 (초기값이 0이어도 학습 가능)
+        out = self.gamma * out
         
         # Residual connection
         return residual + out
