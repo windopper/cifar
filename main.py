@@ -48,6 +48,7 @@ from utils.supcon import SupConLoss
 from utils.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
+from models.deep_baseline3_bn_residual_18 import DeepBaselineNetBN3Residual18
 from models.deep_baseline3_bn_residual_15_convnext import DeepBaselineNetBN3Residual15ConvNeXt
 from models.deep_baseline3_bn_residual_15_convnext_ln_classifier import DeepBaselineNetBN3Residual15ConvNeXtLNClassifier
 from models.deep_baseline3_bn_residual_15_convnext_ln_classifier_stem import DeepBaselineNetBN3Residual15ConvNeXtLNClassifierStem
@@ -158,6 +159,7 @@ def _get_nets_dict(init_weights: bool = False):
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline3_bn_residual': DeepBaselineNetBN3Residual(init_weights=init_weights),
         'deep_baseline3_bn_residual_15': DeepBaselineNetBN3Residual15(init_weights=init_weights),
+        'deep_baseline3_bn_residual_18': DeepBaselineNetBN3Residual18(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_convnext': DeepBaselineNetBN3Residual15ConvNeXt(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_convnext_ln_classifier': DeepBaselineNetBN3Residual15ConvNeXtLNClassifier(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_convnext_ln_classifier_stem': DeepBaselineNetBN3Residual15ConvNeXtLNClassifierStem(init_weights=init_weights),

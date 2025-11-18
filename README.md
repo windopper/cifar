@@ -214,6 +214,7 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_bottleneck | -- | 89.69 | 10.3 M |
 | deep_baseline3_bn_residual_convnext_stride | -- | -- | 10.8 M |
 | deep_baseline3_bn_residual_15 | -- | **94.84** | 13.5 M |
+| deep_baseline3_bn_residual_18 | -- | -- | 24.5 M |
 | deep_baseline3_bn_residual_15 | AdamW | 94.39 | 13.5 M |
 | deep_baseline3_bn_residual_15_convnext | -- | 83.76 | 11.0 M |
 | deep_baseline3_bn_residual_15_convnext | AdamW, Weight Decay 5e-5 | 92.82 | 11.0 M | 
@@ -228,7 +229,8 @@ AutoAugment: ✅
 | residual_attention_92_32input_gelu_tiny | AdamW | 94.99 | 14.5 M |
 | residual_attention_92_32input_se_tiny | -- | 94.96 | 14.6 M |
 | residual_attention_92_32input_preact_tiny | -- | 94.82 | 14.5 M |
-| residual_attention_92_32input_gelu_tiny_dla_tiny | -- | -- | 12.6 M |
+| residual_attention_92_32input_gelu_tiny_dla_tiny | -- | 94.05 | 12.6 M |
+| residual_attention_92_32input_gelu_tiny_dla | Batch Size 32 | -- | 55.1 M |
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
 | deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |
 | deep_baseline3_bn_residual_4x | Epoch 800 TMax 200 | 95.46 | 41.6 M |

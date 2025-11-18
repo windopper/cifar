@@ -22,6 +22,7 @@ from models.deep_baseline2_bn_residual_grn import DeepBaselineNetBN2ResidualGRN
 from models.deep_baseline3_bn import DeepBaselineNetBN3
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
+from models.deep_baseline3_bn_residual_18 import DeepBaselineNetBN3Residual18
 from models.deep_baseline3_bn_residual_15_convnext import DeepBaselineNetBN3Residual15ConvNeXt
 from models.deep_baseline3_bn_residual_15_convnext_ln_classifier import DeepBaselineNetBN3Residual15ConvNeXtLNClassifier
 from models.deep_baseline3_bn_residual_15_convnext_ln_classifier_stem import DeepBaselineNetBN3Residual15ConvNeXtLNClassifierStem
@@ -167,6 +168,10 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     # DeepBaselineNetBN3Residual15
     model_bn3_residual_15 = DeepBaselineNetBN3Residual15(init_weights=init_weights)
     results['deep_baseline3_bn_residual_15'] = count_parameters(model_bn3_residual_15)
+    
+    # DeepBaselineNetBN3Residual20
+    model_bn3_residual_18 = DeepBaselineNetBN3Residual18(init_weights=init_weights)
+    results['deep_baseline3_bn_residual_18'] = count_parameters(model_bn3_residual_18)
     
     # DeepBaselineNetBN3Residual15ConvNeXt
     model_bn3_residual_15_convnext = DeepBaselineNetBN3Residual15ConvNeXt(init_weights=init_weights)
