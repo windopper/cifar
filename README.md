@@ -196,7 +196,7 @@ Weight Initialization: ✅
 Augmentation: ✅
 AutoAugment: ✅
 
-`python cifar/main.py --optimizer adam --epochs 100 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --net deep_baseline3_bn_residual_15_convnext`
+`python cifar/main.py --optimizer adamw --epochs 100 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --net deep_baseline3_bn_residual_bottleneck`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
@@ -214,14 +214,18 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_bottleneck | -- | 89.69 | 10.3 M |
 | deep_baseline3_bn_residual_convnext_stride | -- | -- | 10.8 M |
 | deep_baseline3_bn_residual_15 | -- | **94.84** | 13.5 M |
+| deep_baseline3_bn_residual_15 | AdamW | 94.39 | 13.5 M |
 | deep_baseline3_bn_residual_15_convnext | -- | 83.76 | 11.0 M |
-| deep_baseline3_bn_residual_15_convnext_ln_classifier | -- | 11.0 M | 
-| deep_baseline3_bn_residual_15_convnext_ln_classifier_stem | -- | 11.2 M | 
+| deep_baseline3_bn_residual_15_convnext | AdamW, Weight Decay 5e-5 | 92.82 | 11.0 M | 
+| deep_baseline3_bn_residual_15_convnext | AdamW, Weight Decay 5e-3 | 93.19 | 11.0 M |
+| deep_baseline3_bn_residual_15_convnext_ln_classifier | AdamW | 91.29 | 11.0 M |
+| deep_baseline3_bn_residual_15_convnext_ln_classifier_stem | AdamW | -- | 12.4 M |
 | deep_baseline3_bn_residual_15_ln | -- | 92.40 | 13.5 M |
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
 | residual_attention_92_32input | Epoch 200 | -- | 160.9 M |
 | residual_attention_92_32input_gelu_tiny | -- | **95.47** | 14.5 M |
+| residual_attention_92_32input_gelu_tiny | AdamW | 94.99 | 14.5 M |
 | residual_attention_92_32input_se_tiny | -- | 94.96 | 14.6 M |
 | residual_attention_92_32input_preact_tiny | -- | 94.82 | 14.5 M |
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
@@ -234,6 +238,7 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_dla | -- | 94.96 | 11 M |
 | deep_baseline4_bn_residual | -- | 94.73 | 11.1 M |
 | DLA | -- | 94.9 | 16.2M |
+| rdnet_tiny | -- | -- | 22.8 M |
 
 ![image](./comparison/final_comparison_2.png)
 

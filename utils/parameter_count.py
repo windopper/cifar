@@ -70,6 +70,7 @@ from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, ResNeXt29_32x4d
 from models.dla import DLA
 from models.convnext_step3_full import ConvNeXtCIFAR
+from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
 
 
 def count_parameters(model):
@@ -100,7 +101,7 @@ def count_parameters_all(model):
 
 def get_deep_baseline2_parameter_counts(init_weights=False):
     """
-    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA 및 ConvNeXt 모델의 파라미터 개수를 계산합니다.
+    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA, ConvNeXt 및 RDNet 모델의 파라미터 개수를 계산합니다.
     
     Args:
         init_weights: 가중치 초기화 여부 (기본값: False)
@@ -295,12 +296,25 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     model_convnext = ConvNeXtCIFAR(init_weights=init_weights)
     results['convnext_step3_full'] = count_parameters(model_convnext)
     
+    # RDNet models
+    model_rdnet_tiny = rdnet_tiny(pretrained=False, num_classes=10)
+    results['rdnet_tiny'] = count_parameters(model_rdnet_tiny)
+    
+    model_rdnet_small = rdnet_small(pretrained=False, num_classes=10)
+    results['rdnet_small'] = count_parameters(model_rdnet_small)
+    
+    model_rdnet_base = rdnet_base(pretrained=False, num_classes=10)
+    results['rdnet_base'] = count_parameters(model_rdnet_base)
+    
+    model_rdnet_large = rdnet_large(pretrained=False, num_classes=10)
+    results['rdnet_large'] = count_parameters(model_rdnet_large)
+    
     return results
 
 
 def print_deep_baseline2_parameter_counts(init_weights=False):
     """
-    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA 및 ConvNeXt 모델의 파라미터 개수를 출력합니다.
+    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA, ConvNeXt 및 RDNet 모델의 파라미터 개수를 출력합니다.
     
     Args:
         init_weights: 가중치 초기화 여부 (기본값: False)
@@ -308,7 +322,7 @@ def print_deep_baseline2_parameter_counts(init_weights=False):
     results = get_deep_baseline2_parameter_counts(init_weights=init_weights)
     
     print("=" * 70)
-    print("deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA 및 ConvNeXt 모델 파라미터 개수")
+    print("deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA, ConvNeXt 및 RDNet 모델 파라미터 개수")
     print("=" * 70)
     
     # 파라미터 개수로 정렬

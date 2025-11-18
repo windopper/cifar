@@ -38,6 +38,7 @@ from models.densenet import DenseNet121
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.dla import DLA
 from models.resnext import ResNeXt29_4x64d
+from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
 from utils.cutmix import CutMixCollator, CutMixCriterion
 from utils.mixup import MixupCollator, MixupCriterion
 from utils.cutout import Cutout
@@ -127,9 +128,9 @@ def get_criterion(name: str, label_smoothing: float = 0.0):
     return criterions[name.lower()]
 
 
-def get_net(name: str, init_weights: bool = False):
-    """Network 팩토리 함수"""
-    nets = {
+def _get_nets_dict(init_weights: bool = False):
+    """네트워크 딕셔너리 생성 헬퍼 함수"""
+    return {
         'baseline': BaselineNet(),
         'baseline_bn': BaselineNetBN(init_weights=init_weights),
         'deep_baseline': DeepBaselineNet(init_weights=init_weights),
@@ -198,7 +199,22 @@ def get_net(name: str, init_weights: bool = False):
         'mxresnet56': MXResNet56(init_weights=init_weights),
         'dla': DLA(),
         'resnext29_4x64d': ResNeXt29_4x64d(),
+        'rdnet_tiny': rdnet_tiny(pretrained=False, num_classes=10),
+        'rdnet_small': rdnet_small(pretrained=False, num_classes=10),
+        'rdnet_base': rdnet_base(pretrained=False, num_classes=10),
+        'rdnet_large': rdnet_large(pretrained=False, num_classes=10),
     }
+
+
+def get_available_nets():
+    """사용 가능한 네트워크 이름 목록 반환"""
+    nets_dict = _get_nets_dict(init_weights=False)
+    return list(nets_dict.keys())
+
+
+def get_net(name: str, init_weights: bool = False):
+    """Network 팩토리 함수"""
+    nets = _get_nets_dict(init_weights=init_weights)
     if name.lower() not in nets:
         raise ValueError(
             f"Unknown net: {name}. Available: {list(nets.keys())}")
@@ -335,40 +351,7 @@ def parse_args():
                         choices=['crossentropy', 'mse', 'nll', 'supcon_ce'],
                         help='손실 함수 (default: crossentropy)')
     parser.add_argument('--net', type=str, default='baseline',
-                        choices=['baseline', 'baseline_bn', 'deep_baseline', 'deep_baseline_silu',
-                                 'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
-                                 'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
-                                 'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
-                                 'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
-                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual',
-                                 'deep_baseline3_bn_residual_15',
-                                 'deep_baseline3_bn_residual_15_convnext',
-                                 'deep_baseline3_bn_residual_15_convnext_ln_classifier',
-                                 'deep_baseline3_bn_residual_15_convnext_ln_classifier_stem',
-                                 'deep_baseline3_bn_residual_15_ln',
-                                 'deep_baseline3_bn_residual_15_attention', 'deep_baseline3_bn_residual_15_attention_tiny',
-                                 'residual_attention_92_32input', 'residual_attention_92_32input_tiny',
-                                 'residual_attention_92_32input_preact', 'residual_attention_92_32input_preact_tiny',
-                                 'residual_attention_92_32input_se', 'residual_attention_92_32input_se_tiny',
-                                 'residual_attention_92_32input_gelu', 'residual_attention_92_32input_gelu_tiny',
-                                 'deep_baseline3_bn_residual_bottleneck',
-                                 'deep_baseline3_bn_residual_convnext_stride',
-                                 'deep_baseline3_bn_residual_convnext_stride_k3',
-                                 'deep_baseline3_bn_residual_preact', 'deep_baseline3_bn_residual_wide', 'deep_baseline3_bn_residual_4x', 'deep_baseline3_bn_residual_deep',
-                                 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu',
-                                 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_dla_tree', 'deep_baseline3_bn_residual_group',
-                                 'deep_baseline3_bn_residual_mish', 'deep_baseline3_bn_residual_gap_gmp',
-                                 'deep_baseline3_bn_residual_gap_gmp_s3_f8_16_32_b2',
-                                 'deep_baseline3_bn_residual_gap_gmp_s3_f16_32_64_b3',
-                                 'deep_baseline3_bn_residual_gap_gmp_s3_f32_64_128_b5',
-                                 'deep_baseline3_bn_residual_gap_gmp_s3_f64_128_256_b5',
-                                 'deep_baseline3_bn_residual_gap_gmp_s4_f64_128_256_512_b5',
-                                 'deep_baseline4_bn_residual',
-                                 'deep_baseline3_bn_residual_shakedrop',
-                                 'deep_baseline4_bn_residual_shakedrop',
-                                 'convnext_patchify', 'convnext_local', 'convnext_cifar', 'convnext_tiny',
-                                 'mxresnet20', 'mxresnet32', 'mxresnet44', 'mxresnet56', 'dla', 'resnext29_4x64d'],
-
+                        choices=get_available_nets(),
                         help='네트워크 모델 (default: baseline)')
     parser.add_argument('--optimizer', type=str, default='sgd',
                         choices=['sgd', 'adam', 'adamw',
