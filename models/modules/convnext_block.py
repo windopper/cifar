@@ -93,12 +93,7 @@ class ConvNeXtBlock(nn.Module):
 
         # Layer Scale (선택적)
         # Residual 클래스 패턴 참고: gamma를 0으로 초기화하여 초기에는 identity mapping에 가깝게 시작
-        if layer_scale_init_value != 0:
-            gamma = torch.full((channels,), layer_scale_init_value)
-            self.gamma = nn.Parameter(gamma.view(1, -1, 1, 1))
-        else:
-            # 0으로 초기화: 학습 중에 gamma가 증가하면서 residual path의 기여도 증가
-            self.gamma = nn.Parameter(torch.zeros(1, channels, 1, 1))
+        self.gamma = nn.Parameter(torch.zeros(1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -198,12 +193,7 @@ class StridedConvNeXtBlock(nn.Module):
         
         # Layer Scale (선택적)
         # Residual 클래스 패턴 참고: gamma를 0으로 초기화하여 초기에는 identity mapping에 가깝게 시작
-        if layer_scale_init_value != 0:
-            gamma = torch.full((out_channels,), layer_scale_init_value)
-            self.gamma = nn.Parameter(gamma.view(1, -1, 1, 1))
-        else:
-            # 0으로 초기화: 학습 중에 gamma가 증가하면서 residual path의 기여도 증가
-            self.gamma = nn.Parameter(torch.zeros(1, out_channels, 1, 1))
+        self.gamma = nn.Parameter(torch.zeros(1))
         
         # Shortcut connection
         # 채널 수가 다르거나 stride가 1이 아닌 경우 projection 필요
