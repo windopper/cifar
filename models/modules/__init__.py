@@ -21,6 +21,7 @@ from .attention_modules_gelu import (
     AttentionModuleStage3CIFAR_GELU,
 )
 from .se_layer import SELayer
+from .convnext_block import ConvNeXtBlock, LayerNormChannels, StridedConvNeXtBlock
 
 __all__ = [
     "ResidualBlock",
@@ -37,5 +38,8 @@ __all__ = [
     "AttentionModuleStage2CIFAR_GELU",
     "AttentionModuleStage3CIFAR_GELU",
     "SELayer",
+    "ConvNeXtBlock",
+    "LayerNormChannels",
+    "StridedConvNeXtBlock",
 ]
 

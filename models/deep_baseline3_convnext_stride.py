@@ -71,7 +71,6 @@ class ConvNeXtResidualBlock(nn.Module):
 
         return residual + out
 
-
 class StridedDownsample(nn.Sequential):
     """LayerNorm + stride 2 conv로 해상도를 절반으로 축소."""
 

@@ -74,6 +74,15 @@ def get_model_name_parts(args):
         if args.mixup_start_epoch_ratio > 0.0:
             model_name_parts.append(f"mixupstart{args.mixup_start_epoch_ratio}")
     
+    if args.cutout and args.augment:
+        model_name_parts.append("cutout")
+        if args.cutout_length != 16:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"cutoutlen{args.cutout_length}")
+        if args.cutout_n_holes != 1:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"cutoutn{args.cutout_n_holes}")
+        if args.cutout_prob != 0.5:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"cutoutprob{args.cutout_prob}")
+    
     if args.w_init:
         model_name_parts.append("winit")
     

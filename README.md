@@ -42,12 +42,21 @@ Augmentation: RandomCrop(32, padding=4), RandomHorizontalFlip, RandomRotation(15
 | Augmentation + CutMix | ✅ | ✅ | ❌ | ❌ | 90.26 |
 | Augmentation + CutMix (75% 에포크 시작) | ✅ | ✅ | ❌ | ❌ | 89.49 |
 | Augmentation + CutMix (75% 에포크 시작) + OneCycleLR | ✅ | ✅ | ❌ | ❌ | 90.97 |
-| Augmentation + Mixup | ✅ | ❌ | ✅ | ❌ | 89.85 |
+| Augmentation + Mixup | ✅ | ❌ | ✅ | ❌ | 89.85 | 
 | Augmentation + AutoAugment | ✅ | ❌ | ❌ | ✅ | **91.17** |
+| Augmentation + Cutout | ✅ | ❌ | ❌ | ❌ | 90.11  |
+| Augmentation + Cutout + AugAugment | ✅ | ❌ | ❌ | ❌ | 90.52  |
+| Augmentation + Cutout (CutLength 8) + AutoAugment  | ✅ | ❌ | ❌ | ✅ | 89.86 |
 | Augmentation + CutMix + AutoAugment | ✅ | ✅ | ❌ | ✅ | 90.88 |
 | Augmentation + Mixup + AutoAugment | ✅ | ❌ | ✅ | ✅ | 90.43 |
 
 `python cifar/main.py --optimizer adam --epochs 100 --batch-size 128 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline_bn --w-init --augment --cutmix --cutmix-start-epoch-ratio 0.75`
+
+`uv run main.py --optimizer adam --epochs 100 --batch-size 128 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline_bn --w-init --augment --cutout`
+
+`uv run main.py --optimizer adam --epochs 100 --batch-size 128 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline_bn --w-init --augment --cutout --cutout-length 8`
+
+`uv run main.py --optimizer adam --epochs 100 --batch-size 128 --lr 3e-4 --scheduler cosineannealinglr --net deep_baseline_bn --w-init --augment --cutout --autoaugment`
 
 ![image](./comparison/augmentation_comparison_100epoch.png)
 
@@ -205,9 +214,11 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_bottleneck | -- | 89.69 | 10.3 M |
 | deep_baseline3_bn_residual_convnext_stride | -- | -- | 10.8 M |
 | deep_baseline3_bn_residual_15 | -- | **94.84** | 13.5 M |
+| deep_baseline3_bn_residual_15_convnext | -- | -- | 11.0 M |
 | deep_baseline3_bn_residual_15_ln | -- | 92.40 | 13.5 M |
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
+| residual_attention_92_32input | Epoch 200 | -- | 160.9 M |
 | residual_attention_92_32input_gelu_tiny | -- | **95.47** | 14.5 M |
 | residual_attention_92_32input_se_tiny | -- | 94.96 | 14.6 M |
 | residual_attention_92_32input_preact_tiny | -- | 94.82 | 14.5 M |

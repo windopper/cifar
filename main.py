@@ -40,12 +40,14 @@ from models.dla import DLA
 from models.resnext import ResNeXt29_4x64d
 from utils.cutmix import CutMixCollator, CutMixCriterion
 from utils.mixup import MixupCollator, MixupCriterion
+from utils.cutout import Cutout
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
 from utils.supcon import SupConLoss
 from utils.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
+from models.deep_baseline3_bn_residual_15_convnext import DeepBaselineNetBN3Residual15ConvNeXt
 from models.deep_baseline3_bn_residual_15_attention import (
     DeepBaselineNetBN3Residual15Attention,
     make_deep_baseline3_bn_residual_15_attention_tiny,
@@ -143,6 +145,7 @@ def get_net(name: str, init_weights: bool = False):
         'deep_baseline3_bn': DeepBaselineNetBN3(init_weights=init_weights),
         'deep_baseline3_bn_residual': DeepBaselineNetBN3Residual(init_weights=init_weights),
         'deep_baseline3_bn_residual_15': DeepBaselineNetBN3Residual15(init_weights=init_weights),
+        'deep_baseline3_bn_residual_15_convnext': DeepBaselineNetBN3Residual15ConvNeXt(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_attention': DeepBaselineNetBN3Residual15Attention(init_weights=init_weights),
         'deep_baseline3_bn_residual_15_attention_tiny': make_deep_baseline3_bn_residual_15_attention_tiny(init_weights=init_weights),
         'residual_attention_92_32input': ResidualAttentionModel_92_32input(init_weights=init_weights),
@@ -335,6 +338,7 @@ def parse_args():
                                  'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
                                  'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual',
                                  'deep_baseline3_bn_residual_15',
+                                 'deep_baseline3_bn_residual_15_convnext',
                                  'deep_baseline3_bn_residual_15_ln',
                                  'deep_baseline3_bn_residual_15_attention', 'deep_baseline3_bn_residual_15_attention_tiny',
                                  'residual_attention_92_32input', 'residual_attention_92_32input_tiny',
@@ -421,6 +425,14 @@ def parse_args():
                         help='Mixup 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
     parser.add_argument('--mixup-start-epoch-ratio', type=float, default=0.0,
                         help='Mixup 시작 에포크 비율 (0.0~1.0, 예: 0.3이면 전체 에포크의 30%% 이후부터 적용, default: 0.0)')
+    parser.add_argument('--cutout', action='store_true',
+                        help='Cutout 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
+    parser.add_argument('--cutout-length', type=int, default=16,
+                        help='Cutout 마스킹 영역의 크기 (픽셀 단위, default: 16)')
+    parser.add_argument('--cutout-n-holes', type=int, default=1,
+                        help='Cutout 마스킹할 영역의 개수 (default: 1)')
+    parser.add_argument('--cutout-prob', type=float, default=0.5,
+                        help='Cutout을 적용할 확률 (0.0~1.0, default: 1.0)')
     parser.add_argument('--calibrate', action='store_true',
                         help='Temperature Scaling 캘리브레이션 수행 (default: False)')
     parser.add_argument('--use-cifar-normalize', action='store_true',
@@ -488,6 +500,15 @@ def main():
 
     # 공통 변환: ToTensor와 Normalize는 항상 적용
     train_transform_list.append(transforms.ToTensor())
+    
+    # Cutout 적용 (--augment가 활성화되어 있을 때만)
+    if args.cutout and args.augment:
+        train_transform_list.append(Cutout(
+            n_holes=args.cutout_n_holes,
+            length=args.cutout_length,
+            prob=args.cutout_prob
+        ))
+    
     train_transform_list.append(
         transforms.Normalize(normalize_mean, normalize_std))
 
@@ -615,6 +636,10 @@ def main():
             'cutmix_start_epoch_ratio': args.cutmix_start_epoch_ratio if args.cutmix and args.augment else None,
             'mixup': args.mixup and args.augment,
             'mixup_start_epoch_ratio': args.mixup_start_epoch_ratio if args.mixup and args.augment else None,
+            'cutout': args.cutout and args.augment,
+            'cutout_length': args.cutout_length if args.cutout and args.augment else None,
+            'cutout_n_holes': args.cutout_n_holes if args.cutout and args.augment else None,
+            'cutout_prob': args.cutout_prob if args.cutout and args.augment else None,
             'normalize_mean': list(normalize_mean),
             'normalize_std': list(normalize_std),
             'seed': args.seed,
