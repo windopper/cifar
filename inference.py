@@ -1,5 +1,6 @@
 import argparse
 import torch
+import torch.nn.functional as F
 import json
 import os
 from torchvision.transforms import transforms
@@ -30,8 +31,8 @@ def parse_args():
                         help='Temperature 파일 경로 (지정하지 않으면 모델 경로에서 자동 검색)')
     parser.add_argument('--no-calibrate', action='store_true',
                         help='캘리브레이션 사용 안 함 (temperature 파일이 있어도 무시)')
-    parser.add_argument('--tta', type=int, default=0, choices=[0, 2],
-                        help='Test Time Augmentation 활성화 (0: 비활성화, 2: 원본+Horizontal Flip)')
+    parser.add_argument('--tta', type=int, default=0, choices=[0, 2, 3],
+                        help='Test Time Augmentation 활성화 (0: 비활성화, 2: 원본+Horizontal Flip, 3: 원본+Horizontal Flip+확대)')
     parser.add_argument('--ensemble-weights', type=float, nargs='+', default=None,
                         help='Ensemble 가중치 (지정하지 않으면 균등 가중치 사용)')
     return parser.parse_args()
@@ -239,6 +240,23 @@ if __name__ == '__main__':
                     outputs_original = net(images)
                     outputs_flipped = net(torch.flip(images, [3]))  # Horizontal flip (dim=3)
                     outputs = (outputs_original + outputs_flipped) / 2.0
+                elif args.tta == 3:
+                    # TTA: 원본 + Horizontal Flip + 확대 평균
+                    outputs_original = net(images)
+                    outputs_flipped = net(torch.flip(images, [3]))  # Horizontal flip (dim=3)
+                    
+                    # 이미지 약간 확대 (1.1배) 후 center crop
+                    scale_factor = 1.1
+                    h, w = images.shape[2], images.shape[3]
+                    new_h, new_w = int(h * scale_factor), int(w * scale_factor)
+                    images_upscaled = F.interpolate(images, size=(new_h, new_w), mode='bilinear', align_corners=False)
+                    # Center crop
+                    start_h = (new_h - h) // 2
+                    start_w = (new_w - w) // 2
+                    images_cropped = images_upscaled[:, :, start_h:start_h+h, start_w:start_w+w]
+                    outputs_upscaled = net(images_cropped)
+                    
+                    outputs = (outputs_original + outputs_flipped + outputs_upscaled) / 3.0
                 else:
                     outputs = net(images)
                 
@@ -278,7 +296,7 @@ if __name__ == '__main__':
             if temperatures[0] is not None:
                 calibration_status = " (캘리브레이션 적용)"
     
-    tta_status = " (TTA 적용)" if args.tta == 2 else ""
+    tta_status = " (TTA 적용)" if args.tta in [2, 3] else ""
     ensemble_status = f" (Ensemble: {len(nets)} 모델)" if is_ensemble else ""
     
     print(f'Accuracy of the network on the 10000 test images{ensemble_status}{calibration_status}{tta_status}: {100 * correct / total:.2f}%')

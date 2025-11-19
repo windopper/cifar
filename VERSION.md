@@ -1,8 +1,8 @@
 # 모델 버전 변화 내역
 
 이 문서는 `baseline` → `baseline_bn` → `deep_baseline_bn` → `deep_baseline2_bn` →  
-`deep_baseline2_bn_residual` → `deep_baseline3_bn_residual` → `deep_baseline3_bn_residual_15`  
-→ `residual_attention_92_32input`
+`deep_baseline2_bn_residual` → `deep_baseline3_bn_residual` → `deep_baseline3_bn_residual_15` →  
+`wideresnet16_8` → `residual_attention_92_32input`
 로 이어지는 모델 구조 변화 과정을 정리하고, 각 단계에서 어떤 설계 의도와 실험 결과를 통해
 다음 버전을 선택하게 되었는지를 상세히 기록한 문서입니다.
 
@@ -193,81 +193,74 @@
 
 ---
 
-## 7. `deep_baseline3_bn_residual_dla`: Deep Layer Aggregation 도입
+## 7. `deep_baseline3_bn_residual_15`: Residual Block 수를 늘린 딥 베이스라인
 
 - **구조 요약**
-  - `deep_baseline3_bn_residual`의 백본을 유지하되,  
-    **Deep Layer Aggregation(DLA)** 아이디어를 도입해 여러 깊이의 feature를 집계하는 버전.
-  - 백본:
-    - 초기 `Conv-BN-ReLU (3→64)`
-    - `ResBlock 1: 64→64` → feature `f1` (32×32)
-    - `ResBlock 2: 64→128` → `MaxPool` → feature `f2` (16×16)
-    - `ResBlock 3: 128→256` → feature `f3` (16×16)
-    - `ResBlock 4: 256→256` → `MaxPool` → feature `f4` (8×8)
-    - `ResBlock 5: 256→512` → `MaxPool` → feature `f5` (4×4)
-  - **DeepLayerAggregator**
-    - 입력: `[f1, f2, f3, f4, f5]` (채널: `[64, 128, 256, 256, 512]`).
-    - 각 feature를 `1×1 Conv + BN + ReLU`로 **512채널**로 투영.
-    - `AdaptiveAvgPool2d`로 모두 4×4 해상도로 맞춘 뒤,
-      순차적으로 더해가며 최종 집계 feature `f_agg (512×4×4)` 생성.
-  - 분류기:
-    - `deep_baseline3_bn_residual`의 분류기와 동일 (`512×4×4 → 512 → 256 → 10` + Dropout).
+  - `deep_baseline3_bn_residual`를 기반으로, 각 stage의 residual block 수를 **3-3-6-3** 패턴으로 늘린 더 깊은 네트워크.
+  - 초기 `Conv-BN-ReLU (3→64)` 이후,
+    - Stage 1: Residual Block ×3 (64→64, stride=1)
+    - Stage 2: Residual Block ×3 (64→128, 첫 블록 stride=2 + projection shortcut)
+    - Stage 3: Residual Block ×6 (128→256, 첫 블록 stride=2 + projection shortcut)
+    - Stage 4: Residual Block ×3 (256→512, 첫 블록 stride=2 + projection shortcut)
+  - 마지막에는 **Global Average Pooling** 후, 간단한 `Linear(512→10)` 분류기 사용.
 - **설계 의도**
-  1. **다양한 깊이/해상도의 정보 집약**
-     - 기존 모델은 **마지막 stage의 feature만** 사용했기 때문에,
-       얕은 stage의 **로컬/텍스처 정보**가 충분히 활용되지 못하는 한계가 있음.
-     - DLA 아이디어를 도입해,  
-       얕은 layer의 세밀한 정보 + 깊은 layer의 추상적 정보 를 **하나의 feature로 집계**.
-  2. **원본 구조와의 호환성 유지**
-     - 기존 `deep_baseline3_bn_residual`의 block 구성과 MaxPool 위치는 그대로 유지하여,
-       - 파라미터 수와 연산량 증가를 **최소화**하면서도
-       - feature aggregation 방식만 개선하도록 설계.
-     - 분류기 입력 차원도 동일(512×4×4)로 유지하여, 
-       실험 설정/하이퍼파라미터를 그대로 재사용 가능.
-  3. **DLA 논문 아이디어의 단순화 적용**
-     - 원 논문은 훨씬 복잡한 트리 구조의 aggregation을 사용하지만,
-       여기서는 “여러 깊이의 feature를 단일 표현으로 집계한다”는 핵심 아이디어만
-       **CIFAR-10용 커스텀 백본에 맞게 단순화**하여 적용.
-- **실험 결과**
-  - `Final Comparison 2` (100 epoch, CosineAnnealingLR, AutoAugment, Label Smoothing, CutMix 등):
-    - `deep_baseline3_bn_residual` : 94.65%
-    - `deep_baseline3_bn_residual_dla` : **94.96%**
-  - 약 **+0.3%p**의 절대 성능 향상이지만,
-    - 이미 94% 중반대의 높은 구간에서 얻은 추가 이득이기 때문에
-    - **의미 있는 개선**으로 해석할 수 있음.
-  - 또한 DLA 도입으로 인해,
-    - 초기/중간 layer들이 학습하는 feature가 단순 보조 역할을 넘어
-      최종 결정에 직접 기여하게 되어,
-    - 시각화나 feature 분석 측면에서도 더 풍부한 정보를 제공할 가능성이 큼.
+  1. **깊이 증가를 통한 표현력 극대화**
+     - `deep_baseline3_bn_residual`에서 이미 Residual + 깊은 채널 구성이 효과적이라는 것을 확인했기 때문에,
+       residual block 수를 늘려 **표현력과 비선형성**을 추가 확보하는 것이 목표.
+  2. **ResNet 스타일 설계를 유지한 “깊은 CIFAR-10 전용 백본”**
+     - 표준 ResNet의 3-4-6-3 패턴을 참고하면서도, CIFAR-10 (32×32) 입력에 맞춘 구조로
+       `Global Average Pooling + 단일 Linear head` 조합을 유지해 **구현 단순성**을 보존.
+  3. **파라미터 수 대비 성능의 sweet spot 탐색**
+     - Parameter 수는 약 **13.5M** 수준으로 증가하지만,
+       wideresnet/ConvNeXt 계열과 비교했을 때 **합리적인 규모**에서 최고 성능을 노리는 포지션.
+- **실험 결과 (`README.md`의 Final Comparison 2 참고)**
+  - `deep_baseline3_bn_residual`: **94.65%** (10.4M)
+  - `deep_baseline3_bn_residual_15`: **94.84%** (13.5M)
+  - 동일한 학습 레시피(CosineAnnealingLR, AutoAugment 등)에서
+    - **약 +0.2%p 수준의 성능 향상**을 얻으면서도
+    - ResNet-계열로서 비교적 단순한 구조를 유지.
+  - 이후 더 깊은 변형(`deep_baseline3_bn_residual_18`, 24.5M, **95.08%**)과의 비교를 통해,
+    - **성능 vs 파라미터 수** 관점에서 `deep_baseline3_bn_residual_15`가 하나의 유의미한 지점이라는 것을 확인.
 
 ---
 
-## 8. 요약: 왜 최종적으로 `deep_baseline3_bn_residual_dla`인가?
+## 8. `wideresnet16_8`: 폭을 넓힌 표준 WideResNet으로의 전환
 
-- **단계별 교훈 정리**
-  - `baseline`  
-    → 아주 단순한 CNN은 학습은 쉽지만 성능 상한이 낮음.
-  - `baseline_bn`  
-    → BatchNorm 도입만으로도 학습 안정성과 성능이 크게 개선.
-  - `deep_baseline_bn`  
-    → 충분한 깊이와 채널을 가진 Conv-BN-ReLU 구조가 강력한 베이스라인이 됨.
-  - `deep_baseline2_bn`  
-    → 채널 수를 더 늘리면 표현력은 증가하지만, 효율성이 떨어지고 성능 이득이 제한적.
-  - `deep_baseline2_bn_residual`  
-    → Residual Connection 도입으로 **효율적인 깊은 학습**이 가능해지고, 성능이 크게 상승.
-  - `deep_baseline3_bn_residual`  
-    → Dropout이 포함된 분류기와 튜닝된 백본으로 CIFAR-10 상위권 성능 달성.
-  - `deep_baseline3_bn_residual_dla`  
-    → 여러 깊이의 feature를 집계하는 DLA 아이디어를 더해,  
-      **기존 백본 구조를 크게 바꾸지 않고도 최종 성능을 한 단계 더 끌어올림**.
+- **구조 요약**
+  - 논문 *“Wide Residual Networks”* 계열의 **WideResNet-16-8** 구조를 CIFAR-10에 맞게 사용.
+  - 채널 구성: `nChannels = [16, 16×8, 32×8, 64×8] = [16, 128, 256, 512]`.
+  - 깊이 `depth=16` → 각 stage 당 BasicBlock 수 `n = (16-4)/6 = 2`.
+  - 각 블록은 `BN-ReLU-Conv` 구조의 **pre-activation 스타일 Residual Block**이며,
+    중간에 Dropout(dropRate=0.3)을 사용해 정규화.
+  - 마지막 stage 출력에 `BatchNorm + ReLU` 후, **Global Average Pooling (8×8)**,  
+    `Linear(64×8 → 10)` 분류기를 거치는 전형적인 WideResNet 헤드.
+- **설계 의도**
+  1. **표준 강력 베이스라인과의 직접 비교**
+     - 커스텀 `deep_baseline*` 계열만이 아니라,
+       CIFAR-10에서 널리 사용되는 **WideResNet-16-8**과 동일/유사 설정으로 비교하여
+       - 아키텍처 자체의 한계
+       - 학습 레시피(optimizer, scheduler, regularization)의 영향
+       을 분리해서 보고자 함.
+  2. **“폭(Width)”을 늘린 residual 네트워크의 장점 검증**
+     - 깊이를 크게 늘리기보다는 채널 수(widen factor=8)를 크게 키운 구조가
+       CIFAR-10에서 **표현력/학습 안정성/연산 효율** 측면에서 어떤 trade-off를 보이는지 확인.
+  3. **강력한 학습 레시피와의 결합**
+     - SGD + Nesterov, CosineAnnealingLR, Label Smoothing,  
+       AutoAugment, ASAM, EMA, CIFAR-10 Normalize 등
+       다양한 최신 기법을 조합해 **“표준 구조 + 강한 레시피”의 상한선**을 측정.
+- **실험 결과 (`README.md`의 Final Comparison 2 참고)**
+  - Parameter Count: 약 **10.9M**.
+  - 기본 설정에서는 약 **95.22%** 수준의 최고 Val Accuracy.
+  - 학습 레시피를 강화하면서,
+    - SGD with Nesterov, LR 0.1: **95.89%**
+    - SGD + Nesterov + ASAM(rho=2.0) + EMA + Label Smoothing 0.1 등 조합에서 **96%대** 도달.
+  - 최종적으로,
+    - `SGD + Nesterov, LR 0.1, Label Smoothing 0.1, Epoch 200, CIFAR-10 Normalize` 설정에서  
+      **96.49%**(10.9M)까지 달성하여,
+      - `deep_baseline3_bn_residual_18` (95.08%, 24.5M),
+      - `convnext_v2_cifar_nano_k3` (최대 96.51%, 13.3M)
+      와 비교했을 때
+      **매우 경쟁력 있는 성능/파라미터 비율**을 보여주는 최종 WideResNet 계열 기준선으로 자리 잡음.
 
-- **최종 선택 이유**
-  - `deep_baseline3_bn_residual_dla`는
-    - Conv-BN-ReLU + Residual + 충분한 채널 + Dropout + Deep Layer Aggregation 을 모두 활용하면서도,
-    - 학습 안정성, 구현 복잡도, 연산량 사이에서 **실용적인 균형**을 달성한 모델.
-  - 실험적으로도 `Final Comparison 2`에서
-    - 동일한 학습 설정 하에 `deep_baseline3_bn_residual` 대비 **더 높은 Val Accuracy(94.96%)**를 기록.
-  - 따라서 본 프로젝트에서는
-    - CIFAR-10 최종 단일 모델 기준으로 **`deep_baseline3_bn_residual_dla`를 최종 구조**로 채택하였고,
-    - 향후 추가 실험(예: 다른 데이터셋, 더 강한 정규화/증강, 지식 증류 등)도 이 모델을 기준으로 확장하는 것을 기본 전략으로 삼는다.
+---
 

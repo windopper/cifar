@@ -196,7 +196,7 @@ Weight Initialization: ✅
 Augmentation: ✅
 AutoAugment: ✅
 
-`python cifar/main.py --optimizer adamw --epochs 200 --lr 3e-4 --batch-size 128 --scheduler cosineannealingwarmuprestarts --w-init --augment --autoaugment --cutmix --mixup --label-smoothing 0.1 --scheduler-warmup-epochs 10 --net convnext_v2_cifar_nano_k3`
+`python cifar/main.py --optimizer adamw --epochs 100 --lr 2e-3 --batch-size 128 --weight-decay 0.05 --scheduler cosineannealingwarmuprestarts --w-init --augment --autoaugment --sam --sam-rho 2.0 --sam-adaptive --ema --scheduler-warmup-epochs 5 --net convnext_v2_cifar_nano_k3`
 
 `python cifar/main.py --optimizer sgd --epochs 200 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --label-smoothing 0.1 --w-init --augment --autoaugment --nesterov --use-cifar-normalize --net wideresnet16_8`
 
@@ -232,18 +232,24 @@ AutoAugment: ✅
 | wideresnet16_8 | -- | 95.22 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | 95.89 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1 | 96.34 | 10.9 M |
-| wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, Label Smoothing 0.1, Epoch 200, Use CIFAR-10 Normalize | 96.49 | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA | 96.4 | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1 | 96.86 | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Use CIFAR-10 Normalize | 96.61 | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Use CIFAR-10 Normalize, ShakeDrop | -- | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 200 | -- | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, Label Smoothing 0.1, Epoch 200, Use CIFAR-10 Normalize | **96.49** | 10.9 M |
 
-`python cifar/main.py --optimizer sgd --epochs 200 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --sam --sam-rho 2.0 --sam-adaptive --net wideresnet16_8`
+`python cifar/main.py --optimizer sgd --epochs 200 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net wideresnet16_8`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
 | convnext_v2_cifar_nano | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | 94.51 | 13.3 M |
 | convnext_v2_cifar_nano_k3 | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | 95.48 | 13.3 M |
-| convnext_v2_cifar_nano_k3 | AdamW, ASAM (rho=2.0), Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | -- | 13.3 M |
+| convnext_v2_cifar_nano_k3 | AdamW, ASAM (rho=2.0), Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | 95.93 | 13.3 M |
+| convnext_v2_cifar_nano_k3 | AdamW, ASAM (rho=2.0), Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5, EMA | 95.95 | 13.3 M |
 | convnext_v2_cifar_nano_k3 | AdamW, Warmup Epoch 5, CutMix, Mixup, Label Smoothing 0.1, Epoch 200 | **96.51** | 13.3 M |
 
-`python cifar/main.py --optimizer adamw --epochs 100 --lr 2e-3 --batch-size 128 --weight-decay 0.05 --scheduler cosineannealingwarmuprestarts --w-init --augment --autoaugment --scheduler-warmup-epochs 5 --net convnext_v2_cifar_nano_k3`
+`python cifar/main.py --optimizer adamw --epochs 100 --lr 2e-3 --batch-size 128 --weight-decay 0.05 --scheduler cosineannealingwarmuprestarts --w-init --augment --autoaugment --sam --sam-rho 2.0 --sam-adaptive --ema --scheduler-warmup-epochs 5 --net convnext_v2_cifar_nano_k3`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|

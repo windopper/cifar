@@ -22,6 +22,7 @@ from .attention_modules_gelu import (
 )
 from .se_layer import SELayer
 from .convnext_block import ConvNeXtBlock, LayerNormChannels, StridedConvNeXtBlock
+from .shakedrop import ShakeDrop
 
 __all__ = [
     "ResidualBlock",
@@ -41,5 +42,6 @@ __all__ = [
     "ConvNeXtBlock",
     "LayerNormChannels",
     "StridedConvNeXtBlock",
+    "ShakeDrop",
 ]
 
