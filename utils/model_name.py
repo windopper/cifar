@@ -124,5 +124,12 @@ def get_model_name_parts(args):
         if args.ema_decay != 0.9999:  # 기본값이 아닐 때만 추가
             model_name_parts.append(f"emad{args.ema_decay}")
     
+    if args.sam:
+        model_name_parts.append("sam")
+        if args.sam_rho != 0.05:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"samrho{args.sam_rho}")
+        if args.sam_adaptive:
+            model_name_parts.append("samadaptive")
+    
     return model_name_parts
 

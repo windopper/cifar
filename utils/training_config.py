@@ -37,6 +37,10 @@ def print_training_configuration(args, normalize_mean, normalize_std, save_path,
     print(f"  EMA: {args.ema}")
     if args.ema:
         print(f"  EMA decay: {args.ema_decay}")
+    print(f"  SAM: {args.sam}")
+    if args.sam:
+        print(f"  SAM rho: {args.sam_rho}")
+        print(f"  SAM adaptive: {args.sam_adaptive}")
     print(f"  Normalize mean: {normalize_mean}")
     print(f"  Normalize std: {normalize_std}")
     print(f"  Scheduler: {args.scheduler}")
