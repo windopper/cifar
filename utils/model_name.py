@@ -131,5 +131,10 @@ def get_model_name_parts(args):
         if args.sam_adaptive:
             model_name_parts.append("samadaptive")
     
+    if args.shakedrop > 0.0:
+        model_name_parts.append("shakedrop")
+        if args.shakedrop != 0.5:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"shakedropp{args.shakedrop}")
+    
     return model_name_parts
 

@@ -165,7 +165,7 @@ def get_criterion(name: str, label_smoothing: float = 0.0):
     return criterions[name.lower()]
 
 
-def _get_nets_dict(init_weights: bool = False):
+def _get_nets_dict(init_weights: bool = False, shakedrop_prob: float = 0.0):
     """네트워크 딕셔너리 생성 헬퍼 함수"""
     return {
         'baseline': BaselineNet(),
@@ -247,8 +247,8 @@ def _get_nets_dict(init_weights: bool = False):
         'mxresnet56': MXResNet56(init_weights=init_weights),
         'dla': DLA(),
         'resnext29_4x64d': ResNeXt29_4x64d(),
-        'wideresnet28_10': wideresnet28_10(),
-        'wideresnet16_8': wideresnet16_8(),
+        'wideresnet28_10': wideresnet28_10(shakedrop_prob=shakedrop_prob),
+        'wideresnet16_8': wideresnet16_8(shakedrop_prob=shakedrop_prob),
         'rdnet_tiny': rdnet_tiny(pretrained=False, num_classes=10),
         'rdnet_small': rdnet_small(pretrained=False, num_classes=10),
         'rdnet_base': rdnet_base(pretrained=False, num_classes=10),
@@ -262,9 +262,9 @@ def get_available_nets():
     return list(nets_dict.keys())
 
 
-def get_net(name: str, init_weights: bool = False):
+def get_net(name: str, init_weights: bool = False, shakedrop_prob: float = 0.0):
     """Network 팩토리 함수"""
-    nets = _get_nets_dict(init_weights=init_weights)
+    nets = _get_nets_dict(init_weights=init_weights, shakedrop_prob=shakedrop_prob)
     if name.lower() not in nets:
         raise ValueError(
             f"Unknown net: {name}. Available: {list(nets.keys())}")
@@ -536,6 +536,8 @@ def parse_args():
                         help='SAM rho 값 (default: 0.05)')
     parser.add_argument('--sam-adaptive', action='store_true',
                         help='SAM adaptive 모드 사용 (default: False)')
+    parser.add_argument('--shakedrop', type=float, default=0.0,
+                        help='ShakeDrop 확률 (0.0~1.0, WideResNet 모델에만 적용, default: 0.0)')
     return parser.parse_args()
 
 
@@ -625,7 +627,12 @@ def main():
     dataiter = iter(train_loader)
     images, labels = next(dataiter)
 
-    net = get_net(args.net, init_weights=args.w_init)
+    # ShakeDrop은 WideResNet 모델에만 적용
+    shakedrop_prob = args.shakedrop if args.net in ['wideresnet28_10', 'wideresnet16_8'] else 0.0
+    if args.shakedrop > 0.0 and args.net not in ['wideresnet28_10', 'wideresnet16_8']:
+        print(f"[경고] --shakedrop은 WideResNet 모델에만 적용됩니다. 현재 모델: {args.net}")
+    
+    net = get_net(args.net, init_weights=args.w_init, shakedrop_prob=shakedrop_prob)
     net = net.to(device)
 
     # EMA 초기화

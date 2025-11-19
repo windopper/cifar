@@ -110,11 +110,11 @@ class WideResNet(nn.Module):
         out = out.view(-1, self.nChannels)
         return self.fc(out)
     
-def wideresnet28_10():
-    return WideResNet(depth=28, num_classes=10, widen_factor=10, dropRate=0.3)
+def wideresnet28_10(shakedrop_prob=0.0):
+    return WideResNet(depth=28, num_classes=10, widen_factor=10, dropRate=0.3, shakedrop_prob=shakedrop_prob)
 
 # channel [16, 160, 320, 640]
 # n = 2
-def wideresnet16_8():
-    return WideResNet(depth=16, num_classes=10, widen_factor=8, dropRate=0.3)
+def wideresnet16_8(shakedrop_prob=0.0):
+    return WideResNet(depth=16, num_classes=10, widen_factor=8, dropRate=0.3, shakedrop_prob=shakedrop_prob)
     

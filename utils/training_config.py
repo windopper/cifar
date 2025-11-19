@@ -41,6 +41,11 @@ def print_training_configuration(args, normalize_mean, normalize_std, save_path,
     if args.sam:
         print(f"  SAM rho: {args.sam_rho}")
         print(f"  SAM adaptive: {args.sam_adaptive}")
+    print(f"  ShakeDrop: {args.shakedrop}")
+    if args.shakedrop > 0.0:
+        print(f"  ShakeDrop probability: {args.shakedrop}")
+        if args.net not in ['wideresnet28_10', 'wideresnet16_8']:
+            print(f"  [경고] ShakeDrop은 WideResNet 모델에만 적용됩니다.")
     print(f"  Normalize mean: {normalize_mean}")
     print(f"  Normalize std: {normalize_std}")
     print(f"  Scheduler: {args.scheduler}")
