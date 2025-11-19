@@ -30,6 +30,7 @@ from models.deep_baseline_se import DeepBaselineNetSE
 from models.convnext_step1_patchify import ConvNeXtPatchifyClassifier
 from models.convnext_step2_local_block import ConvNeXtLocalBlockClassifier
 from models.convnext_step3_full import ConvNeXtCIFAR, convnext_tiny
+from models.convnextv2 import convnext_v2_cifar_nano
 from calibration import calibrate_temperature
 from models.resnet import ResNet18
 from models.vgg import VGG
@@ -47,6 +48,7 @@ from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
 from utils.supcon import SupConLoss
 from utils.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
+from utils.ema import ModelEMA
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
 from models.deep_baseline3_bn_residual_18 import DeepBaselineNetBN3Residual18
@@ -214,6 +216,7 @@ def _get_nets_dict(init_weights: bool = False):
         'convnext_local': ConvNeXtLocalBlockClassifier(init_weights=init_weights),
         'convnext_cifar': ConvNeXtCIFAR(init_weights=init_weights),
         'convnext_tiny': convnext_tiny(init_weights=init_weights),
+        'convnext_v2_cifar_nano': convnext_v2_cifar_nano(),
         'resnet18': ResNet18(),
         'vgg16': VGG('VGG16'),
         'mobilenetv2': MobileNetV2(),
@@ -345,9 +348,20 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
     return schedulers[name.lower()]
 
 
-def validate(net, criterion, val_loader, device):
-    """Validation 함수 - loss와 accuracy 계산"""
-    net.eval()
+def validate(net, criterion, val_loader, device, ema_model=None):
+    """Validation 함수 - loss와 accuracy 계산
+    
+    Args:
+        net: 검증에 사용할 모델
+        criterion: 손실 함수
+        val_loader: 검증 데이터 로더
+        device: 디바이스
+        ema_model: EMA 모델 (있으면 EMA 모델 사용, 없으면 일반 모델 사용)
+    """
+    # EMA 모델이 있으면 EMA 모델 사용, 없으면 일반 모델 사용
+    model_to_validate = ema_model.get_model() if ema_model is not None else net
+    
+    model_to_validate.eval()
     val_loss = 0.0
     correct = 0
     total = 0
@@ -355,7 +369,7 @@ def validate(net, criterion, val_loader, device):
     with torch.no_grad():
         for inputs, labels in val_loader:
             inputs, labels = inputs.to(device), labels.to(device)
-            outputs = net(inputs)
+            outputs = model_to_validate(inputs)
             loss = criterion(outputs, labels)
 
             val_loss += loss.item()
@@ -363,7 +377,9 @@ def validate(net, criterion, val_loader, device):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-    net.train()
+    # 일반 모델은 학습 모드로 복원 (EMA 모델은 항상 eval 모드)
+    if ema_model is None:
+        net.train()
     avg_loss = val_loss / len(val_loader)
     accuracy = 100 * correct / total
     return avg_loss, accuracy
@@ -467,6 +483,10 @@ def parse_args():
                         help='모델 및 히스토리 파일 저장 디렉토리 (default: outputs)')
     parser.add_argument('--num-workers', type=int, default=None,
                         help='DataLoader의 워커 수 (None이면 자동 설정: AutoAugment 사용 시 4, 그 외 2, default: None)')
+    parser.add_argument('--ema', action='store_true',
+                        help='EMA (Exponential Moving Average) 사용 (default: False)')
+    parser.add_argument('--ema-decay', type=float, default=0.999,
+                        help='EMA decay 값 (default: 0.999)')
     return parser.parse_args()
 
 
@@ -602,6 +622,12 @@ def main():
     net = get_net(args.net, init_weights=args.w_init)
     net = net.to(device)
 
+    # EMA 초기화
+    ema_model = None
+    if args.ema:
+        ema_model = ModelEMA(net, decay=args.ema_decay, device=device)
+        print(f"EMA 활성화됨 (decay: {args.ema_decay})")
+
     # Criterion 설정
     supcon_criterion = None
     supcon_weight = 0.1
@@ -667,7 +693,9 @@ def main():
             'early_stopping': args.early_stopping,
             'early_stopping_patience': args.early_stopping_patience if args.early_stopping else None,
             'num_workers': num_workers,
-            'pin_memory': pin_memory
+            'pin_memory': pin_memory,
+            'ema': args.ema,
+            'ema_decay': args.ema_decay if args.ema else None
         },
         'train_loss': [],
         'val_loss': [],
@@ -778,6 +806,10 @@ def main():
             loss.backward()
             optimizer.step()
 
+            # EMA 업데이트 (각 배치마다)
+            if ema_model is not None:
+                ema_model.update(net)
+
             # OneCycleLR과 CosineAnnealingWarmupRestarts는 각 step마다 업데이트
             if scheduler is not None and isinstance(scheduler, lr_scheduler.OneCycleLR):
                 scheduler.step()
@@ -794,8 +826,8 @@ def main():
         # Epoch 종료 후 평균 train loss 계산
         avg_train_loss = running_loss / len(train_loader)
 
-        # Validation 수행
-        val_loss, val_acc = validate(net, criterion, val_loader, device)
+        # Validation 수행 (EMA 모델이 있으면 EMA 모델 사용)
+        val_loss, val_acc = validate(net, criterion, val_loader, device, ema_model=ema_model)
 
         # ExponentialLR, CosineAnnealingLR은 각 epoch마다 업데이트
         if scheduler is not None and isinstance(scheduler, lr_scheduler.ExponentialLR):
@@ -816,8 +848,13 @@ def main():
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             history['best_val_accuracy'] = best_val_acc
-            torch.save(net.state_dict(), SAVE_PATH)
-            print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
+            # EMA가 활성화되어 있으면 EMA 모델만 저장, 없으면 일반 모델 저장
+            if ema_model is not None:
+                torch.save(ema_model.get_model().state_dict(), SAVE_PATH)
+                print(f"  [Best Model Saved (EMA)] Val Accuracy: {val_acc:.2f}%")
+            else:
+                torch.save(net.state_dict(), SAVE_PATH)
+                print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
             # Early stopping 카운터 리셋 (활성화된 경우에만)
             if early_stopping_enabled:
                 patience_counter = 0

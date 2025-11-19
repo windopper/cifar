@@ -95,5 +95,10 @@ def get_model_name_parts(args):
     if args.use_cifar_normalize:
         model_name_parts.append("cifar_normalize")
     
+    if args.ema:
+        model_name_parts.append("ema")
+        if args.ema_decay != 0.9999:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"emad{args.ema_decay}")
+    
     return model_name_parts
 

@@ -92,6 +92,8 @@ class WideResNet(nn.Module):
 def wideresnet28_10():
     return WideResNet(depth=28, num_classes=10, widen_factor=10, dropRate=0.3)
 
+# channel [16, 160, 320, 640]
+# n = 2
 def wideresnet16_8():
     return WideResNet(depth=16, num_classes=10, widen_factor=8, dropRate=0.3)
     
