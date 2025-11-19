@@ -196,9 +196,9 @@ Weight Initialization: ✅
 Augmentation: ✅
 AutoAugment: ✅
 
-`python cifar/main.py --optimizer adamw --epochs 200 --lr 3e-4 --batch-size 128 --scheduler cosineannealingwarmuprestarts --w-init --augment --autoaugment --cutmix --mixup --label-smoothing 0.1 --warmup-epochs 10 --net convnext_v2_cifar_nano_k3`
+`python cifar/main.py --optimizer adamw --epochs 200 --lr 3e-4 --batch-size 128 --scheduler cosineannealingwarmuprestarts --w-init --augment --autoaugment --cutmix --mixup --label-smoothing 0.1 --scheduler-warmup-epochs 10 --net convnext_v2_cifar_nano_k3`
 
-`uv run main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net wideresnet16_8`
+`python cifar/main.py --optimizer sgd --epochs 200 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --label-smoothing 0.1 --w-init --augment --autoaugment --nesterov --use-cifar-normalize --net wideresnet16_8`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
@@ -226,10 +226,23 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_15_convnext_ln_classifier_stem | AdamW | -- | 12.4 M |
 | deep_baseline3_bn_residual_15_ln | -- | 92.40 | 13.5 M |
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
+
+| 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
+|------|------------|----------------------|----------------------|
 | wideresnet16_8 | -- | 95.22 | 10.9 M |
-| wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | **95.89** | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | 95.89 | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, Use CIFAR-10 Normalize | 95.89 | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, Label Smoothing 0.1, Epoch 200, Use CIFAR-10 Normalize | -- | 10.9 M |
+
+`python cifar/main.py --optimizer sgd --epochs 200 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --label-smoothing 0.1 --w-init --augment --autoaugment --nesterov --use-cifar-normalize --sam --sam-rho 2.0 --sam-adaptive --net wideresnet16_8`
+
+| 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
+|------|------------|----------------------|----------------------|
 | convnext_v2_cifar_nano | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | 94.51 | 13.3 M |
-| convnext_v2_cifar_nano_k3 | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | 95.48 | 13.3 M |
+| convnext_v2_cifar_nano_k3 | AdamW, Warmup Epoch 5, CutMix, Mixup, Label Smoothing 0.1, Epoch 200 | **96.51** | 13.3 M |
+
+| 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
+|------|------------|----------------------|----------------------|
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
 | residual_attention_92_32input | Epoch 200 | -- | 160.9 M |   
 | residual_attention_92_32input_gelu_tiny | -- | **95.47** | 14.5 M |
@@ -239,6 +252,9 @@ AutoAugment: ✅
 | residual_attention_92_32input_preact_tiny | -- | 94.82 | 14.5 M |
 | residual_attention_92_32input_gelu_tiny_dla_tiny | -- | 94.05 | 12.6 M |
 | residual_attention_92_32input_gelu_tiny_dla | Batch Size 32 | -- | 55.1 M |
+
+| 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
+|------|------------|----------------------|----------------------|
 | deep_baseline3_bn_residual_deep | -- | 94.85 | 32.7 M |
 | deep_baseline3_bn_residual_wide | -- | -- | 41.6 M |
 | deep_baseline3_bn_residual_4x | Epoch 800 TMax 200 | 95.46 | 41.6 M |

@@ -2,8 +2,6 @@ import argparse
 import random
 import numpy as np
 import torch
-import torchvision
-import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -43,7 +41,12 @@ from models.wideresnet import wideresnet28_10, wideresnet16_8
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
 from utils.cutmix import CutMixCollator, CutMixCriterion
 from utils.mixup import MixupCollator, MixupCriterion
-from utils.cutout import Cutout
+from utils.dataset import get_cifar10_loaders, get_normalize_values
+from utils.history import (
+    create_history, update_history_scheduler_params, update_history_optimizer_params,
+    update_history_epoch, update_history_best, update_history_early_stop,
+    update_history_calibration, save_history
+)
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
 
@@ -64,6 +67,7 @@ class SwitchCollator:
 from utils.supcon import SupConLoss
 from utils.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
 from utils.ema import ModelEMA
+from utils.sam import SAM
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
 from models.deep_baseline3_bn_residual_18 import DeepBaselineNetBN3Residual18
@@ -267,19 +271,36 @@ def get_net(name: str, init_weights: bool = False):
     return nets[name.lower()]
 
 
-def get_optimizer(name: str, net: nn.Module, lr: float = 0.001, momentum: float = 0.9, weight_decay: float = 5e-4, nesterov: bool = False):
+def get_optimizer(name: str, net: nn.Module, lr: float = 0.001, momentum: float = 0.9, weight_decay: float = 5e-4, nesterov: bool = False,
+                  use_sam: bool = False, sam_rho: float = 0.05, sam_adaptive: bool = False):
     """Optimizer 팩토리 함수"""
-    optimizers = {
-        'sgd': optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay, nesterov=nesterov),
-        'adam': optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay),
-        'adamw': optim.AdamW(net.parameters(), lr=lr, weight_decay=weight_decay),
-        'adagrad': optim.Adagrad(net.parameters(), lr=lr, weight_decay=weight_decay),
-        'rmsprop': optim.RMSprop(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay),
-    }
-    if name.lower() not in optimizers:
+    name_lower = name.lower()
+    base_optimizer_cls = None
+    base_optimizer_kwargs = {}
+
+    if name_lower == 'sgd':
+        base_optimizer_cls = optim.SGD
+        base_optimizer_kwargs = {'lr': lr, 'momentum': momentum, 'weight_decay': weight_decay, 'nesterov': nesterov}
+    elif name_lower == 'adam':
+        base_optimizer_cls = optim.Adam
+        base_optimizer_kwargs = {'lr': lr, 'weight_decay': weight_decay}
+    elif name_lower == 'adamw':
+        base_optimizer_cls = optim.AdamW
+        base_optimizer_kwargs = {'lr': lr, 'weight_decay': weight_decay}
+    elif name_lower == 'adagrad':
+        base_optimizer_cls = optim.Adagrad
+        base_optimizer_kwargs = {'lr': lr, 'weight_decay': weight_decay}
+    elif name_lower == 'rmsprop':
+        base_optimizer_cls = optim.RMSprop
+        base_optimizer_kwargs = {'lr': lr, 'momentum': momentum, 'weight_decay': weight_decay}
+    else:
         raise ValueError(
-            f"Unknown optimizer: {name}. Available: {list(optimizers.keys())}")
-    return optimizers[name.lower()]
+            f"Unknown optimizer: {name}. Available: ['sgd', 'adam', 'adamw', 'adagrad', 'rmsprop']")
+            
+    if use_sam:
+        return SAM(net.parameters(), base_optimizer_cls, rho=sam_rho, adaptive=sam_adaptive, **base_optimizer_kwargs)
+    else:
+        return base_optimizer_cls(net.parameters(), **base_optimizer_kwargs)
 
 
 def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int = 1,
@@ -473,16 +494,12 @@ def parse_args():
                         help='CutMix의 alpha 값 (Beta 분포 파라미터, default: 1.0)')
     parser.add_argument('--cutmix-prob', type=float, default=1,
                         help='CutMix 적용 확률 (0.0~1.0, default: 1)')
-    parser.add_argument('--cutmix-start-epoch-ratio', type=float, default=0.0,
-                        help='CutMix 시작 에포크 비율 (0.0~1.0, 예: 0.3이면 전체 에포크의 30%% 이후부터 적용, default: 0.0)')
     parser.add_argument('--mixup', action='store_true',
                         help='Mixup 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
     parser.add_argument('--mixup-alpha', type=float, default=1.0,
                         help='Mixup의 alpha 값 (Beta 분포 파라미터, default: 1.0)')
     parser.add_argument('--mixup-prob', type=float, default=1,
                         help='Mixup 적용 확률 (0.0~1.0, default: 1)')
-    parser.add_argument('--mixup-start-epoch-ratio', type=float, default=0.0,
-                        help='Mixup 시작 에포크 비율 (0.0~1.0, 예: 0.3이면 전체 에포크의 30%% 이후부터 적용, default: 0.0)')
     parser.add_argument('--switch-prob', type=float, default=0.5,
                         help='CutMix와 Mixup이 동시에 활성화되었을 때 Mixup을 선택할 확률 (0.0~1.0, default: 0.5)')
     parser.add_argument('--cutout', action='store_true',
@@ -513,6 +530,12 @@ def parse_args():
                         help='EMA (Exponential Moving Average) 사용 (default: False)')
     parser.add_argument('--ema-decay', type=float, default=0.999,
                         help='EMA decay 값 (default: 0.999)')
+    parser.add_argument('--sam', action='store_true',
+                        help='SAM optimizer 사용 (default: False)')
+    parser.add_argument('--sam-rho', type=float, default=0.05,
+                        help='SAM rho 값 (default: 0.05)')
+    parser.add_argument('--sam-adaptive', action='store_true',
+                        help='SAM adaptive 모드 사용 (default: False)')
     return parser.parse_args()
 
 
@@ -537,55 +560,8 @@ def main():
     SAVE_PATH = os.path.join(output_dir, f"{model_name}.pth")
     HISTORY_PATH = os.path.join(output_dir, f"{model_name}_history.json")
 
-    # Normalize 값 설정
-    if args.use_cifar_normalize:
-        # CIFAR-10 표준 Normalize 값
-        normalize_mean = (0.4914, 0.4822, 0.4465)
-        normalize_std = (0.2470, 0.2434, 0.2615)
-    else:
-        # 기본값
-        normalize_mean = (0.5, 0.5, 0.5)
-        normalize_std = (0.5, 0.5, 0.5)
-
-    # Train 데이터 변환: 증강 on/off에 따라 다르게 설정
-    train_transform_list = []
-
-    if args.augment:
-        train_transform_list.append(transforms.RandomCrop(32, padding=4))
-        train_transform_list.append(transforms.RandomHorizontalFlip())
-
-        if args.autoaugment:
-            # AutoAugment 사용: CIFAR-10 정책 적용
-            train_transform_list.append(transforms.AutoAugment(
-                policy=transforms.AutoAugmentPolicy.CIFAR10))
-        else:
-            # 기본 데이터 증강: RandomRotation
-            train_transform_list.append(transforms.RandomRotation(15))
-
-    # 공통 변환: ToTensor와 Normalize는 항상 적용
-    train_transform_list.append(transforms.ToTensor())
-    
-    # Cutout 적용 (--augment가 활성화되어 있을 때만)
-    if args.cutout and args.augment:
-        train_transform_list.append(Cutout(
-            n_holes=args.cutout_n_holes,
-            length=args.cutout_length,
-            prob=args.cutout_prob
-        ))
-    
-    train_transform_list.append(
-        transforms.Normalize(normalize_mean, normalize_std))
-
-    train_transform = transforms.Compose(train_transform_list)
-
-    # Validation: 데이터 증강 없이 기본 변환만
-    val_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(normalize_mean, normalize_std)
-    ])
-
-    train_set = torchvision.datasets.CIFAR10(
-        root='./data', train=True, download=True, transform=train_transform)
+    # Normalize 값 설정 (히스토리 저장용)
+    normalize_mean, normalize_std = get_normalize_values(args.use_cifar_normalize)
 
     # CutMix/Mixup 설정 (--augment가 활성화되어 있을 때만)
     cutmix_collator = None
@@ -618,46 +594,33 @@ def main():
         mixup_criterion = MixupCriterion(
             reduction='mean', label_smoothing=args.label_smoothing)
 
-    # 시작 에포크 계산
-    cutmix_start_epoch = int(args.cutmix_start_epoch_ratio *
-                             args.epochs) if args.cutmix and args.augment else args.epochs
-    mixup_start_epoch = int(args.mixup_start_epoch_ratio *
-                            args.epochs) if args.mixup and args.augment else args.epochs
-
-    # 초기 collate_fn 설정 (첫 에포크에서는 시작 비율에 따라 결정)
+    # 초기 collate_fn 설정
     collate_fn = None
     if use_both:
-        # 둘 다 활성화된 경우: 둘 다 시작 에포크에 도달했을 때만 switch_collator 사용
-        if cutmix_start_epoch == 0 and mixup_start_epoch == 0:
-            collate_fn = switch_collator
-    elif args.cutmix and args.augment and cutmix_start_epoch == 0:
+        collate_fn = switch_collator
+    elif args.cutmix and args.augment:
         collate_fn = cutmix_collator
-    elif args.mixup and args.augment and mixup_start_epoch == 0:
+    elif args.mixup and args.augment:
         collate_fn = mixup_collator
 
-    # num_workers 자동 설정: AutoAugment 사용 시 더 많은 워커 필요
-    if args.num_workers is None:
-        # AutoAugment는 CPU에서 무거운 작업이므로 더 많은 워커 사용
-        num_workers = 4 if args.autoaugment and args.augment else 2
-    else:
-        num_workers = args.num_workers
-
-    # GPU 사용 시 pin_memory 활성화로 전송 속도 향상
+    # 데이터셋 및 DataLoader 생성
+    train_loader, val_loader, train_set, val_set = get_cifar10_loaders(
+        batch_size=args.batch_size,
+        augment=args.augment,
+        autoaugment=args.autoaugment,
+        cutout=args.cutout,
+        cutout_n_holes=args.cutout_n_holes,
+        cutout_length=args.cutout_length,
+        cutout_prob=args.cutout_prob,
+        use_cifar_normalize=args.use_cifar_normalize,
+        num_workers=args.num_workers,
+        collate_fn=collate_fn,
+        data_root='./data'
+    )
+    
+    # num_workers 및 pin_memory 값 가져오기 (히스토리 저장용)
+    num_workers = train_loader.num_workers
     pin_memory = torch.cuda.is_available()
-    # persistent_workers로 워커 재생성 오버헤드 감소 (num_workers > 0일 때만)
-    persistent_workers = num_workers > 0
-
-    train_loader = torch.utils.data.DataLoader(
-        train_set, batch_size=args.batch_size, shuffle=True,
-        num_workers=num_workers, pin_memory=pin_memory,
-        persistent_workers=persistent_workers, collate_fn=collate_fn)
-
-    val_set = torchvision.datasets.CIFAR10(
-        root='./data', train=False, download=True, transform=val_transform)
-    val_loader = torch.utils.data.DataLoader(
-        val_set, batch_size=args.batch_size, shuffle=False,
-        num_workers=num_workers, pin_memory=pin_memory,
-        persistent_workers=persistent_workers)
 
     dataiter = iter(train_loader)
     images, labels = next(dataiter)
@@ -686,7 +649,8 @@ def main():
         criterion = get_criterion(
             args.criterion, label_smoothing=args.label_smoothing)
     optimizer = get_optimizer(args.optimizer, net, lr=args.lr,
-                              momentum=args.momentum, weight_decay=args.weight_decay, nesterov=args.nesterov)
+                              momentum=args.momentum, weight_decay=args.weight_decay, nesterov=args.nesterov,
+                              use_sam=args.sam, sam_rho=args.sam_rho, sam_adaptive=args.sam_adaptive)
 
     # Learning rate scheduler 생성
     steps_per_epoch = len(train_loader)
@@ -705,79 +669,15 @@ def main():
         scheduler_gamma=args.scheduler_gamma_restarts
     )
 
-    # 학습 히스토리 저장용 리스트
-    history = {
-        'hyperparameters': {
-            'batch_size': args.batch_size,
-            'criterion': args.criterion,
-            'net': args.net,
-            'optimizer': args.optimizer,
-            'epochs': args.epochs,
-            'learning_rate': args.lr,
-            'momentum': args.momentum,
-            'nesterov': args.nesterov if args.optimizer.lower() == 'sgd' else None,
-            'scheduler': args.scheduler,
-            'label_smoothing': args.label_smoothing,
-            'data_augment': args.augment,
-            'autoaugment': args.autoaugment and args.augment,
-            'cutmix': args.cutmix and args.augment,
-            'cutmix_alpha': args.cutmix_alpha if args.cutmix and args.augment else None,
-            'cutmix_prob': args.cutmix_prob if args.cutmix and args.augment else None,
-            'cutmix_start_epoch_ratio': args.cutmix_start_epoch_ratio if args.cutmix and args.augment else None,
-            'mixup': args.mixup and args.augment,
-            'mixup_alpha': args.mixup_alpha if args.mixup and args.augment else None,
-            'mixup_prob': args.mixup_prob if args.mixup and args.augment else None,
-            'mixup_start_epoch_ratio': args.mixup_start_epoch_ratio if args.mixup and args.augment else None,
-            'switch_prob': args.switch_prob if (args.cutmix and args.augment and args.mixup and args.augment) else None,
-            'cutout': args.cutout and args.augment,
-            'cutout_length': args.cutout_length if args.cutout and args.augment else None,
-            'cutout_n_holes': args.cutout_n_holes if args.cutout and args.augment else None,
-            'cutout_prob': args.cutout_prob if args.cutout and args.augment else None,
-            'normalize_mean': list(normalize_mean),
-            'normalize_std': list(normalize_std),
-            'seed': args.seed,
-            'weight_init': args.w_init,
-            'device': str(device),
-            'early_stopping': args.early_stopping,
-            'early_stopping_patience': args.early_stopping_patience if args.early_stopping else None,
-            'num_workers': num_workers,
-            'pin_memory': pin_memory,
-            'ema': args.ema,
-            'ema_decay': args.ema_decay if args.ema else None
-        },
-        'train_loss': [],
-        'val_loss': [],
-        'val_accuracy': [],
-        'best_val_accuracy': None
-    }
-
+    # 학습 히스토리 초기화
+    history = create_history(
+        args, normalize_mean, normalize_std, device, num_workers, pin_memory, steps_per_epoch)
+    
     # Scheduler 관련 하이퍼파라미터 추가
-    if args.scheduler and args.scheduler.lower() != 'none':
-        if args.scheduler.lower() == 'exponentiallr':
-            history['hyperparameters']['scheduler_gamma'] = args.scheduler_gamma
-        elif args.scheduler.lower() == 'onecyclelr':
-            history['hyperparameters']['scheduler_max_lr'] = args.scheduler_max_lr if args.scheduler_max_lr else args.lr * 10
-            history['hyperparameters']['scheduler_pct_start'] = args.scheduler_pct_start
-            history['hyperparameters']['scheduler_final_lr_ratio'] = args.scheduler_final_lr_ratio
-        elif args.scheduler.lower() == 'reducelronplateau':
-            history['hyperparameters']['scheduler_factor'] = args.scheduler_factor
-            history['hyperparameters']['scheduler_patience'] = args.scheduler_patience
-            history['hyperparameters']['scheduler_mode'] = args.scheduler_mode
-            history['hyperparameters']['scheduler_metric'] = 'val_loss'
-        elif args.scheduler.lower() == 'cosineannealinglr':
-            history['hyperparameters']['scheduler_t_max'] = args.scheduler_t_max if args.scheduler_t_max else args.epochs
-            history['hyperparameters']['scheduler_eta_min'] = args.scheduler_eta_min
-        elif args.scheduler.lower() == 'cosineannealingwarmuprestarts':
-            history['hyperparameters']['scheduler_first_cycle_steps'] = args.scheduler_first_cycle_steps if args.scheduler_first_cycle_steps else args.epochs * steps_per_epoch
-            history['hyperparameters']['scheduler_cycle_mult'] = args.scheduler_cycle_mult
-            history['hyperparameters']['scheduler_max_lr'] = args.scheduler_max_lr if args.scheduler_max_lr else args.lr
-            history['hyperparameters']['scheduler_min_lr'] = args.scheduler_min_lr if args.scheduler_min_lr else (args.scheduler_eta_min if args.scheduler_eta_min > 0 else args.lr * 0.001)
-            history['hyperparameters']['scheduler_warmup_epochs'] = args.scheduler_warmup_epochs
-            history['hyperparameters']['scheduler_gamma_restarts'] = args.scheduler_gamma_restarts
-
+    update_history_scheduler_params(history, args, steps_per_epoch)
+    
     # Optimizer 관련 하이퍼파라미터 추가
-    if args.optimizer.lower() == 'adamw':
-        history['hyperparameters']['weight_decay'] = args.weight_decay
+    update_history_optimizer_params(history, args)
 
     # Training configuration 출력
     print_training_configuration(
@@ -793,26 +693,9 @@ def main():
 
     for epoch in range(args.epochs):
         # 현재 에포크에서 cutmix/mixup 적용 여부 확인
-        use_cutmix = args.cutmix and args.augment and epoch >= cutmix_start_epoch
-        use_mixup = args.mixup and args.augment and epoch >= mixup_start_epoch
-        use_both_current = use_both and use_cutmix and use_mixup
-
-        # collate_fn 동적 설정
-        current_collate_fn = None
-        if use_both_current:
-            current_collate_fn = switch_collator
-        elif use_cutmix:
-            current_collate_fn = cutmix_collator
-        elif use_mixup:
-            current_collate_fn = mixup_collator
-
-        # collate_fn이 변경된 경우 DataLoader 재생성
-        if current_collate_fn != collate_fn:
-            collate_fn = current_collate_fn
-            train_loader = torch.utils.data.DataLoader(
-                train_set, batch_size=args.batch_size, shuffle=True,
-                num_workers=num_workers, pin_memory=pin_memory,
-                persistent_workers=persistent_workers, collate_fn=collate_fn)
+        use_cutmix = args.cutmix and args.augment
+        use_mixup = args.mixup and args.augment
+        use_both_current = use_both
 
         running_loss = 0.0
         pbar = tqdm(train_loader, desc=f'Epoch {epoch + 1}/{args.epochs}')
@@ -829,42 +712,55 @@ def main():
 
             optimizer.zero_grad()
 
-            outputs = net(inputs)
+            def compute_loss(inputs, labels):
+                outputs = net(inputs)
 
-            # 기본 CrossEntropy / CutMix / Mixup 손실
-            # 둘 다 사용 중일 때는 배치마다 선택되므로, labels가 tuple인지만 확인
-            if isinstance(labels, tuple):
-                # CutMix와 Mixup 둘 다 사용 중이면, 실제로 어떤 것이 적용되었는지 판단하기 어려우므로
-                # 둘 다 동일한 형태의 손실을 사용하므로, cutmix_criterion을 사용 (둘 다 동일한 형태)
-                if use_both_current:
-                    # 둘 다 사용 중일 때는 cutmix_criterion 사용 (둘 다 동일한 형태)
-                    loss_ce = cutmix_criterion(outputs, labels)
-                elif use_cutmix:
-                    loss_ce = cutmix_criterion(outputs, labels)
-                elif use_mixup:
-                    loss_ce = mixup_criterion(outputs, labels)
+                # 기본 CrossEntropy / CutMix / Mixup 손실
+                # 둘 다 사용 중일 때는 배치마다 선택되므로, labels가 tuple인지만 확인
+                if isinstance(labels, tuple):
+                    # CutMix와 Mixup 둘 다 사용 중이면, 실제로 어떤 것이 적용되었는지 판단하기 어려우므로
+                    # 둘 다 동일한 형태의 손실을 사용하므로, cutmix_criterion을 사용 (둘 다 동일한 형태)
+                    if use_both_current:
+                        # 둘 다 사용 중일 때는 cutmix_criterion 사용 (둘 다 동일한 형태)
+                        loss_ce = cutmix_criterion(outputs, labels)
+                    elif use_cutmix:
+                        loss_ce = cutmix_criterion(outputs, labels)
+                    elif use_mixup:
+                        loss_ce = mixup_criterion(outputs, labels)
+                    else:
+                        loss_ce = criterion(outputs, labels)
                 else:
                     loss_ce = criterion(outputs, labels)
-            else:
-                loss_ce = criterion(outputs, labels)
 
-            # SupCon 손실 추가 (--criterion supcon_ce, CutMix/Mixup 미사용 시)
-            if supcon_criterion is not None:
-                if use_cutmix or use_mixup or use_both_current:
-                    raise ValueError(
-                        "SupCon CE(--criterion supcon_ce)는 CutMix/Mixup과 함께 사용할 수 없습니다.")
-                if hasattr(net, "forward_features"):
-                    features = net.forward_features(inputs)
+                # SupCon 손실 추가 (--criterion supcon_ce, CutMix/Mixup 미사용 시)
+                if supcon_criterion is not None:
+                    if use_cutmix or use_mixup or use_both_current:
+                        raise ValueError(
+                            "SupCon CE(--criterion supcon_ce)는 CutMix/Mixup과 함께 사용할 수 없습니다.")
+                    if hasattr(net, "forward_features"):
+                        features = net.forward_features(inputs)
+                    else:
+                        # 안전 장치: 별도 feature 추출 메서드가 없을 경우 logits를 그대로 사용
+                        features = outputs
+                    # SupCon은 hard label만 사용
+                    supcon_loss = supcon_criterion(features, labels)
+                    loss = loss_ce + supcon_weight * supcon_loss
                 else:
-                    # 안전 장치: 별도 feature 추출 메서드가 없을 경우 logits를 그대로 사용
-                    features = outputs
-                # SupCon은 hard label만 사용
-                supcon_loss = supcon_criterion(features, labels)
-                loss = loss_ce + supcon_weight * supcon_loss
-            else:
-                loss = loss_ce
+                    loss = loss_ce
+                
+                return loss, outputs
+
+            loss, outputs = compute_loss(inputs, labels)
             loss.backward()
-            optimizer.step()
+            
+            if args.sam:
+                def closure():
+                    loss, _ = compute_loss(inputs, labels)
+                    loss.backward()
+                    return loss
+                optimizer.step(closure)
+            else:
+                optimizer.step()
 
             # EMA 업데이트 (각 배치마다)
             if ema_model is not None:
@@ -900,14 +796,12 @@ def main():
             scheduler.step(val_loss)
 
         # 히스토리에 저장
-        history['train_loss'].append(avg_train_loss)
-        history['val_loss'].append(val_loss)
-        history['val_accuracy'].append(val_acc)
+        update_history_epoch(history, avg_train_loss, val_loss, val_acc)
 
         # 최고 검증 정확도일 때만 모델 저장
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            history['best_val_accuracy'] = best_val_acc
+            update_history_best(history, best_val_acc)
             # EMA가 활성화되어 있으면 EMA 모델만 저장, 없으면 일반 모델 저장
             if ema_model is not None:
                 torch.save(ema_model.get_model().state_dict(), SAVE_PATH)
@@ -935,29 +829,22 @@ def main():
         print()
 
         # 매 epoch마다 히스토리 저장 (중간에 중단되어도 데이터 보존)
-        with open(HISTORY_PATH, 'w') as f:
-            json.dump(history, f, indent=2)
+        save_history(history, HISTORY_PATH)
 
         # Early stopping 체크 (활성화된 경우에만)
         if early_stopping_enabled and patience_counter >= early_stopping_patience:
             print(f"\nEarly stopping triggered after {epoch + 1} epochs")
             print(
                 f"No improvement in validation accuracy for {early_stopping_patience} consecutive epochs")
-            history['early_stopped'] = True
-            history['early_stopped_epoch'] = epoch + 1
-            history['early_stopping_patience'] = early_stopping_patience
+            update_history_early_stop(history, True, epoch + 1, early_stopping_patience)
             # 히스토리 파일 업데이트
-            with open(HISTORY_PATH, 'w') as f:
-                json.dump(history, f, indent=2)
+            save_history(history, HISTORY_PATH)
             break
 
     # Early stopping이 발생하지 않은 경우 히스토리 업데이트
     if not early_stopping_enabled or (early_stopping_enabled and patience_counter < early_stopping_patience):
-        history['early_stopped'] = False
-        if early_stopping_enabled:
-            history['early_stopping_patience'] = early_stopping_patience
-        with open(HISTORY_PATH, 'w') as f:
-            json.dump(history, f, indent=2)
+        update_history_early_stop(history, False, early_stopping_patience=early_stopping_patience if early_stopping_enabled else None)
+        save_history(history, HISTORY_PATH)
 
     print('Finished Training')
 
@@ -989,12 +876,10 @@ def main():
         print("="*50 + "\n")
 
         # 히스토리에 temperature 저장
-        history['hyperparameters']['temperature'] = optimal_temperature
-        history['calibrated_val_accuracy'] = calibrated_acc
+        update_history_calibration(history, optimal_temperature, calibrated_acc)
 
         # 히스토리 파일 업데이트
-        with open(HISTORY_PATH, 'w') as f:
-            json.dump(history, f, indent=2)
+        save_history(history, HISTORY_PATH)
 
     # 최고 모델은 이미 저장되어 있음
     print(
