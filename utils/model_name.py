@@ -67,13 +67,37 @@ def get_model_name_parts(args):
     if args.autoaugment and args.augment:
         model_name_parts.append("autoaug")
     
-    if args.cutmix and args.augment:
-        model_name_parts.append("cutmix")
+    if args.cutmix and args.augment and args.mixup and args.augment:
+        # 둘 다 활성화된 경우
+        model_name_parts.append("cutmix_mixup")
+        if args.cutmix_alpha != 1.0:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"cutmixa{args.cutmix_alpha}")
+        if args.cutmix_prob != 0.5:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"cutmixp{args.cutmix_prob}")
+        if args.mixup_alpha != 1.0:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"mixupa{args.mixup_alpha}")
+        if args.mixup_prob != 0.5:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"mixupp{args.mixup_prob}")
+        if args.switch_prob != 0.5:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"switchp{args.switch_prob}")
         if args.cutmix_start_epoch_ratio > 0.0:
             model_name_parts.append(f"cutmixstart{args.cutmix_start_epoch_ratio}")
-    
-    if args.mixup and args.augment:
+        if args.mixup_start_epoch_ratio > 0.0:
+            model_name_parts.append(f"mixupstart{args.mixup_start_epoch_ratio}")
+    elif args.cutmix and args.augment:
+        model_name_parts.append("cutmix")
+        if args.cutmix_alpha != 1.0:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"cutmixa{args.cutmix_alpha}")
+        if args.cutmix_prob != 0.5:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"cutmixp{args.cutmix_prob}")
+        if args.cutmix_start_epoch_ratio > 0.0:
+            model_name_parts.append(f"cutmixstart{args.cutmix_start_epoch_ratio}")
+    elif args.mixup and args.augment:
         model_name_parts.append("mixup")
+        if args.mixup_alpha != 1.0:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"mixupa{args.mixup_alpha}")
+        if args.mixup_prob != 0.5:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"mixupp{args.mixup_prob}")
         if args.mixup_start_epoch_ratio > 0.0:
             model_name_parts.append(f"mixupstart{args.mixup_start_epoch_ratio}")
     

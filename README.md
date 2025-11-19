@@ -196,7 +196,7 @@ Weight Initialization: ✅
 Augmentation: ✅
 AutoAugment: ✅
 
-`python cifar/main.py --optimizer adamw --epochs 100 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --net deep_baseline3_bn_residual_bottleneck`
+`python cifar/main.py --optimizer adamw --epochs 200 --lr 3e-4 --batch-size 128 --scheduler cosineannealingwarmuprestarts --w-init --augment --autoaugment --cutmix --mixup --label-smoothing 0.1 --warmup-epochs 10 --net convnext_v2_cifar_nano_k3`
 
 `uv run main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net wideresnet16_8`
 
@@ -229,7 +229,7 @@ AutoAugment: ✅
 | wideresnet16_8 | -- | 95.22 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | **95.89** | 10.9 M |
 | convnext_v2_cifar_nano | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | 94.51 | 13.3 M |
-| convnext_v2_cifar_nano_k3 | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | -- | 13.3 M |
+| convnext_v2_cifar_nano_k3 | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | 95.48 | 13.3 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
 | residual_attention_92_32input | Epoch 200 | -- | 160.9 M |   
 | residual_attention_92_32input_gelu_tiny | -- | **95.47** | 14.5 M |

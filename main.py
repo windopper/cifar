@@ -46,6 +46,21 @@ from utils.mixup import MixupCollator, MixupCriterion
 from utils.cutout import Cutout
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
+
+
+class SwitchCollator:
+    """CutMix와 Mixup을 각 배치마다 랜덤하게 선택하는 Collator"""
+    def __init__(self, cutmix_collator, mixup_collator, switch_prob=0.5):
+        self.cutmix_collator = cutmix_collator
+        self.mixup_collator = mixup_collator
+        self.switch_prob = switch_prob
+    
+    def __call__(self, batch):
+        # switch_prob 확률로 Mixup 선택, (1 - switch_prob) 확률로 CutMix 선택
+        if np.random.rand() < self.switch_prob:
+            return self.mixup_collator(batch)
+        else:
+            return self.cutmix_collator(batch)
 from utils.supcon import SupConLoss
 from utils.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
 from utils.ema import ModelEMA
@@ -454,12 +469,22 @@ def parse_args():
                         help='AutoAugment 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
     parser.add_argument('--cutmix', action='store_true',
                         help='CutMix 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
+    parser.add_argument('--cutmix-alpha', type=float, default=1.0,
+                        help='CutMix의 alpha 값 (Beta 분포 파라미터, default: 1.0)')
+    parser.add_argument('--cutmix-prob', type=float, default=1,
+                        help='CutMix 적용 확률 (0.0~1.0, default: 1)')
     parser.add_argument('--cutmix-start-epoch-ratio', type=float, default=0.0,
                         help='CutMix 시작 에포크 비율 (0.0~1.0, 예: 0.3이면 전체 에포크의 30%% 이후부터 적용, default: 0.0)')
     parser.add_argument('--mixup', action='store_true',
                         help='Mixup 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
+    parser.add_argument('--mixup-alpha', type=float, default=1.0,
+                        help='Mixup의 alpha 값 (Beta 분포 파라미터, default: 1.0)')
+    parser.add_argument('--mixup-prob', type=float, default=1,
+                        help='Mixup 적용 확률 (0.0~1.0, default: 1)')
     parser.add_argument('--mixup-start-epoch-ratio', type=float, default=0.0,
                         help='Mixup 시작 에포크 비율 (0.0~1.0, 예: 0.3이면 전체 에포크의 30%% 이후부터 적용, default: 0.0)')
+    parser.add_argument('--switch-prob', type=float, default=0.5,
+                        help='CutMix와 Mixup이 동시에 활성화되었을 때 Mixup을 선택할 확률 (0.0~1.0, default: 0.5)')
     parser.add_argument('--cutout', action='store_true',
                         help='Cutout 증강 사용 (--augment가 활성화되어 있을 때만 동작, default: False)')
     parser.add_argument('--cutout-length', type=int, default=16,
@@ -563,20 +588,33 @@ def main():
         root='./data', train=True, download=True, transform=train_transform)
 
     # CutMix/Mixup 설정 (--augment가 활성화되어 있을 때만)
-    # CutMix와 Mixup은 동시에 사용할 수 없음
     cutmix_collator = None
     cutmix_criterion = None
     mixup_collator = None
     mixup_criterion = None
+    switch_collator = None
+    use_both = False
 
-    if args.cutmix and args.augment:
-        if args.mixup:
-            raise ValueError("CutMix와 Mixup은 동시에 사용할 수 없습니다. 하나만 선택해주세요.")
-        cutmix_collator = CutMixCollator(alpha=1.0, prob=0.5)
+    if args.cutmix and args.augment and args.mixup and args.augment:
+        # 둘 다 활성화된 경우: 각 배치마다 랜덤하게 선택
+        use_both = True
+        cutmix_collator = CutMixCollator(alpha=args.cutmix_alpha, prob=args.cutmix_prob)
+        cutmix_criterion = CutMixCriterion(
+            reduction='mean', label_smoothing=args.label_smoothing)
+        mixup_collator = MixupCollator(alpha=args.mixup_alpha, prob=args.mixup_prob)
+        mixup_criterion = MixupCriterion(
+            reduction='mean', label_smoothing=args.label_smoothing)
+        switch_collator = SwitchCollator(
+            cutmix_collator=cutmix_collator,
+            mixup_collator=mixup_collator,
+            switch_prob=args.switch_prob
+        )
+    elif args.cutmix and args.augment:
+        cutmix_collator = CutMixCollator(alpha=args.cutmix_alpha, prob=args.cutmix_prob)
         cutmix_criterion = CutMixCriterion(
             reduction='mean', label_smoothing=args.label_smoothing)
     elif args.mixup and args.augment:
-        mixup_collator = MixupCollator(alpha=1.0, prob=0.5)
+        mixup_collator = MixupCollator(alpha=args.mixup_alpha, prob=args.mixup_prob)
         mixup_criterion = MixupCriterion(
             reduction='mean', label_smoothing=args.label_smoothing)
 
@@ -588,7 +626,11 @@ def main():
 
     # 초기 collate_fn 설정 (첫 에포크에서는 시작 비율에 따라 결정)
     collate_fn = None
-    if args.cutmix and args.augment and cutmix_start_epoch == 0:
+    if use_both:
+        # 둘 다 활성화된 경우: 둘 다 시작 에포크에 도달했을 때만 switch_collator 사용
+        if cutmix_start_epoch == 0 and mixup_start_epoch == 0:
+            collate_fn = switch_collator
+    elif args.cutmix and args.augment and cutmix_start_epoch == 0:
         collate_fn = cutmix_collator
     elif args.mixup and args.augment and mixup_start_epoch == 0:
         collate_fn = mixup_collator
@@ -679,9 +721,14 @@ def main():
             'data_augment': args.augment,
             'autoaugment': args.autoaugment and args.augment,
             'cutmix': args.cutmix and args.augment,
+            'cutmix_alpha': args.cutmix_alpha if args.cutmix and args.augment else None,
+            'cutmix_prob': args.cutmix_prob if args.cutmix and args.augment else None,
             'cutmix_start_epoch_ratio': args.cutmix_start_epoch_ratio if args.cutmix and args.augment else None,
             'mixup': args.mixup and args.augment,
+            'mixup_alpha': args.mixup_alpha if args.mixup and args.augment else None,
+            'mixup_prob': args.mixup_prob if args.mixup and args.augment else None,
             'mixup_start_epoch_ratio': args.mixup_start_epoch_ratio if args.mixup and args.augment else None,
+            'switch_prob': args.switch_prob if (args.cutmix and args.augment and args.mixup and args.augment) else None,
             'cutout': args.cutout and args.augment,
             'cutout_length': args.cutout_length if args.cutout and args.augment else None,
             'cutout_n_holes': args.cutout_n_holes if args.cutout and args.augment else None,
@@ -748,10 +795,13 @@ def main():
         # 현재 에포크에서 cutmix/mixup 적용 여부 확인
         use_cutmix = args.cutmix and args.augment and epoch >= cutmix_start_epoch
         use_mixup = args.mixup and args.augment and epoch >= mixup_start_epoch
+        use_both_current = use_both and use_cutmix and use_mixup
 
         # collate_fn 동적 설정
         current_collate_fn = None
-        if use_cutmix:
+        if use_both_current:
+            current_collate_fn = switch_collator
+        elif use_cutmix:
             current_collate_fn = cutmix_collator
         elif use_mixup:
             current_collate_fn = mixup_collator
@@ -782,16 +832,25 @@ def main():
             outputs = net(inputs)
 
             # 기본 CrossEntropy / CutMix / Mixup 손실
-            if use_cutmix and isinstance(labels, tuple):
-                loss_ce = cutmix_criterion(outputs, labels)
-            elif use_mixup and isinstance(labels, tuple):
-                loss_ce = mixup_criterion(outputs, labels)
+            # 둘 다 사용 중일 때는 배치마다 선택되므로, labels가 tuple인지만 확인
+            if isinstance(labels, tuple):
+                # CutMix와 Mixup 둘 다 사용 중이면, 실제로 어떤 것이 적용되었는지 판단하기 어려우므로
+                # 둘 다 동일한 형태의 손실을 사용하므로, cutmix_criterion을 사용 (둘 다 동일한 형태)
+                if use_both_current:
+                    # 둘 다 사용 중일 때는 cutmix_criterion 사용 (둘 다 동일한 형태)
+                    loss_ce = cutmix_criterion(outputs, labels)
+                elif use_cutmix:
+                    loss_ce = cutmix_criterion(outputs, labels)
+                elif use_mixup:
+                    loss_ce = mixup_criterion(outputs, labels)
+                else:
+                    loss_ce = criterion(outputs, labels)
             else:
                 loss_ce = criterion(outputs, labels)
 
             # SupCon 손실 추가 (--criterion supcon_ce, CutMix/Mixup 미사용 시)
             if supcon_criterion is not None:
-                if use_cutmix or use_mixup:
+                if use_cutmix or use_mixup or use_both_current:
                     raise ValueError(
                         "SupCon CE(--criterion supcon_ce)는 CutMix/Mixup과 함께 사용할 수 없습니다.")
                 if hasattr(net, "forward_features"):
