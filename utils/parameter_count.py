@@ -86,7 +86,7 @@ from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, Re
 from models.wideresnet import wideresnet28_10, wideresnet16_8
 from models.dla import DLA
 from models.convnext_step3_full import ConvNeXtCIFAR
-from models.convnextv2 import convnext_v2_cifar_nano
+from models.convnextv2 import convnext_v2_cifar_nano, convnext_v2_cifar_nano_k3
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
 
 
@@ -351,6 +351,9 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     # ConvNeXt V2 model
     model_convnext_v2_nano = convnext_v2_cifar_nano()
     results['convnext_v2_cifar_nano'] = count_parameters(model_convnext_v2_nano)
+    
+    model_convnext_v2_nano_k3 = convnext_v2_cifar_nano_k3()
+    results['convnext_v2_cifar_nano_k3'] = count_parameters(model_convnext_v2_nano_k3)
     
     # RDNet models
     model_rdnet_tiny = rdnet_tiny(pretrained=False, num_classes=10)

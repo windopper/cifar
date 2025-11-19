@@ -30,7 +30,7 @@ from models.deep_baseline_se import DeepBaselineNetSE
 from models.convnext_step1_patchify import ConvNeXtPatchifyClassifier
 from models.convnext_step2_local_block import ConvNeXtLocalBlockClassifier
 from models.convnext_step3_full import ConvNeXtCIFAR, convnext_tiny
-from models.convnextv2 import convnext_v2_cifar_nano
+from models.convnextv2 import convnext_v2_cifar_nano, convnext_v2_cifar_nano_k3
 from calibration import calibrate_temperature
 from models.resnet import ResNet18
 from models.vgg import VGG
@@ -217,6 +217,7 @@ def _get_nets_dict(init_weights: bool = False):
         'convnext_cifar': ConvNeXtCIFAR(init_weights=init_weights),
         'convnext_tiny': convnext_tiny(init_weights=init_weights),
         'convnext_v2_cifar_nano': convnext_v2_cifar_nano(),
+        'convnext_v2_cifar_nano_k3': convnext_v2_cifar_nano_k3(),
         'resnet18': ResNet18(),
         'vgg16': VGG('VGG16'),
         'mobilenetv2': MobileNetV2(),

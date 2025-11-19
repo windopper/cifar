@@ -216,8 +216,8 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_bottleneck | -- | 89.69 | 10.3 M |
 | deep_baseline3_bn_residual_convnext_stride | -- | -- | 10.8 M |
 | deep_baseline3_bn_residual_15 | -- | **94.84** | 13.5 M |
-| deep_baseline3_bn_residual_18 | -- | **95.08** | 24.5 M |
 | deep_baseline3_bn_residual_15 | AdamW | 94.39 | 13.5 M |
+| deep_baseline3_bn_residual_18 | -- | **95.08** | 24.5 M |
 | deep_baseline3_bn_residual_15_convnext | -- | 83.76 | 11.0 M |
 | deep_baseline3_bn_residual_15_convnext | SGD with Nestrov, Learning Rate 0.1 | -- | 11.0 M |
 | deep_baseline3_bn_residual_15_convnext | AdamW, Weight Decay 5e-5 | 92.82 | 11.0 M | 
@@ -228,9 +228,10 @@ AutoAugment: ✅
 | deep_baseline3_bn_residual_15_attention_tiny | -- | 93.48 | 13.0 M |
 | wideresnet16_8 | -- | 95.22 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | **95.89** | 10.9 M |
-| convnext_v2_cifar_nano | AdamW, Learning Rate 4e-3, Weight Decay 0.05, EMA | -- | 13.3 M |
+| convnext_v2_cifar_nano | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | 94.51 | 13.3 M |
+| convnext_v2_cifar_nano_k3 | AdamW, Learning Rate 2e-3, Weight Decay 0.05, Warmup Epoch 5 | -- | 13.3 M |
 | residual_attention_92_32input_tiny | -- | 95.43 | 14.5 M |
-| residual_attention_92_32input | Epoch 200 | -- | 160.9 M |
+| residual_attention_92_32input | Epoch 200 | -- | 160.9 M |   
 | residual_attention_92_32input_gelu_tiny | -- | **95.47** | 14.5 M |
 | residual_attention_92_32input_gelu_medium | -- | 95.36 | 25.5 M |
 | residual_attention_92_32input_gelu_tiny | AdamW | 94.99 | 14.5 M |

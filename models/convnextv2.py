@@ -39,9 +39,10 @@ class GRN(nn.Module):
 
 # 3. ConvNeXt V2 Block
 class Block(nn.Module):
-    def __init__(self, dim, drop_path=0.):
+    def __init__(self, dim, drop_path=0., kernel_size=7):
         super().__init__()
-        self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim) # Depthwise
+        padding = kernel_size // 2
+        self.dwconv = nn.Conv2d(dim, dim, kernel_size=kernel_size, padding=padding, groups=dim) # Depthwise
         self.norm = LayerNorm(dim, eps=1e-6)
         self.pwconv1 = nn.Linear(dim, 4 * dim) # Pointwise
         self.act = nn.GELU()
@@ -65,7 +66,7 @@ class Block(nn.Module):
 # 4. Main Model: ConvNeXt V2 for CIFAR-10
 class ConvNeXtV2_CIFAR(nn.Module):
     def __init__(self, in_chans=3, num_classes=10, 
-                 depths=[3, 3, 9, 3], dims=[96, 192, 384, 768], drop_path_rate=0.):
+                 depths=[3, 3, 9, 3], dims=[96, 192, 384, 768], drop_path_rate=0., kernel_size=7):
         super().__init__()
         
         # CIFAR-10 전용 Stem (32x32 해상도 보존)
@@ -91,7 +92,7 @@ class ConvNeXtV2_CIFAR(nn.Module):
         self.stages = nn.ModuleList()
         for i in range(4):
             stage = nn.Sequential(
-                *[Block(dim=dims[i], drop_path=dpr[cur + j]) for j in range(depths[i])]
+                *[Block(dim=dims[i], drop_path=dpr[cur + j], kernel_size=kernel_size) for j in range(depths[i])]
             )
             cur += depths[i]
             self.stages.append(stage)
@@ -121,3 +122,8 @@ class ConvNeXtV2_CIFAR(nn.Module):
 def convnext_v2_cifar_nano(drop_path_rate=0.1):
     # 깊이와 차원을 CIFAR-10 복잡도에 맞게 조정
     return ConvNeXtV2_CIFAR(depths=[2, 2, 6, 2], dims=[80, 160, 320, 640], num_classes=10, drop_path_rate=drop_path_rate)
+
+# 커널 사이즈 3을 사용하는 모델 생성 함수
+def convnext_v2_cifar_nano_k3(drop_path_rate=0.1):
+    # 깊이와 차원을 CIFAR-10 복잡도에 맞게 조정, 커널 사이즈 3 사용
+    return ConvNeXtV2_CIFAR(depths=[2, 2, 6, 2], dims=[80, 160, 320, 640], num_classes=10, drop_path_rate=drop_path_rate, kernel_size=3)
