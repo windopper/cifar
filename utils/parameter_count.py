@@ -83,6 +83,7 @@ from models.deep_baseline3_bn_residual_gap_gmp import (
 from models.deep_baseline4_bn_residual import ResNet18
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, ResNeXt29_32x4d
+from models.wideresnet import wideresnet28_10, wideresnet16_8
 from models.dla import DLA
 from models.convnext_step3_full import ConvNeXtCIFAR
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
@@ -116,7 +117,7 @@ def count_parameters_all(model):
 
 def get_deep_baseline2_parameter_counts(init_weights=False):
     """
-    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA, ConvNeXt 및 RDNet 모델의 파라미터 개수를 계산합니다.
+    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, WideResNet, DLA, ConvNeXt 및 RDNet 모델의 파라미터 개수를 계산합니다.
     
     Args:
         init_weights: 가중치 초기화 여부 (기본값: False)
@@ -331,6 +332,13 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     model_resnext29_32x4d = ResNeXt29_32x4d()
     results['resnext29_32x4d'] = count_parameters(model_resnext29_32x4d)
     
+    # WideResNet models
+    model_wideresnet28_10 = wideresnet28_10()
+    results['wideresnet28_10'] = count_parameters(model_wideresnet28_10)
+    
+    model_wideresnet16_8 = wideresnet16_8()
+    results['wideresnet16_8'] = count_parameters(model_wideresnet16_8)
+    
     # DLA model
     model_dla = DLA()
     results['dla'] = count_parameters(model_dla)
@@ -357,7 +365,7 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
 
 def print_deep_baseline2_parameter_counts(init_weights=False):
     """
-    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA, ConvNeXt 및 RDNet 모델의 파라미터 개수를 출력합니다.
+    deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, WideResNet, DLA, ConvNeXt 및 RDNet 모델의 파라미터 개수를 출력합니다.
     
     Args:
         init_weights: 가중치 초기화 여부 (기본값: False)
@@ -365,7 +373,7 @@ def print_deep_baseline2_parameter_counts(init_weights=False):
     results = get_deep_baseline2_parameter_counts(init_weights=init_weights)
     
     print("=" * 70)
-    print("deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, DLA, ConvNeXt 및 RDNet 모델 파라미터 개수")
+    print("deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, WideResNet, DLA, ConvNeXt 및 RDNet 모델 파라미터 개수")
     print("=" * 70)
     
     # 파라미터 개수로 정렬

@@ -19,6 +19,9 @@ def get_model_name_parts(args):
         f"mom{args.momentum}"
     ]
     
+    if args.optimizer.lower() == 'sgd' and args.nesterov:
+        model_name_parts.append("nesterov")
+    
     if args.optimizer.lower() == 'adamw':
         model_name_parts.append(f"wd{args.weight_decay}")
     

@@ -38,6 +38,7 @@ from models.densenet import DenseNet121
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.dla import DLA
 from models.resnext import ResNeXt29_4x64d
+from models.wideresnet import wideresnet28_10, wideresnet16_8
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
 from utils.cutmix import CutMixCollator, CutMixCriterion
 from utils.mixup import MixupCollator, MixupCriterion
@@ -223,6 +224,8 @@ def _get_nets_dict(init_weights: bool = False):
         'mxresnet56': MXResNet56(init_weights=init_weights),
         'dla': DLA(),
         'resnext29_4x64d': ResNeXt29_4x64d(),
+        'wideresnet28_10': wideresnet28_10(),
+        'wideresnet16_8': wideresnet16_8(),
         'rdnet_tiny': rdnet_tiny(pretrained=False, num_classes=10),
         'rdnet_small': rdnet_small(pretrained=False, num_classes=10),
         'rdnet_base': rdnet_base(pretrained=False, num_classes=10),
@@ -245,10 +248,10 @@ def get_net(name: str, init_weights: bool = False):
     return nets[name.lower()]
 
 
-def get_optimizer(name: str, net: nn.Module, lr: float = 0.001, momentum: float = 0.9, weight_decay: float = 5e-4):
+def get_optimizer(name: str, net: nn.Module, lr: float = 0.001, momentum: float = 0.9, weight_decay: float = 5e-4, nesterov: bool = False):
     """Optimizer 팩토리 함수"""
     optimizers = {
-        'sgd': optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay),
+        'sgd': optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay, nesterov=nesterov),
         'adam': optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay),
         'adamw': optim.AdamW(net.parameters(), lr=lr, weight_decay=weight_decay),
         'adagrad': optim.Adagrad(net.parameters(), lr=lr, weight_decay=weight_decay),
@@ -391,6 +394,8 @@ def parse_args():
                         default=0.9, help='모멘텀 (default: 0.9)')
     parser.add_argument('--weight-decay', type=float, default=5e-4,
                         help='Weight decay (default: 5e-4)')
+    parser.add_argument('--nesterov', action='store_true',
+                        help='SGD에서 Nesterov momentum 사용 (default: False)')
     parser.add_argument('--scheduler', type=str, default='none',
                         choices=['none', 'exponentiallr', 'onecyclelr',
                                  'reducelronplateau', 'cosineannealinglr', 'cosineannealingwarmuprestarts'],
@@ -612,7 +617,7 @@ def main():
         criterion = get_criterion(
             args.criterion, label_smoothing=args.label_smoothing)
     optimizer = get_optimizer(args.optimizer, net, lr=args.lr,
-                              momentum=args.momentum, weight_decay=args.weight_decay)
+                              momentum=args.momentum, weight_decay=args.weight_decay, nesterov=args.nesterov)
 
     # Learning rate scheduler 생성
     steps_per_epoch = len(train_loader)
@@ -641,6 +646,7 @@ def main():
             'epochs': args.epochs,
             'learning_rate': args.lr,
             'momentum': args.momentum,
+            'nesterov': args.nesterov if args.optimizer.lower() == 'sgd' else None,
             'scheduler': args.scheduler,
             'label_smoothing': args.label_smoothing,
             'data_augment': args.augment,
