@@ -646,7 +646,7 @@ def main():
     # ShakeDrop은 WideResNet 및 PyramidNet 모델에만 적용
     wideresnet_models = ['wideresnet28_10', 'wideresnet16_8', 'wideresnet28_10_pyramid', 
                          'wideresnet16_8_pyramid', 'wideresnet28_10_fullpyramid', 
-                         'wideresnet16_8_fullpyramid', 'pyramidnet110_270', 'pyramidnet164_118',
+                         'wideresnet16_8_fullpyramid', 'pyramidnet110_270', 'pyramidnet110_150', 'pyramidnet164_118',
                          'wideresnet28_10_remove_first_relu', 'wideresnet28_10_last_bn_remove_first_relu',
                          'wideresnet16_8_remove_first_relu', 'wideresnet16_8_last_bn_remove_first_relu']
     shakedrop_prob = args.shakedrop if args.net in wideresnet_models else 0.0

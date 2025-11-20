@@ -77,6 +77,8 @@ Weight Initialization: ✅
 | AdamW | 0.0001 | 67.43 |
 | SGD | 0.001 | 71.08 |
 | SGD | 0.01 | 73.08 |
+| SGD with Nestrov | 0.01 | -- |
+| SGD with Nestrov | 0.1 | -- |
 | Adagrad | 0.001 | 57.5 |
 | Adagrad | 0.01 | 74.72 |
 | RMSprop | 0.001 | 79.51 |
@@ -252,9 +254,12 @@ AutoAugment: ✅
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
-| pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
+| pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1 | 96.82 | 10.9 M |
+| pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 1 | -- | 10.9 M |
 
-`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet164_118`
+`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet110_150`
+
+`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet110_150 --shakedrop 1`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
