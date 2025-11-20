@@ -152,7 +152,7 @@ class WideResNetPyramid(nn.Module):
         else:
             probs = [0.0] * total_blocks
         
-        # Initial convolution + BatchNorm (원본 구조 반영)
+        # Initial convolution + BatchNorm (원본 구조 반영 )
         self.c_in = nn.Conv2d(3, in_chs[0], 3, padding=1)
         self.bn_in = nn.BatchNorm2d(in_chs[0])
         

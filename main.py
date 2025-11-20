@@ -175,7 +175,7 @@ def get_criterion(name: str, label_smoothing: float = 0.0):
 def _get_nets_dict(init_weights: bool = False, shakedrop_prob: float = 0.0):
     """네트워크 딕셔너리 생성 헬퍼 함수"""
     return {
-        'baseline': BaselineNet(),
+        'baseline': BaselineNet(init_weights=init_weights),
         'baseline_bn': BaselineNetBN(init_weights=init_weights),
         'deep_baseline': DeepBaselineNet(init_weights=init_weights),
         'deep_baseline_silu': DeepBaselineNetSilu(),

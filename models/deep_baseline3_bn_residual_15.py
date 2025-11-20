@@ -205,7 +205,7 @@ class DeepBaselineNetBN3Residual15(nn.Module):
         """
         Forward pass
 
-        Args:
+        Args:   
             x: 입력 이미지 [batch, 3, 32, 32] (CIFAR-10)
 
         Returns:

@@ -1,5 +1,40 @@
 !git clone https://colab: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@github.com/windopper/cifar.git
 
+# Baseline
+Optimizer: Adam
+Epochs: 20
+Batch Size: 128
+Learning Rate: 3e-4
+Net: baseline
+
+`uv run main.py --optimizer adam --epochs 20 --batch-size 128 --lr 3e-4 --net baseline`
+
+| 세부사항 | 최고 Val Accuracy (%) |
+|------|------------|
+| -- | 59.48 |  
+| + Weight Initialization | 61.25 |
+
+# Deep Baseline
+Optimizer: Adam
+Epochs: 20
+Batch Size: 128
+Learning Rate: 3e-4
+Net: deep_baseline
+Weight Initialization: ✅
+
+`uv run main.py --optimizer adam --epochs 20 --batch-size 32 --lr 3e-4 --net deep_baseline_bn --w-init`
+| 
+| 세부사항 | 최고 Val Accuracy (%) |
+|------|------------|
+| -- | 76.22 |
+| + Weight Initialization | 77.63 |
+| + Cosine Annealing LR | 78.81 |
+| + Batch Normalization | 71.93 | 
+
+# TODO: 배치사이즈 32로 비교해야됨.
+|--|--|
+| + Batch Size 32 | 82.7 |
+
 # Scheduler 비교
 Optimizer: Adam
 Epochs: 60
@@ -31,7 +66,8 @@ Epochs: 100
 Batch Size: 128
 Learning Rate: 3e-4
 Scheduler: Cosine Annealing LR
-Weight Initialization: ✅
+Weight Initialization: ✅   
+1.9M
 
 Augmentation: RandomCrop(32, padding=4), RandomHorizontalFlip, RandomRotation(15)
 
@@ -45,7 +81,7 @@ Augmentation: RandomCrop(32, padding=4), RandomHorizontalFlip, RandomRotation(15
 | Augmentation + Mixup | ✅ | ❌ | ✅ | ❌ | 89.85 | 
 | Augmentation + AutoAugment | ✅ | ❌ | ❌ | ✅ | **91.17** |
 | Augmentation + Cutout | ✅ | ❌ | ❌ | ❌ | 90.11  |
-| Augmentation + Cutout + AugAugment | ✅ | ❌ | ❌ | ❌ | 90.52  |
+| Augmentation + Cutout + AutoAugment | ✅ | ❌ | ❌ | ❌ | 90.52  |
 | Augmentation + Cutout (CutLength 8) + AutoAugment  | ✅ | ❌ | ❌ | ✅ | 89.86 |
 | Augmentation + CutMix + AutoAugment | ✅ | ✅ | ❌ | ✅ | 90.88 |
 | Augmentation + Mixup + AutoAugment | ✅ | ❌ | ✅ | ✅ | 90.43 |
@@ -240,7 +276,6 @@ AutoAugment: ✅
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA | 96.4 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1 | 96.86 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Use CIFAR-10 Normalize | 96.61 | 10.9 M |
-| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Use CIFAR-10 Normalize | -- | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, Label Smoothing 0.1, Epoch 200, Use CIFAR-10 Normalize | 96.49 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 200 | **97.07** | 10.9 M |
 
@@ -255,11 +290,15 @@ AutoAugment: ✅
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
 | pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1 | 96.82 | 10.9 M |
-| pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 1 | -- | 10.9 M |
+| pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 1 | 92.61 | 10.9 M |
+| pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 0.5 | 96.90 | 10.9 M |
+| pyramidnet110_150 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 200, ShakeDrop 0.5 | 97.48 | 10.9 M |
 
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet110_150`
 
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet110_150 --shakedrop 1`
+
+`python cifar/main.py --optimizer sgd --epochs 200 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net pyramidnet110_150 --shakedrop 0.5`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|

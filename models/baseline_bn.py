@@ -1,5 +1,5 @@
 """
-BaselineNetBN: DeepBaselineNetBN의 채널 수를 줄인 베이스라인 테스트 버전
+BaselineNetBN: BaselineNet에 BatchNorm 레이어를 추가한 버전
 
 설계 의도:
 1. 내부 공변량 이동(Internal Covariate Shift) 감소
@@ -19,17 +19,9 @@ BaselineNetBN: DeepBaselineNetBN의 채널 수를 줄인 베이스라인 테스�
    - ReLU 활성화 함수는 BatchNorm 이후에 적용
    - 이는 딥러닝에서 널리 사용되는 표준 패턴
 
-DeepBaselineNetBN과의 차이점:
-- 모든 컨볼루션 레이어의 채널 수를 절반으로 감소 (베이스라인 테스트 용도)
-  - conv1: 3 -> 16 (원본: 3 -> 32)
-  - conv2: 16 -> 32 (원본: 32 -> 64)
-  - conv3: 32 -> 64 (원본: 64 -> 128)
-  - conv4: 64 -> 64 (원본: 128 -> 128)
-  - conv5: 64 -> 128 (원본: 128 -> 256)
-- Fully-connected 레이어의 크기도 비례하여 감소
-  - fc1: 128*4*4 -> 256 (원본: 256*4*4 -> 512)
-  - fc2: 256 -> 128 (원본: 512 -> 256)
-  - fc3: 128 -> 64 (원본: 256 -> 128)
+BaselineNet과의 차이점:
+- 각 컨볼루션 레이어 뒤에 BatchNorm2d 레이어 추가
+- Conv-BN-ReLU 순서로 구조 변경
 """
 import torch
 import torch.nn as nn
@@ -38,28 +30,14 @@ import torch.nn.functional as F
 class BaselineNetBN(nn.Module):
     def __init__(self, init_weights=False):
         super(BaselineNetBN, self).__init__()
-        # Conv-BN-ReLU 블록들 (채널 수 절반으로 감소)
-        self.conv1 = nn.Conv2d(3, 16, 3, padding=1)
-        self.bn1 = nn.BatchNorm2d(16)
-        
-        self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
-        self.bn2 = nn.BatchNorm2d(32)
-        
-        self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
-        self.bn3 = nn.BatchNorm2d(64)
-        
-        self.conv4 = nn.Conv2d(64, 64, 3, padding=1)
-        self.bn4 = nn.BatchNorm2d(64)
-        
-        self.conv5 = nn.Conv2d(64, 128, 3, padding=1)
-        self.bn5 = nn.BatchNorm2d(128)
-        
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.bn1 = nn.BatchNorm2d(6)
         self.pool = nn.MaxPool2d(2, 2)
-        
-        self.fc1 = nn.Linear(128 * 4 * 4, 256)
-        self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, 64)
-        self.fc4 = nn.Linear(64, 10)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.bn2 = nn.BatchNorm2d(16)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
         
         if init_weights:
             self._initialize_weights()
@@ -80,40 +58,17 @@ class BaselineNetBN(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        # Conv-BN-ReLU 블록 1
         x = self.conv1(x)
         x = self.bn1(x)
-        x = F.relu(x)
+        x = self.pool(F.relu(x))
         
-        # Conv-BN-ReLU 블록 2
         x = self.conv2(x)
         x = self.bn2(x)
-        x = F.relu(x)
-        x = self.pool(x)
-        
-        # Conv-BN-ReLU 블록 3
-        x = self.conv3(x)
-        x = self.bn3(x)
-        x = F.relu(x)
-        
-        # Conv-BN-ReLU 블록 4
-        x = self.conv4(x)
-        x = self.bn4(x)
-        x = F.relu(x)
-        x = self.pool(x)
-        
-        # Conv-BN-ReLU 블록 5
-        x = self.conv5(x)
-        x = self.bn5(x)
-        x = F.relu(x)
-        x = self.pool(x)
+        x = self.pool(F.relu(x))
         
         x = torch.flatten(x, 1)
-        
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = self.fc4(x)
-        
+        x = self.fc3(x)
         return x
 
