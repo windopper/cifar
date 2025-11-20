@@ -29,7 +29,8 @@ class BasicBlock(nn.Module):
             out = self.relu1(self.bn1(x))
         
         out = self.relu2(self.bn2(self.conv1(out if self.equalInOut else x)))
-        if self.droprate > 0:
+        # ShakeDrop 사용 시 dropout 비활성화
+        if self.droprate > 0 and self.shake_drop is None:
             out = F.dropout(out, p=self.droprate, training=self.training)
         out = self.conv2(out)
         
