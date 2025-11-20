@@ -21,6 +21,8 @@ class BasicBlock(nn.Module):
         
         # ShakeDrop 모듈 초기화 (기본값 0.0으로 비활성화)
         self.shake_drop = ShakeDrop(p_drop=shakedrop_prob) if shakedrop_prob > 0.0 else None
+        # ShakeDrop 전에 통과할 BatchNorm2d 층 (ShakeDrop 활성화 시에만 사용)
+        self.bn3 = nn.BatchNorm2d(out_planes) if shakedrop_prob > 0.0 else None
 
     def forward(self, x):
         if not self.equalInOut:
@@ -35,7 +37,9 @@ class BasicBlock(nn.Module):
         out = self.conv2(out)
         
         # ShakeDrop 적용 (residual branch 출력에 적용)
+        # ShakeDrop 활성화 시 BatchNorm2d 통과 후 ShakeDrop 적용
         if self.shake_drop is not None:
+            out = self.bn3(out)
             out = self.shake_drop(out)
         
         return torch.add(x if self.equalInOut else self.convShortcut(x), out)
