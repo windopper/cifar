@@ -231,7 +231,7 @@ AutoAugment: ✅
 |------|------------|----------------------|----------------------|
 | wideresnet16_8 | -- | 95.22 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | 95.89 | 10.9 M |
-| + Remove First ReLU | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
+| + Remove First ReLU | SGD with Nestrov, Learning Rate 0.1 | 94.78 | 10.9 M |
 | + Last Batch Norm | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 1 | -- | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1 | 96.34 | 10.9 M |
@@ -242,9 +242,19 @@ AutoAugment: ✅
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, Label Smoothing 0.1, Epoch 200, Use CIFAR-10 Normalize | 96.49 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 200 | **97.07** | 10.9 M |
 
+`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net wideresnet16_8_remove_first_relu`
+
+`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net wideresnet16_8_last_bn_remove_first_relu`
+
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net wideresnet16_8 --shakedrop 1`
 
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net wideresnet16_8 --shakedrop 1`
+
+| 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
+|------|------------|----------------------|----------------------|
+| pyramidnet164_118 | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
+
+`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet164_118`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|

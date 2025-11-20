@@ -43,8 +43,7 @@ from models.wideresnet import (
 )
 from models.wideresnet_pyramid import (
     wideresnet28_10_pyramid, wideresnet16_8_pyramid,
-    wideresnet28_10_fullpyramid, wideresnet16_8_fullpyramid,
-    pyramidnet110_270
+    pyramidnet110_270, pyramidnet164_118
 )
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
 from utils.cutmix import CutMixCollator, CutMixCriterion
@@ -261,11 +260,10 @@ def _get_nets_dict(init_weights: bool = False, shakedrop_prob: float = 0.0):
         'wideresnet28_10_last_bn_remove_first_relu': wideresnet28_10(shakedrop_prob=shakedrop_prob, last_batch_norm=True, remove_first_relu=True),
         'wideresnet16_8_remove_first_relu': wideresnet16_8(shakedrop_prob=shakedrop_prob, remove_first_relu=True),
         'wideresnet16_8_last_bn_remove_first_relu': wideresnet16_8(shakedrop_prob=shakedrop_prob, last_batch_norm=True, remove_first_relu=True),
-        'wideresnet28_10_pyramid': wideresnet28_10_pyramid(shakedrop_prob=shakedrop_prob, use_pyramid=False),
-        'wideresnet16_8_pyramid': wideresnet16_8_pyramid(shakedrop_prob=shakedrop_prob, use_pyramid=False),
-        'wideresnet28_10_fullpyramid': wideresnet28_10_fullpyramid(shakedrop_prob=shakedrop_prob),
-        'wideresnet16_8_fullpyramid': wideresnet16_8_fullpyramid(shakedrop_prob=shakedrop_prob),
+        'wideresnet28_10_pyramid': wideresnet28_10_pyramid(shakedrop_prob=shakedrop_prob),
+        'wideresnet16_8_pyramid': wideresnet16_8_pyramid(shakedrop_prob=shakedrop_prob),
         'pyramidnet110_270': pyramidnet110_270(shakedrop_prob=shakedrop_prob),
+        'pyramidnet164_118': pyramidnet164_118(shakedrop_prob=shakedrop_prob),
         'rdnet_tiny': rdnet_tiny(pretrained=False, num_classes=10),
         'rdnet_small': rdnet_small(pretrained=False, num_classes=10),
         'rdnet_base': rdnet_base(pretrained=False, num_classes=10),
@@ -647,7 +645,7 @@ def main():
     # ShakeDrop은 WideResNet 및 PyramidNet 모델에만 적용
     wideresnet_models = ['wideresnet28_10', 'wideresnet16_8', 'wideresnet28_10_pyramid', 
                          'wideresnet16_8_pyramid', 'wideresnet28_10_fullpyramid', 
-                         'wideresnet16_8_fullpyramid', 'pyramidnet110_270',
+                         'wideresnet16_8_fullpyramid', 'pyramidnet110_270', 'pyramidnet164_118',
                          'wideresnet28_10_remove_first_relu', 'wideresnet28_10_last_bn_remove_first_relu',
                          'wideresnet16_8_remove_first_relu', 'wideresnet16_8_last_bn_remove_first_relu']
     shakedrop_prob = args.shakedrop if args.net in wideresnet_models else 0.0

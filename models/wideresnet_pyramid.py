@@ -4,7 +4,7 @@ WideResNet with PyramidNet-style improvements
 - Zero-padding shortcut instead of 1x1 convolution
 - Gradual channel increase option (pyramid style)
 - Improved ShakeDrop integration
-- Pre-activation style blocks
+- Original PyramidNet block structure (BN-Conv-BN-ReLU-Conv-BN)
 """
 
 import math
@@ -16,101 +16,77 @@ from .modules import ShakeDrop
 
 class PyramidBasicBlock(nn.Module):
     """
-    PyramidNet 스타일의 BasicBlock
-    - Pre-activation 구조
+    PyramidNet 스타일의 BasicBlock (원본 ShakePyramidNet 구조 반영)
+    - BN → Conv → BN → ReLU → Conv → BN 구조
     - Zero-padding shortcut (파라미터 효율적)
     - ShakeDrop을 residual branch에 적용
     """
     def __init__(self, in_planes, out_planes, stride=1, dropRate=0.0, shakedrop_prob=0.0):
         super(PyramidBasicBlock, self).__init__()
         
-        self.bn1 = nn.BatchNorm2d(in_planes)
-        self.relu1 = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(out_planes)
-        self.relu2 = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(out_planes, out_planes, kernel_size=3, stride=1,
-                               padding=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(out_planes)
+        self.downsampled = stride == 2
+        self.branch = self._make_branch(in_planes, out_planes, stride=stride)
+        self.shortcut = None if not self.downsampled else nn.AvgPool2d(2)
+        
+        # ShakeDrop 모듈 (원본과 동일하게 항상 생성)
+        self.shake_drop = ShakeDrop(p_drop=shakedrop_prob)
         
         self.droprate = dropRate
-        self.stride = stride
         self.in_planes = in_planes
         self.out_planes = out_planes
-        
-        # Shortcut: stride=2일 때만 average pooling 사용
-        self.shortcut = None
-        if stride == 2:
-            self.shortcut = nn.AvgPool2d(kernel_size=2, stride=2)
-        
-        # ShakeDrop 모듈
-        self.shake_drop = ShakeDrop(p_drop=shakedrop_prob) if shakedrop_prob > 0.0 else None
+
+    def _make_branch(self, in_ch, out_ch, stride=1):
+        """원본 ShakePyramidNet의 _make_branch 구조"""
+        return nn.Sequential(
+            nn.BatchNorm2d(in_ch),
+            nn.Conv2d(in_ch, out_ch, 3, padding=1, stride=stride, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_ch, out_ch, 3, padding=1, stride=1, bias=False),
+            nn.BatchNorm2d(out_ch))
 
     def forward(self, x):
-        # Pre-activation
-        out = self.relu1(self.bn1(x))
+        h = self.branch(x)
+        h = self.shake_drop(h)
         
-        # First convolution (stride가 여기서 적용됨)
-        out = self.conv1(out)
-        out = self.relu2(self.bn2(out))
+        # Shortcut 처리
+        h0 = x if not self.downsampled else self.shortcut(x)
         
-        # Dropout (ShakeDrop 미사용 시에만)
-        if self.droprate > 0 and self.shake_drop is None:
-            out = F.dropout(out, p=self.droprate, training=self.training)
+        # Zero-padding (device-aware)
+        if h.size(1) > h0.size(1):
+            pad_size = h.size(1) - h0.size(1)
+            pad_zero = torch.zeros(h0.size(0), pad_size, h0.size(2), h0.size(3), 
+                                  dtype=h0.dtype, device=h0.device)
+            h0 = torch.cat([h0, pad_zero], dim=1)
         
-        # Second convolution
-        out = self.conv2(out)
-        out = self.bn3(out)
-        
-        # ShakeDrop 적용
-        if self.shake_drop is not None:
-            out = self.shake_drop(out)
-        
-        # Shortcut connection with zero-padding
-        shortcut = x
-        if self.shortcut is not None:
-            shortcut = self.shortcut(shortcut)
-        
-        # 채널 수가 다르면 zero-padding
-        if self.in_planes != self.out_planes:
-            pad_size = self.out_planes - self.in_planes
-            shortcut = F.pad(shortcut, (0, 0, 0, 0, 0, pad_size), mode='constant', value=0)
-        
-        return out + shortcut
+        return h + h0
 
 
 class NetworkBlock(nn.Module):
-    def __init__(self, nb_layers, in_planes, out_planes, block, stride, dropRate=0.0, 
-                 shakedrop_probs=None, use_pyramid=False, alpha=0):
+    def __init__(self, nb_layers, in_chs, start_idx, block, stride, dropRate=0.0, 
+                 shakedrop_probs=None):
         super(NetworkBlock, self).__init__()
-        self.use_pyramid = use_pyramid
-        self.layer = self._make_layer(block, in_planes, out_planes, nb_layers, stride, 
-                                       dropRate, shakedrop_probs, alpha)
+        self.start_idx = start_idx
+        self.in_chs = in_chs
+        self.layer = self._make_layer(block, nb_layers, stride, dropRate, shakedrop_probs)
 
-    def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate, 
-                    shakedrop_probs, alpha):
+    def _make_layer(self, block, nb_layers, stride, dropRate, shakedrop_probs):
         layers = []
+        u_idx = self.start_idx
         
         for i in range(int(nb_layers)):
             # ShakeDrop 확률
-            prob = shakedrop_probs[i] if shakedrop_probs and i < len(shakedrop_probs) else 0.0
+            prob = shakedrop_probs[u_idx] if shakedrop_probs and u_idx < len(shakedrop_probs) else 0.0
             
-            # Pyramid 스타일: 각 블록마다 채널을 점진적으로 증가
-            if self.use_pyramid and alpha > 0:
-                # 각 블록당 증가량
-                add_per_block = alpha / nb_layers
-                current_in = in_planes + int(add_per_block * i)
-                current_out = in_planes + int(add_per_block * (i + 1))
-            else:
-                # 기존 WideResNet 스타일: 첫 블록만 in_planes, 나머지는 out_planes
-                current_in = in_planes if i == 0 else out_planes
-                current_out = out_planes
+            # 채널은 미리 계산된 in_chs 리스트에서 가져옴 (원본 방식)
+            current_in = self.in_chs[u_idx]
+            current_out = self.in_chs[u_idx + 1]
             
             # 첫 번째 블록만 stride 적용
             current_stride = stride if i == 0 else 1
             
             layers.append(block(current_in, current_out, current_stride, dropRate, shakedrop_prob=prob))
+            u_idx += 1
         
         return nn.Sequential(*layers)
 
@@ -120,82 +96,80 @@ class NetworkBlock(nn.Module):
 
 class WideResNetPyramid(nn.Module):
     """
-    PyramidNet 스타일로 개선된 WideResNet
+    PyramidNet 스타일로 개선된 WideResNet (원본 ShakePyramidNet 구조 완전 반영)
     
     Args:
-        depth: 네트워크 깊이 (28, 16 등)
+        depth: 네트워크 깊이 (원본: (depth-2)//6, WideResNet 호환: (depth-4)//6)
         num_classes: 클래스 수
-        widen_factor: width 배수
+        widen_factor: width 배수 (use_pyramid=False일 때만 사용)
         dropRate: dropout 비율
-        shakedrop_prob: 마지막 블록의 최대 ShakeDrop 확률
+        shakedrop_prob: 마지막 블록의 최대 ShakeDrop 확률 (기본값: 0.5)
         use_pyramid: True이면 pyramid 스타일 채널 증가 사용
         alpha: pyramid 스타일 총 채널 증가량 (use_pyramid=True일 때)
+        use_original_depth: True이면 원본 방식 (depth-2)//6 사용, False면 WideResNet 방식 (depth-4)//6
     """
     def __init__(self, depth=28, num_classes=10, widen_factor=10, dropRate=0.3, 
-                 shakedrop_prob=0.0, use_pyramid=False, alpha=48):
+                 shakedrop_prob=0.5, use_pyramid=False, alpha=48, use_original_depth=False):
         super(WideResNetPyramid, self).__init__()
         
-        nChannels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
-        assert((depth - 4) % 6 == 0)
-        n = (depth - 4) // 6
+        in_ch = 16
         block = PyramidBasicBlock
         
-        # ShakeDrop 확률 스케줄 생성 (PyramidNet 스타일: 선형 증가)
-        total_blocks = int(n * 3)
+        # Depth 계산: 원본 방식 또는 WideResNet 방식
+        if use_original_depth:
+            # 원본 ShakePyramidNet 방식
+            n_units = (depth - 2) // 6
+            assert (depth - 2) % 6 == 0, f"depth must satisfy (depth-2) % 6 == 0, got depth={depth}"
+        else:
+            # WideResNet 호환 방식
+            n_units = (depth - 4) // 6
+            assert (depth - 4) % 6 == 0, f"depth must satisfy (depth-4) % 6 == 0, got depth={depth}"
+        
+        # 채널 리스트 계산 (원본 방식: 미리 모든 채널 계산)
+        if use_pyramid:
+            # Pyramid 스타일: 각 블록마다 채널이 점진적으로 증가
+            # 원본 공식: in_ch + math.ceil((alpha / (3 * n_units)) * (i + 1))
+            in_chs = [in_ch] + [in_ch + math.ceil((alpha / (3 * n_units)) * (i + 1)) 
+                                for i in range(3 * n_units)]
+        else:
+            # WideResNet 스타일: 각 stage마다 채널이 고정
+            nChannels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
+            in_chs = [nChannels[0]]
+            # 각 stage의 블록 수만큼 채널 반복
+            for stage_idx in range(3):
+                stage_ch = nChannels[stage_idx + 1]
+                for _ in range(n_units):
+                    in_chs.append(stage_ch)
+        
+        # ShakeDrop 확률 스케줄 생성 (원본 공식 반영)
+        # 원본: [1 - (1.0 - (0.5 / (3 * n_units)) * (i + 1)) for i in range(3 * n_units)]
+        # 단순화: (shakedrop_prob / total_blocks) * (i + 1)
+        total_blocks = 3 * n_units
         if shakedrop_prob > 0 and total_blocks > 1:
-            # 0부터 shakedrop_prob까지 선형 증가
-            probs = [shakedrop_prob * (i + 1) / total_blocks for i in range(total_blocks)]
+            # 원본 공식과 동일하게 구현
+            probs = [1 - (1.0 - (shakedrop_prob / total_blocks) * (i + 1)) 
+                    for i in range(total_blocks)]
         else:
             probs = [0.0] * total_blocks
         
-        # Initial convolution
-        self.conv1 = nn.Conv2d(3, nChannels[0], kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        # Initial convolution + BatchNorm (원본 구조 반영)
+        self.c_in = nn.Conv2d(3, in_chs[0], 3, padding=1)
+        self.bn_in = nn.BatchNorm2d(in_chs[0])
         
-        # Pyramid 스타일에서는 전체 블록에 걸쳐 채널을 점진적으로 증가
-        if use_pyramid:
-            # 각 블록당 증가량 계산
-            add_channel = alpha / (3 * n)
-            
-            # 각 stage의 시작과 끝 채널 계산
-            stage1_out = nChannels[0] + int(add_channel * n)
-            stage2_out = stage1_out + int(add_channel * n)
-            stage3_out = stage2_out + int(add_channel * n)
-            
-            n_int = int(n)
-            self.block1 = NetworkBlock(n, nChannels[0], stage1_out, block, 1, dropRate, 
-                                       shakedrop_probs=probs[0:n_int],
-                                       use_pyramid=use_pyramid, alpha=int(add_channel * n))
-            self.block2 = NetworkBlock(n, stage1_out, stage2_out, block, 2, dropRate, 
-                                       shakedrop_probs=probs[n_int:2*n_int],
-                                       use_pyramid=use_pyramid, alpha=int(add_channel * n))
-            self.block3 = NetworkBlock(n, stage2_out, stage3_out, block, 2, dropRate, 
-                                       shakedrop_probs=probs[2*n_int:],
-                                       use_pyramid=use_pyramid, alpha=int(add_channel * n))
-            
-            final_channels = stage3_out
-        else:
-            # 기존 WideResNet 스타일
-            n_int = int(n)
-            self.block1 = NetworkBlock(n, nChannels[0], nChannels[1], block, 1, dropRate, 
-                                       shakedrop_probs=probs[0:n_int],
-                                       use_pyramid=False, alpha=0)
-            self.block2 = NetworkBlock(n, nChannels[1], nChannels[2], block, 2, dropRate, 
-                                       shakedrop_probs=probs[n_int:2*n_int],
-                                       use_pyramid=False, alpha=0)
-            self.block3 = NetworkBlock(n, nChannels[2], nChannels[3], block, 2, dropRate, 
-                                       shakedrop_probs=probs[2*n_int:],
-                                       use_pyramid=False, alpha=0)
-            
-            final_channels = nChannels[3]
+        # Network blocks (원본 방식: 채널 리스트와 시작 인덱스 전달)
+        self.block1 = NetworkBlock(n_units, in_chs, 0, block, 1, dropRate, 
+                                   shakedrop_probs=probs)
+        self.block2 = NetworkBlock(n_units, in_chs, n_units, block, 2, dropRate, 
+                                   shakedrop_probs=probs)
+        self.block3 = NetworkBlock(n_units, in_chs, 2*n_units, block, 2, dropRate, 
+                                   shakedrop_probs=probs)
         
         # Classifier
-        self.bn1 = nn.BatchNorm2d(final_channels)
-        self.relu = nn.ReLU(inplace=True)
-        self.fc = nn.Linear(final_channels, num_classes)
-        self.nChannels = final_channels
+        self.bn_out = nn.BatchNorm2d(in_chs[-1])
+        self.fc_out = nn.Linear(in_chs[-1], num_classes)
+        self.nChannels = in_chs[-1]
 
-        # Weight initialization
+        # Weight initialization (원본과 동일)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -207,45 +181,19 @@ class WideResNetPyramid(nn.Module):
                 m.bias.data.zero_()
 
     def forward(self, x):
-        out = self.conv1(x)
-        out = self.block1(out)
-        out = self.block2(out)
-        out = self.block3(out)
-        out = self.relu(self.bn1(out))
-        out = F.avg_pool2d(out, 8)
-        out = out.view(-1, self.nChannels)
-        return self.fc(out)
-
-
-# 기본 WideResNet 스타일 (zero-padding shortcut만 적용)
-def wideresnet28_10_pyramid(shakedrop_prob=0.0, use_pyramid=False, alpha=48):
-    """
-    WideResNet-28-10 with PyramidNet improvements
-    
-    Args:
-        shakedrop_prob: 최대 ShakeDrop 확률
-        use_pyramid: True이면 pyramid 스타일 채널 증가 활성화
-        alpha: pyramid 채널 증가량
-    """
-    return WideResNetPyramid(depth=28, num_classes=10, widen_factor=10, dropRate=0.3,
-                            shakedrop_prob=shakedrop_prob, use_pyramid=use_pyramid, alpha=alpha)
-
-
-def wideresnet16_8_pyramid(shakedrop_prob=0.0, use_pyramid=False, alpha=32):
-    """
-    WideResNet-16-8 with PyramidNet improvements
-    
-    Args:
-        shakedrop_prob: 최대 ShakeDrop 확률
-        use_pyramid: True이면 pyramid 스타일 채널 증가 활성화
-        alpha: pyramid 채널 증가량
-    """
-    return WideResNetPyramid(depth=16, num_classes=10, widen_factor=8, dropRate=0.3,
-                            shakedrop_prob=shakedrop_prob, use_pyramid=use_pyramid, alpha=alpha)
-
+        # 원본 구조: Conv -> BN
+        h = self.bn_in(self.c_in(x))
+        h = self.block1(h)
+        h = self.block2(h)
+        h = self.block3(h)
+        h = F.relu(self.bn_out(h))
+        h = F.avg_pool2d(h, 8)
+        h = h.view(h.size(0), -1)
+        h = self.fc_out(h)
+        return h
 
 # PyramidNet 완전 스타일 (pyramid 채널 증가 + zero-padding shortcut)
-def wideresnet28_10_fullpyramid(shakedrop_prob=0.5, alpha=48):
+def wideresnet28_10_pyramid(shakedrop_prob=0.5, alpha=48):
     """
     WideResNet-28-10 with full PyramidNet style
     """
@@ -253,7 +201,7 @@ def wideresnet28_10_fullpyramid(shakedrop_prob=0.5, alpha=48):
                             shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha)
 
 
-def wideresnet16_8_fullpyramid(shakedrop_prob=0.5, alpha=32):
+def wideresnet16_8_pyramid(shakedrop_prob=0.5, alpha=32):
     """
     WideResNet-16-8 with full PyramidNet style
     """
@@ -265,13 +213,33 @@ def pyramidnet110_270(shakedrop_prob=0.5, alpha=270):
     """
     PyramidNet-110 with alpha=270 (Original ShakePyramidNet configuration)
     
-    depth=110: (110 - 4) / 6 = 17.67, 가장 가까운 depth=112 사용 (n=18)
-    최종 채널: 16 + 270 = 286
+    depth=110: (110 - 2) / 6 = 18 (원본 방식)
+    최종 채널: 16 + math.ceil(270) = 286
+    파라미터: ~28.5M
     
     Args:
         shakedrop_prob: 최대 ShakeDrop 확률 (기본값: 0.5)
         alpha: pyramid 채널 증가량 (기본값: 270)
     """
-    return WideResNetPyramid(depth=112, num_classes=10, widen_factor=1, dropRate=0.0,
-                            shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha)
+    return WideResNetPyramid(depth=110, num_classes=10, widen_factor=1, dropRate=0.0,
+                            shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha,
+                            use_original_depth=True)
+
+
+# 10M 파라미터 수준의 PyramidNet 모델들
+def pyramidnet164_118(shakedrop_prob=0.5, alpha=118):
+    """
+    PyramidNet-164 with alpha=118 (~10M parameters)
+    
+    depth=164: (164 - 2) / 6 = 27 (원본 방식)
+    최종 채널: 16 + math.ceil(118) = 134
+    파라미터: ~10.12M
+    
+    Args:
+        shakedrop_prob: 최대 ShakeDrop 확률 (기본값: 0.5)
+        alpha: pyramid 채널 증가량 (기본값: 118)
+    """
+    return WideResNetPyramid(depth=164, num_classes=10, widen_factor=1, dropRate=0.0,
+                            shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha,
+                            use_original_depth=True)
 
