@@ -231,6 +231,8 @@ AutoAugment: ✅
 |------|------------|----------------------|----------------------|
 | wideresnet16_8 | -- | 95.22 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | 95.89 | 10.9 M |
+| + Remove First ReLU | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
+| + Last Batch Norm | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 1 | -- | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1 | 96.34 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA | 96.4 | 10.9 M |

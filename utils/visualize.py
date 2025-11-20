@@ -22,6 +22,7 @@ import torch.nn as nn
 from collections import OrderedDict
 import subprocess
 import shutil
+from main import _get_nets_dict 
 
 try:
     from torchviz import make_dot
@@ -326,15 +327,7 @@ def parse_args():
     """커맨드라인 인자 파싱"""
     parser = argparse.ArgumentParser(description='CIFAR-10 모델 시각화')
     parser.add_argument('--net', type=str, default='resnet18',
-                        choices=['baseline', 'baseline_bn', 'deep_baseline', 'deep_baseline_silu',
-                                 'deep_baseline_bn', 'deep_baseline_gap', 'deep_baseline_bn_dropout',
-                                 'deep_baseline_bn_dropout_resnet', 'deep_baseline_se', 'resnet18',
-                                 'vgg16', 'mobilenetv2', 'densenet121', 'deep_baseline2_bn', 'deep_baseline2_bn_residual',
-                                 'deep_baseline2_bn_residual_preact', 'deep_baseline3_bn', 'deep_baseline2_bn_resnext', 'deep_baseline2_bn_residual_se',
-                                 'deep_baseline2_bn_residual_grn', 'deep_baseline3_bn_residual', 'deep_baseline3_bn_residual_swish', 'deep_baseline3_bn_residual_swiglu', 'deep_baseline3_bn_residual_dla', 'deep_baseline3_bn_residual_dla_tree', 'deep_baseline3_bn_residual_group', 'deep_baseline3_bn_residual_shakedrop', 'deep_baseline4_bn_residual',
-                                 'deep_baseline4_bn_residual_shakedrop',
-                                 'convnext_patchify', 'convnext_local', 'convnext_cifar', 'convnext_tiny',
-                                 'mxresnet20', 'mxresnet32', 'mxresnet44', 'mxresnet56', 'dla', 'resnext29_4x64d'],
+                        choices=list(_get_nets_dict().keys()),
                         help='네트워크 모델 (default: resnet18)')
     parser.add_argument('--w-init', action='store_true',
                         help='Weight initialization 사용 (default: False)')

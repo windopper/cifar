@@ -83,7 +83,12 @@ from models.deep_baseline3_bn_residual_gap_gmp import (
 from models.deep_baseline4_bn_residual import ResNet18
 from models.mxresnet import MXResNet20, MXResNet32, MXResNet44, MXResNet56
 from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, ResNeXt29_32x4d
-from models.wideresnet import wideresnet28_10, wideresnet16_8
+from models.wideresnet import wideresnet28_10, wideresnet16_8, WideResNet
+from models.wideresnet_pyramid import (
+    wideresnet28_10_pyramid, wideresnet16_8_pyramid,
+    wideresnet28_10_fullpyramid, wideresnet16_8_fullpyramid,
+    pyramidnet110_270
+)
 from models.dla import DLA
 from models.convnext_step3_full import ConvNeXtCIFAR
 from models.convnextv2 import convnext_v2_cifar_nano, convnext_v2_cifar_nano_k3
@@ -339,6 +344,37 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     
     model_wideresnet16_8 = wideresnet16_8()
     results['wideresnet16_8'] = count_parameters(model_wideresnet16_8)
+    
+    # WideResNet with remove_first_relu
+    model_wideresnet28_10_remove_first_relu = wideresnet28_10(remove_first_relu=True)
+    results['wideresnet28_10_remove_first_relu'] = count_parameters(model_wideresnet28_10_remove_first_relu)
+    
+    model_wideresnet16_8_remove_first_relu = wideresnet16_8(remove_first_relu=True)
+    results['wideresnet16_8_remove_first_relu'] = count_parameters(model_wideresnet16_8_remove_first_relu)
+    
+    # WideResNet with last_batch_norm and remove_first_relu
+    model_wideresnet28_10_last_bn_remove_first_relu = wideresnet28_10(last_batch_norm=True, remove_first_relu=True)
+    results['wideresnet28_10_last_bn_remove_first_relu'] = count_parameters(model_wideresnet28_10_last_bn_remove_first_relu)
+    
+    model_wideresnet16_8_last_bn_remove_first_relu = wideresnet16_8(last_batch_norm=True, remove_first_relu=True)
+    results['wideresnet16_8_last_bn_remove_first_relu'] = count_parameters(model_wideresnet16_8_last_bn_remove_first_relu)
+    
+    # WideResNet Pyramid models
+    model_wideresnet28_10_pyramid = wideresnet28_10_pyramid(use_pyramid=False)
+    results['wideresnet28_10_pyramid'] = count_parameters(model_wideresnet28_10_pyramid)
+    
+    model_wideresnet16_8_pyramid = wideresnet16_8_pyramid(use_pyramid=False)
+    results['wideresnet16_8_pyramid'] = count_parameters(model_wideresnet16_8_pyramid)
+    
+    model_wideresnet28_10_fullpyramid = wideresnet28_10_fullpyramid()
+    results['wideresnet28_10_fullpyramid'] = count_parameters(model_wideresnet28_10_fullpyramid)
+    
+    model_wideresnet16_8_fullpyramid = wideresnet16_8_fullpyramid()
+    results['wideresnet16_8_fullpyramid'] = count_parameters(model_wideresnet16_8_fullpyramid)
+    
+    # PyramidNet-110
+    model_pyramidnet110_270 = pyramidnet110_270()
+    results['pyramidnet110_270'] = count_parameters(model_pyramidnet110_270)
     
     # DLA model
     model_dla = DLA()
