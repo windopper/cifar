@@ -232,7 +232,7 @@ AutoAugment: ✅
 | wideresnet16_8 | -- | 95.22 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | 95.89 | 10.9 M |
 | + Remove First ReLU | SGD with Nestrov, Learning Rate 0.1 | 94.78 | 10.9 M |
-| + Last Batch Norm | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
+| + Last Batch Norm | SGD with Nestrov, Learning Rate 0.1 | 95.08 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 1 | -- | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1 | 96.34 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA | 96.4 | 10.9 M |
@@ -252,7 +252,7 @@ AutoAugment: ✅
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
-| pyramidnet164_118 | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
+| pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1 | -- | 10.9 M |
 
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet164_118`
 

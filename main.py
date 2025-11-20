@@ -43,7 +43,7 @@ from models.wideresnet import (
 )
 from models.wideresnet_pyramid import (
     wideresnet28_10_pyramid, wideresnet16_8_pyramid,
-    pyramidnet110_270, pyramidnet164_118
+    pyramidnet110_270, pyramidnet110_150
 )
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
 from utils.cutmix import CutMixCollator, CutMixCriterion
@@ -263,7 +263,8 @@ def _get_nets_dict(init_weights: bool = False, shakedrop_prob: float = 0.0):
         'wideresnet28_10_pyramid': wideresnet28_10_pyramid(shakedrop_prob=shakedrop_prob),
         'wideresnet16_8_pyramid': wideresnet16_8_pyramid(shakedrop_prob=shakedrop_prob),
         'pyramidnet110_270': pyramidnet110_270(shakedrop_prob=shakedrop_prob),
-        'pyramidnet164_118': pyramidnet164_118(shakedrop_prob=shakedrop_prob),
+        # PyramidNet-110 with alpha=150 (~10M parameters, depth=110으로 변경됨)
+        'pyramidnet110_150': pyramidnet110_150(shakedrop_prob=shakedrop_prob),
         'rdnet_tiny': rdnet_tiny(pretrained=False, num_classes=10),
         'rdnet_small': rdnet_small(pretrained=False, num_classes=10),
         'rdnet_base': rdnet_base(pretrained=False, num_classes=10),

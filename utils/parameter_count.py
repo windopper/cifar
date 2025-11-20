@@ -86,7 +86,7 @@ from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, Re
 from models.wideresnet import wideresnet28_10, wideresnet16_8, WideResNet
 from models.wideresnet_pyramid import (
     wideresnet28_10_pyramid, wideresnet16_8_pyramid,
-    pyramidnet110_270, pyramidnet164_118
+    pyramidnet110_270, pyramidnet110_150
 )
 from models.dla import DLA
 from models.convnext_step3_full import ConvNeXtCIFAR
@@ -368,8 +368,9 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     model_pyramidnet110_270 = pyramidnet110_270()
     results['pyramidnet110_270'] = count_parameters(model_pyramidnet110_270)
     
-    model_pyramidnet164_118 = pyramidnet164_118()
-    results['pyramidnet164_118'] = count_parameters(model_pyramidnet164_118)
+    # PyramidNet-110 with alpha=150 (~10M parameters, depth=110으로 변경됨)
+    model_pyramidnet110_150 = pyramidnet110_150()
+    results['pyramidnet110_150'] = count_parameters(model_pyramidnet110_150)
     
     # DLA model
     model_dla = DLA()

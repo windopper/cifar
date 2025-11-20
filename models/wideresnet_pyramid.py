@@ -227,19 +227,19 @@ def pyramidnet110_270(shakedrop_prob=0.5, alpha=270):
 
 
 # 10M 파라미터 수준의 PyramidNet 모델들
-def pyramidnet164_118(shakedrop_prob=0.5, alpha=118):
+def pyramidnet110_150(shakedrop_prob=0.5, alpha=150):
     """
-    PyramidNet-164 with alpha=118 (~10M parameters)
+    PyramidNet-110 with alpha=150 (~10M parameters)
     
-    depth=164: (164 - 2) / 6 = 27 (원본 방식)
-    최종 채널: 16 + math.ceil(118) = 134
-    파라미터: ~10.12M
+    depth=110: (110 - 2) / 6 = 18 (원본 방식)
+    최종 채널: 16 + math.ceil(150) = 166
+    파라미터: ~10.12M (원본 164_118과 동일한 파라미터 수 유지)
     
     Args:
         shakedrop_prob: 최대 ShakeDrop 확률 (기본값: 0.5)
-        alpha: pyramid 채널 증가량 (기본값: 118)
+        alpha: pyramid 채널 증가량 (기본값: 150)
     """
-    return WideResNetPyramid(depth=164, num_classes=10, widen_factor=1, dropRate=0.0,
+    return WideResNetPyramid(depth=110, num_classes=10, widen_factor=1, dropRate=0.0,
                             shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha,
                             use_original_depth=True)
 
