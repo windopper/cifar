@@ -581,6 +581,8 @@ def main():
     # 시드 고정
     set_seed(args.seed)
 
+    # torch.set_float32_matmul_precision('high')
+
     # 디바이스 설정
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
