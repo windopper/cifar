@@ -145,5 +145,13 @@ def get_model_name_parts(args):
     if args.grad_norm is not None:
         model_name_parts.append(f"gradnorm{args.grad_norm}")
     
+    if args.amp:
+        model_name_parts.append("amp")
+    
+    if args.compile:
+        model_name_parts.append("compile")
+        if args.compile_mode != 'default':
+            model_name_parts.append(f"compile{args.compile_mode}")
+    
     return model_name_parts
 

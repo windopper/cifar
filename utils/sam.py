@@ -24,7 +24,7 @@ class SAM(torch.optim.Optimizer):
                 e_w = (torch.pow(p, 2) if group["adaptive"] else 1.0) * p.grad * scale.to(p)
                 p.add_(e_w)  # climb to the local maximum "w + e(w)"
 
-        if zero_grad: self.zero_grad()
+        if zero_grad: self.zero_grad(set_to_none=True)
 
     @torch.no_grad()
     def second_step(self, zero_grad=False):
@@ -35,7 +35,7 @@ class SAM(torch.optim.Optimizer):
 
         self.base_optimizer.step()  # do the actual "sharpness-aware" update
 
-        if zero_grad: self.zero_grad()
+        if zero_grad: self.zero_grad(set_to_none=True)
 
     @torch.no_grad()
     def step(self, closure=None):

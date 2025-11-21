@@ -41,6 +41,10 @@ def print_training_configuration(args, normalize_mean, normalize_std, save_path,
     if args.sam:
         print(f"  SAM rho: {args.sam_rho}")
         print(f"  SAM adaptive: {args.sam_adaptive}")
+    print(f"  AMP (Automatic Mixed Precision): {args.amp}")
+    print(f"  torch.compile: {args.compile}")
+    if args.compile:
+        print(f"  torch.compile mode: {args.compile_mode}")
     print(f"  ShakeDrop: {args.shakedrop}")
     if args.shakedrop > 0.0:
         print(f"  ShakeDrop probability: {args.shakedrop}")

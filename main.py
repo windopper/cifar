@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
+from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 import json
 import os
@@ -155,7 +156,8 @@ def set_seed(seed: int = 42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    # torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.benchmark = True
     print(f"Seed fixed to: {seed}")
 
 
@@ -563,6 +565,13 @@ def parse_args():
                         help='Weighted Cross Entropy 사용 (cat, dog 클래스에 1.5배 가중치 부여, default: False)')
     parser.add_argument('--grad-norm', type=float, default=None,
                         help='Gradient clipping의 최대 norm 값 (None이면 비활성화, default: None)')
+    parser.add_argument('--amp', action='store_true',
+                        help='AMP (Automatic Mixed Precision) 사용 (default: False)')
+    parser.add_argument('--compile', action='store_true', default=True,
+                        help='torch.compile을 사용하여 모델 최적화 (default: True)')
+    parser.add_argument('--compile-mode', type=str, default='max-autotune',
+                        choices=['default', 'reduce-overhead', 'max-autotune'],
+                        help='torch.compile 모드 (default: max-autotune)')
     return parser.parse_args()
 
 
@@ -665,12 +674,35 @@ def main():
     
     net = get_net(args.net, init_weights=args.w_init, shakedrop_prob=shakedrop_prob)
     net = net.to(device)
+    
+    # torch.compile 적용
+    if args.compile:
+        if hasattr(torch, 'compile'):
+            try:
+                net = torch.compile(net, mode=args.compile_mode)
+                print(f"torch.compile 활성화됨 (mode: {args.compile_mode})")
+            except Exception as e:
+                print(f"[경고] torch.compile 적용 실패: {e}")
+                print("  모델을 컴파일하지 않고 계속 진행합니다.")
+        else:
+            print("[경고] 현재 PyTorch 버전에서 torch.compile을 지원하지 않습니다. (PyTorch 2.0+ 필요)")
+            args.compile = False
 
     # EMA 초기화
     ema_model = None
     if args.ema:
         ema_model = ModelEMA(net, decay=args.ema_decay, device=device)
         print(f"EMA 활성화됨 (decay: {args.ema_decay})")
+    
+    # AMP GradScaler 초기화
+    scaler = None
+    if args.amp:
+        if device.type == 'cuda':
+            scaler = GradScaler()
+            print(f"AMP (Automatic Mixed Precision) 활성화됨")
+        else:
+            print("[경고] AMP는 CUDA 디바이스에서만 지원됩니다. CPU에서는 비활성화됩니다.")
+            args.amp = False
 
     # Weighted Cross Entropy 가중치 설정
     class_weights = None
@@ -763,61 +795,93 @@ def main():
             else:
                 labels = labels.to(device)
 
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
 
             def compute_loss(inputs, labels):
-                outputs = net(inputs)
+                # AMP autocast 적용
+                with autocast(enabled=args.amp):
+                    outputs = net(inputs)
 
-                # 기본 CrossEntropy / CutMix / Mixup 손실
-                # 둘 다 사용 중일 때는 배치마다 선택되므로, labels가 tuple인지만 확인
-                if isinstance(labels, tuple):
-                    # CutMix와 Mixup 둘 다 사용 중이면, 실제로 어떤 것이 적용되었는지 판단하기 어려우므로
-                    # 둘 다 동일한 형태의 손실을 사용하므로, cutmix_criterion을 사용 (둘 다 동일한 형태)
-                    if use_both_current:
-                        # 둘 다 사용 중일 때는 cutmix_criterion 사용 (둘 다 동일한 형태)
-                        loss_ce = cutmix_criterion(outputs, labels)
-                    elif use_cutmix:
-                        loss_ce = cutmix_criterion(outputs, labels)
-                    elif use_mixup:
-                        loss_ce = mixup_criterion(outputs, labels)
+                    # 기본 CrossEntropy / CutMix / Mixup 손실
+                    # 둘 다 사용 중일 때는 배치마다 선택되므로, labels가 tuple인지만 확인
+                    if isinstance(labels, tuple):
+                        # CutMix와 Mixup 둘 다 사용 중이면, 실제로 어떤 것이 적용되었는지 판단하기 어려우므로
+                        # 둘 다 동일한 형태의 손실을 사용하므로, cutmix_criterion을 사용 (둘 다 동일한 형태)
+                        if use_both_current:
+                            # 둘 다 사용 중일 때는 cutmix_criterion 사용 (둘 다 동일한 형태)
+                            loss_ce = cutmix_criterion(outputs, labels)
+                        elif use_cutmix:
+                            loss_ce = cutmix_criterion(outputs, labels)
+                        elif use_mixup:
+                            loss_ce = mixup_criterion(outputs, labels)
+                        else:
+                            loss_ce = criterion(outputs, labels)
                     else:
                         loss_ce = criterion(outputs, labels)
-                else:
-                    loss_ce = criterion(outputs, labels)
 
-                # SupCon 손실 추가 (--criterion supcon_ce, CutMix/Mixup 미사용 시)
-                if supcon_criterion is not None:
-                    if use_cutmix or use_mixup or use_both_current:
-                        raise ValueError(
-                            "SupCon CE(--criterion supcon_ce)는 CutMix/Mixup과 함께 사용할 수 없습니다.")
-                    if hasattr(net, "forward_features"):
-                        features = net.forward_features(inputs)
+                    # SupCon 손실 추가 (--criterion supcon_ce, CutMix/Mixup 미사용 시)
+                    if supcon_criterion is not None:
+                        if use_cutmix or use_mixup or use_both_current:
+                            raise ValueError(
+                                "SupCon CE(--criterion supcon_ce)는 CutMix/Mixup과 함께 사용할 수 없습니다.")
+                        if hasattr(net, "forward_features"):
+                            features = net.forward_features(inputs)
+                        else:
+                            # 안전 장치: 별도 feature 추출 메서드가 없을 경우 logits를 그대로 사용
+                            features = outputs
+                        # SupCon은 hard label만 사용
+                        supcon_loss = supcon_criterion(features, labels)
+                        loss = loss_ce + supcon_weight * supcon_loss
                     else:
-                        # 안전 장치: 별도 feature 추출 메서드가 없을 경우 logits를 그대로 사용
-                        features = outputs
-                    # SupCon은 hard label만 사용
-                    supcon_loss = supcon_criterion(features, labels)
-                    loss = loss_ce + supcon_weight * supcon_loss
-                else:
-                    loss = loss_ce
+                        loss = loss_ce
                 
                 return loss, outputs
 
             loss, outputs = compute_loss(inputs, labels)
-            loss.backward()
             
-            # Gradient clipping
-            if args.grad_norm is not None:
+            # AMP를 사용할 경우 scaler를 통해 backward
+            if args.amp:
+                scaler.scale(loss).backward()
+            else:
+                loss.backward()
+            
+            # Gradient clipping (SAM 사용 시에는 적용하지 않음)
+            if args.grad_norm is not None and not args.sam:
+                if args.amp:
+                    # AMP 사용 시 scaler를 통해 gradient unscale 후 clipping
+                    scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(net.parameters(), args.grad_norm)
             
             if args.sam:
+                # SAM optimizer는 closure를 통해 두 번의 forward-backward를 수행
                 def closure():
+                    optimizer.zero_grad(set_to_none=True)
                     loss, _ = compute_loss(inputs, labels)
-                    loss.backward()
+                    if args.amp:
+                        scaler.scale(loss).backward()
+                    else:
+                        loss.backward()
                     return loss
-                optimizer.step(closure)
+                
+                # SAM의 first step (gradient 계산)
+                if args.amp:
+                    scaler.unscale_(optimizer)
+                optimizer.first_step(zero_grad=True)
+                
+                # SAM의 second step (실제 업데이트)
+                closure()
+                if args.amp:
+                    scaler.unscale_(optimizer)
+                optimizer.second_step()
+                
+                if args.amp:
+                    scaler.update()
             else:
-                optimizer.step()
+                if args.amp:
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    optimizer.step()
 
             # EMA 업데이트 (각 배치마다)
             if ema_model is not None:
