@@ -31,9 +31,14 @@ Weight Initialization: ✅
 | + Cosine Annealing LR | 78.81 |
 | + Batch Normalization | 71.93 | 
 
+
+Batch Size: 32
 # TODO: 배치사이즈 32로 비교해야됨.
 |--|--|
-| + Batch Size 32 | 82.7 |
+| -- | 77.27 |
+| + Weight Initialization | 80.52 |
+| + Cosine Annealing LR | 82.05 |
+| + Batch Normalization | 82.7 | 
 
 # Scheduler 비교
 Optimizer: Adam
@@ -236,7 +241,7 @@ AutoAugment: ✅
 
 `python cifar/main.py --optimizer adamw --epochs 100 --lr 2e-3 --batch-size 128 --weight-decay 0.05 --scheduler cosineannealingwarmuprestarts --w-init --augment --autoaugment --sam --sam-rho 2.0 --sam-adaptive --ema --scheduler-warmup-epochs 5 --net convnext_v2_cifar_nano_k3`
 
-`python cifar/main.py --optimizer sgd --epochs 200 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --label-smoothing 0.1 --w-init --augment --autoaugment --nesterov --use-cifar-normalize --net wideresnet16_8`
+`python cifar/main.py --optimizer adam --epochs 100 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --net wideresnet16_8`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
@@ -267,7 +272,7 @@ AutoAugment: ✅
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
-| wideresnet16_8 | -- | 95.22 | 10.9 M |
+| wideresnet16_8 | -- | 95.08 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1 | 95.89 | 10.9 M |
 | + Remove First ReLU | SGD with Nestrov, Learning Rate 0.1 | 94.78 | 10.9 M |
 | + Last Batch Norm | SGD with Nestrov, Learning Rate 0.1 | 95.08 | 10.9 M |
@@ -275,23 +280,19 @@ AutoAugment: ✅
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1 | 96.34 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA | 96.4 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1 | 96.86 | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, --weighted-ce | -- | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Use CIFAR-10 Normalize | 96.61 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, Label Smoothing 0.1, Epoch 200, Use CIFAR-10 Normalize | 96.49 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 200 | **97.07** | 10.9 M |
 
-`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net wideresnet16_8_remove_first_relu`
-
-`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net wideresnet16_8_last_bn_remove_first_relu`
-
-`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net wideresnet16_8 --shakedrop 1`
-
-`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net wideresnet16_8 --shakedrop 1`
+`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --weighted-ce --net wideresnet16_8`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
 | pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1 | 96.82 | 10.9 M |
 | pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 1 | 92.61 | 10.9 M |
 | pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 0.5 | 96.90 | 10.9 M |
+| pyramidnet110_150 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, ShakeDrop 0.5, Label Smoothing 0.1 | 97.0 | 10.9 M |
 | pyramidnet110_150 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 200, ShakeDrop 0.5 | 97.48 | 10.9 M |
 
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet110_150`
@@ -299,6 +300,8 @@ AutoAugment: ✅
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet110_150 --shakedrop 1`
 
 `python cifar/main.py --optimizer sgd --epochs 200 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net pyramidnet110_150 --shakedrop 0.5`
+
+`python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net pyramidnet110_150 --shakedrop 0.5`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|

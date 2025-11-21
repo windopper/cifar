@@ -4,7 +4,6 @@ import torch.nn as nn
 
 
 def _rand_bbox(size, lam):
-    """CutMix에서 사용할 박스 좌표 생성"""
     _, _, h, w = size
     cut_ratio = np.sqrt(1.0 - lam)
     cut_w = int(w * cut_ratio)
@@ -22,7 +21,6 @@ def _rand_bbox(size, lam):
 
 
 def cutmix(batch, alpha):
-    """Batch 단위 CutMix 적용"""
     data, targets = batch
     batch_size = data.size(0)
 
@@ -36,11 +34,9 @@ def cutmix(batch, alpha):
 
     x0, y0, x1, y1 = _rand_bbox(data.size(), lam)
 
-    # 데이터 복사 후 CutMix 적용 (in-place 수정 방지)
     mixed_data = data.clone()
     mixed_data[:, :, y0:y1, x0:x1] = shuffled_data[:, :, y0:y1, x0:x1]
 
-    # 실제로 잘린 영역 비율로 lam 업데이트
     area = (x1 - x0) * (y1 - y0)
     lam = 1.0 - area / (data.size(2) * data.size(3))
 
@@ -56,7 +52,6 @@ class CutMixCollator:
 
     def __call__(self, batch):
         batch = torch.utils.data.dataloader.default_collate(batch)
-        # 확률적으로 CutMix 적용
         if self.prob > 0.0 and np.random.rand() < self.prob:
             batch = cutmix(batch, self.alpha)
         return batch

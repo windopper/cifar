@@ -19,12 +19,9 @@ class BasicBlock(nn.Module):
         self.convShortcut = (not self.equalInOut) and nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride,
                                padding=0, bias=False) or None
         
-        # ShakeDrop 모듈 초기화 (기본값 0.0으로 비활성화)
         self.shake_drop = ShakeDrop(p_drop=shakedrop_prob) if shakedrop_prob > 0.0 else None
-        # ShakeDrop 전에 통과할 BatchNorm2d 층 (ShakeDrop 활성화 시에만 사용)
         self.bn3 = nn.BatchNorm2d(out_planes) if last_batch_norm else None
         
-        # 첫 번째 ReLU 제거 옵션
         self.remove_first_relu = remove_first_relu
         
         self.last_batch_norm = last_batch_norm
@@ -36,7 +33,6 @@ class BasicBlock(nn.Module):
             out = self.bn1(x) if self.remove_first_relu else self.relu1(self.bn1(x))
         
         out = self.relu2(self.bn2(self.conv1(out if self.equalInOut else x)))
-        # ShakeDrop 사용 시 dropout 비활성화
         if self.droprate > 0 and self.shake_drop is None:
             out = F.dropout(out, p=self.droprate, training=self.training)
         out = self.conv2(out)
@@ -57,7 +53,6 @@ class NetworkBlock(nn.Module):
     def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate, shakedrop_probs, last_batch_norm, remove_first_relu):
         layers = []
         for i in range(int(nb_layers)):
-            # 각 블록에 맞는 ShakeDrop 확률 전달
             prob = shakedrop_probs[i] if shakedrop_probs and i < len(shakedrop_probs) else 0.0
             layers.append(block(i == 0 and in_planes or out_planes, out_planes,
                                 i == 0 and stride or 1, dropRate, shakedrop_prob=prob,
@@ -75,7 +70,6 @@ class WideResNet(nn.Module):
         n = (depth - 4) / 6
         block = BasicBlock
         
-        # ShakeDrop 확률 스케줄 생성 (선형 증가: 첫 블록 0.0 → 마지막 블록 shakedrop_prob)
         total_blocks = int(n * 3)
         if shakedrop_prob > 0 and total_blocks > 1:
             step = shakedrop_prob / (total_blocks - 1)
@@ -85,19 +79,14 @@ class WideResNet(nn.Module):
         else:
             probs = [0.0] * total_blocks
         
-        # 1st conv before any network block
         self.conv1 = nn.Conv2d(3, nChannels[0], kernel_size=3, stride=1,
                                padding=1, bias=False)
         
-        # 1st block (probs의 앞부분 n개 전달)
         n_int = int(n)
         self.block1 = NetworkBlock(n, nChannels[0], nChannels[1], block, 1, dropRate, shakedrop_probs=probs[0:n_int], last_batch_norm=last_batch_norm, remove_first_relu=remove_first_relu)
-        # 2nd block (probs의 중간 n개 전달)
         self.block2 = NetworkBlock(n, nChannels[1], nChannels[2], block, 2, dropRate, shakedrop_probs=probs[n_int:2*n_int], last_batch_norm=last_batch_norm, remove_first_relu=remove_first_relu)
-        # 3rd block (probs의 뒷부분 n개 전달)
         self.block3 = NetworkBlock(n, nChannels[2], nChannels[3], block, 2, dropRate, shakedrop_probs=probs[2*n_int:], last_batch_norm=last_batch_norm, remove_first_relu=remove_first_relu)
         
-        # global average pooling and classifier
         self.bn1 = nn.BatchNorm2d(nChannels[3])
         self.relu = nn.ReLU(inplace=True)
         self.fc = nn.Linear(nChannels[3], num_classes)
@@ -125,8 +114,6 @@ class WideResNet(nn.Module):
 def wideresnet28_10(shakedrop_prob=0.0, last_batch_norm=False, remove_first_relu=False):
     return WideResNet(depth=28, num_classes=10, widen_factor=10, dropRate=0.3, shakedrop_prob=shakedrop_prob, last_batch_norm=last_batch_norm, remove_first_relu=remove_first_relu)
 
-# channel [16, 160, 320, 640]
-# n = 2
 def wideresnet16_8(shakedrop_prob=0.0, last_batch_norm=False, remove_first_relu=False):
     return WideResNet(depth=16, num_classes=10, widen_factor=8, dropRate=0.3, shakedrop_prob=shakedrop_prob, last_batch_norm=last_batch_norm, remove_first_relu=remove_first_relu)
     

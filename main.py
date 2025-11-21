@@ -159,10 +159,16 @@ def set_seed(seed: int = 42):
     print(f"Seed fixed to: {seed}")
 
 
-def get_criterion(name: str, label_smoothing: float = 0.0):
-    """Criterion 팩토리 함수"""
+def get_criterion(name: str, label_smoothing: float = 0.0, weight: torch.Tensor = None):
+    """Criterion 팩토리 함수
+    
+    Args:
+        name: criterion 이름
+        label_smoothing: label smoothing 값
+        weight: 클래스별 가중치 텐서 (weighted cross entropy용)
+    """
     criterions = {
-        'crossentropy': nn.CrossEntropyLoss(label_smoothing=label_smoothing),
+        'crossentropy': nn.CrossEntropyLoss(label_smoothing=label_smoothing, weight=weight),
         'mse': nn.MSELoss(),
         'nll': nn.NLLLoss(),
     }
@@ -554,6 +560,8 @@ def parse_args():
                         help='SAM adaptive 모드 사용 (default: False)')
     parser.add_argument('--shakedrop', type=float, default=0.0,
                         help='ShakeDrop 확률 (0.0~1.0, WideResNet 모델에만 적용, default: 0.0)')
+    parser.add_argument('--weighted-ce', action='store_true',
+                        help='Weighted Cross Entropy 사용 (cat, dog 클래스에 1.5배 가중치 부여, default: False)')
     return parser.parse_args()
 
 
@@ -662,20 +670,34 @@ def main():
         ema_model = ModelEMA(net, decay=args.ema_decay, device=device)
         print(f"EMA 활성화됨 (decay: {args.ema_decay})")
 
+    # Weighted Cross Entropy 가중치 설정
+    class_weights = None
+    if args.weighted_ce:
+        # CIFAR-10 클래스: 0:plane, 1:car, 2:bird, 3:cat, 4:deer, 5:dog, 6:frog, 7:horse, 8:ship, 9:truck
+        # cat(3)과 dog(5)에 1.5배 가중치 부여
+        class_weights = torch.ones(10, dtype=torch.float32)
+        class_weights[3] = 1.5  # cat
+        class_weights[5] = 1.5  # dog
+        class_weights = class_weights.to(device)
+        print(f"Weighted Cross Entropy 활성화됨:")
+        print(f"  - cat (인덱스 3): 가중치 1.5")
+        print(f"  - dog (인덱스 5): 가중치 1.5")
+        print(f"  - 기타 클래스: 가중치 1.0")
+    
     # Criterion 설정
     supcon_criterion = None
     supcon_weight = 0.1
     if args.criterion.lower() == 'supcon_ce':
         # SupCon + CrossEntropy 조합
         criterion = get_criterion(
-            'crossentropy', label_smoothing=args.label_smoothing)
+            'crossentropy', label_smoothing=args.label_smoothing, weight=class_weights)
         supcon_criterion = SupConLoss(temperature=0.07)
         # SupCon은 현재 baseline_bn 모델에서만 정식 지원
         if args.net != 'baseline_bn':
             print("[경고] --criterion supcon_ce는 현재 baseline_bn 모델에 최적화되어 있습니다.")
     else:
         criterion = get_criterion(
-            args.criterion, label_smoothing=args.label_smoothing)
+            args.criterion, label_smoothing=args.label_smoothing, weight=class_weights)
     optimizer = get_optimizer(args.optimizer, net, lr=args.lr,
                               momentum=args.momentum, weight_decay=args.weight_decay, nesterov=args.nesterov,
                               use_sam=args.sam, sam_rho=args.sam_rho, sam_adaptive=args.sam_adaptive)
