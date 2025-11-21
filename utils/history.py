@@ -59,7 +59,8 @@ def create_history(args, normalize_mean, normalize_std, device, num_workers, pin
             'ema_decay': args.ema_decay if args.ema else None,
             'sam': args.sam,
             'sam_rho': args.sam_rho if args.sam else None,
-            'sam_adaptive': args.sam_adaptive if args.sam else None
+            'sam_adaptive': args.sam_adaptive if args.sam else None,
+            'grad_norm': args.grad_norm
         },
         'train_loss': [],
         'val_loss': [],

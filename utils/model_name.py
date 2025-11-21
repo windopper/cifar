@@ -142,5 +142,8 @@ def get_model_name_parts(args):
         if args.shakedrop != 0.5:  # 기본값이 아닐 때만 추가
             model_name_parts.append(f"shakedropp{args.shakedrop}")
     
+    if args.grad_norm is not None:
+        model_name_parts.append(f"gradnorm{args.grad_norm}")
+    
     return model_name_parts
 
