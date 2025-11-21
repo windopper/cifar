@@ -567,7 +567,7 @@ def parse_args():
                         help='Gradient clipping의 최대 norm 값 (None이면 비활성화, default: None)')
     parser.add_argument('--amp', action='store_true',
                         help='AMP (Automatic Mixed Precision) 사용 (default: False)')
-    parser.add_argument('--compile', action='store_true', default=True,
+    parser.add_argument('--compile', action='store_true', default=False,
                         help='torch.compile을 사용하여 모델 최적화 (default: True)')
     parser.add_argument('--compile-mode', type=str, default='default',
                         choices=['default', 'reduce-overhead', 'max-autotune'],
