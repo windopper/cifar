@@ -174,7 +174,7 @@ def get_criterion(name: str, label_smoothing: float = 0.0, weight: torch.Tensor 
         'crossentropy': nn.CrossEntropyLoss(label_smoothing=label_smoothing, weight=weight),
         'mse': nn.MSELoss(),
         'nll': nn.NLLLoss(),
-        'focal_loss_adaptive': FocalLossAdaptive(gamma=gamma, size_average=False, device=device),
+        'focal_loss_adaptive': FocalLossAdaptive(gamma=gamma, size_average=True, device=device),
     }
     if name.lower() not in criterions:
         raise ValueError(

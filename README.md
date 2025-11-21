@@ -288,7 +288,7 @@ AutoAugment: ✅
 
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --weighted-ce --net wideresnet16_8`
 
-`python cifar/main.py --optimizer sgd --epochs 100 --criterion focal_loss_adaptive --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net wideresnet16_8`
+`python cifar/main.py --optimizer sgd --epochs 100 --criterion focal_loss_adaptive --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --grad-norm 2.0 --net wideresnet16_8`
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|
