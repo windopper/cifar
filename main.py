@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 from tqdm import tqdm
 import json
 import os
@@ -569,9 +569,9 @@ def parse_args():
                         help='AMP (Automatic Mixed Precision) 사용 (default: False)')
     parser.add_argument('--compile', action='store_true', default=True,
                         help='torch.compile을 사용하여 모델 최적화 (default: True)')
-    parser.add_argument('--compile-mode', type=str, default='max-autotune',
+    parser.add_argument('--compile-mode', type=str, default='default',
                         choices=['default', 'reduce-overhead', 'max-autotune'],
-                        help='torch.compile 모드 (default: max-autotune)')
+                        help='torch.compile 모드 (default: default)')
     return parser.parse_args()
 
 
@@ -674,6 +674,12 @@ def main():
     
     net = get_net(args.net, init_weights=args.w_init, shakedrop_prob=shakedrop_prob)
     net = net.to(device)
+
+    # EMA 초기화 (torch.compile 전에 수행하여 원본 모델을 복사하도록 함)
+    ema_model = None
+    if args.ema:
+        ema_model = ModelEMA(net, decay=args.ema_decay, device=device)
+        print(f"EMA 활성화됨 (decay: {args.ema_decay})")
     
     # torch.compile 적용
     if args.compile:
@@ -688,12 +694,6 @@ def main():
             print("[경고] 현재 PyTorch 버전에서 torch.compile을 지원하지 않습니다. (PyTorch 2.0+ 필요)")
             args.compile = False
 
-    # EMA 초기화
-    ema_model = None
-    if args.ema:
-        ema_model = ModelEMA(net, decay=args.ema_decay, device=device)
-        print(f"EMA 활성화됨 (decay: {args.ema_decay})")
-    
     # AMP GradScaler 초기화
     scaler = None
     if args.amp:
@@ -799,7 +799,7 @@ def main():
 
             def compute_loss(inputs, labels):
                 # AMP autocast 적용
-                with autocast(enabled=args.amp):
+                with autocast('cuda', enabled=args.amp):
                     outputs = net(inputs)
 
                     # 기본 CrossEntropy / CutMix / Mixup 손실
@@ -854,26 +854,22 @@ def main():
             
             if args.sam:
                 # SAM optimizer는 closure를 통해 두 번의 forward-backward를 수행
-                def closure():
-                    optimizer.zero_grad(set_to_none=True)
-                    loss, _ = compute_loss(inputs, labels)
-                    if args.amp:
-                        scaler.scale(loss).backward()
-                    else:
-                        loss.backward()
-                    return loss
+                # AMP 사용 시 첫 번째 backward 후 unscale 필요
+                if args.amp:
+                    scaler.unscale_(optimizer)
                 
                 # SAM의 first step (gradient 계산)
-                if args.amp:
-                    scaler.unscale_(optimizer)
                 optimizer.first_step(zero_grad=True)
                 
-                # SAM의 second step (실제 업데이트)
-                closure()
-                if args.amp:
-                    scaler.unscale_(optimizer)
+                # SAM의 second step을 위한 closure
+                optimizer.zero_grad(set_to_none=True)
+                loss, _ = compute_loss(inputs, labels)
+                
+                # 두 번째 backward는 AMP 없이 수행 (이미 unscale되었으므로)
+                loss.backward()
                 optimizer.second_step()
                 
+                # AMP 사용 시 scaler update
                 if args.amp:
                     scaler.update()
             else:
