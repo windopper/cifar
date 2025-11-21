@@ -29,7 +29,6 @@ from models.convnext_step1_patchify import ConvNeXtPatchifyClassifier
 from models.convnext_step2_local_block import ConvNeXtLocalBlockClassifier
 from models.convnext_step3_full import ConvNeXtCIFAR, convnext_tiny
 from models.convnextv2 import convnext_v2_cifar_nano, convnext_v2_cifar_nano_k3
-from calibration import calibrate_temperature
 from models.resnet import ResNet18
 from models.vgg import VGG
 from models.mobilenetv2 import MobileNetV2
@@ -52,7 +51,7 @@ from utils.dataset import get_cifar10_loaders, get_normalize_values
 from utils.history import (
     create_history, update_history_scheduler_params, update_history_optimizer_params,
     update_history_epoch, update_history_best, update_history_early_stop,
-    update_history_calibration, save_history
+    save_history
 )
 from utils.model_name import get_model_name_parts
 from utils.training_config import print_training_configuration
@@ -75,6 +74,7 @@ from utils.supcon import SupConLoss
 from utils.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
 from utils.ema import ModelEMA
 from utils.sam import SAM
+from utils.loss.focal_loss_adaptive import FocalLossAdaptive
 from models.deep_baseline3_bn_residual import DeepBaselineNetBN3Residual
 from models.deep_baseline3_bn_residual_15 import DeepBaselineNetBN3Residual15
 from models.deep_baseline3_bn_residual_18 import DeepBaselineNetBN3Residual18
@@ -159,18 +159,22 @@ def set_seed(seed: int = 42):
     print(f"Seed fixed to: {seed}")
 
 
-def get_criterion(name: str, label_smoothing: float = 0.0, weight: torch.Tensor = None):
+def get_criterion(name: str, label_smoothing: float = 0.0, weight: torch.Tensor = None, 
+                  gamma: float = 3.0, device: torch.device = None):
     """Criterion 팩토리 함수
     
     Args:
         name: criterion 이름
         label_smoothing: label smoothing 값
         weight: 클래스별 가중치 텐서 (weighted cross entropy용)
+        gamma: focal loss의 gamma 값 (focal_loss_adaptive용)
+        device: 디바이스 (focal_loss_adaptive용)
     """
     criterions = {
         'crossentropy': nn.CrossEntropyLoss(label_smoothing=label_smoothing, weight=weight),
         'mse': nn.MSELoss(),
         'nll': nn.NLLLoss(),
+        'focal_loss_adaptive': FocalLossAdaptive(gamma=gamma, size_average=False, device=device),
     }
     if name.lower() not in criterions:
         raise ValueError(
@@ -450,8 +454,10 @@ def parse_args():
     parser.add_argument('--batch-size', type=int,
                         default=16, help='배치 크기 (default: 16)')
     parser.add_argument('--criterion', type=str, default='crossentropy',
-                        choices=['crossentropy', 'mse', 'nll', 'supcon_ce'],
+                        choices=['crossentropy', 'mse', 'nll', 'supcon_ce', 'focal_loss_adaptive'],
                         help='손실 함수 (default: crossentropy)')
+    parser.add_argument('--flsd-gamma', type=float, default=3.0,
+                        help='Focal Loss의 gamma 값 (default: 3.0)')
     parser.add_argument('--net', type=str, default='baseline',
                         choices=get_available_nets(),
                         help='네트워크 모델 (default: baseline)')
@@ -532,8 +538,6 @@ def parse_args():
                         help='Cutout 마스킹할 영역의 개수 (default: 1)')
     parser.add_argument('--cutout-prob', type=float, default=0.5,
                         help='Cutout을 적용할 확률 (0.0~1.0, default: 1.0)')
-    parser.add_argument('--calibrate', action='store_true',
-                        help='Temperature Scaling 캘리브레이션 수행 (default: False)')
     parser.add_argument('--use-cifar-normalize', action='store_true',
                         help='CIFAR-10 표준 Normalize 값 사용 (mean: 0.4914 0.4822 0.4465, std: 0.2023 0.1994 0.2010, default: False)')
     parser.add_argument('--seed', type=int, default=42,
@@ -697,7 +701,8 @@ def main():
             print("[경고] --criterion supcon_ce는 현재 baseline_bn 모델에 최적화되어 있습니다.")
     else:
         criterion = get_criterion(
-            args.criterion, label_smoothing=args.label_smoothing, weight=class_weights)
+            args.criterion, label_smoothing=args.label_smoothing, weight=class_weights,
+            gamma=args.flsd_gamma, device=device)
     optimizer = get_optimizer(args.optimizer, net, lr=args.lr,
                               momentum=args.momentum, weight_decay=args.weight_decay, nesterov=args.nesterov,
                               use_sam=args.sam, sam_rho=args.sam_rho, sam_adaptive=args.sam_adaptive)
@@ -898,50 +903,12 @@ def main():
 
     print('Finished Training')
 
-    # Temperature Scaling 캘리브레이션 수행
-    optimal_temperature = None
-    if args.calibrate:
-        print("\n" + "="*50)
-        print("Temperature Scaling 캘리브레이션 시작...")
-        print("="*50)
-        optimal_temperature = calibrate_temperature(net, val_loader, device)
-        print(f"최적의 Temperature: {optimal_temperature:.4f}")
-
-        # 캘리브레이션 후 검증 정확도 확인
-        net.eval()
-        calibrated_correct = 0
-        calibrated_total = 0
-        with torch.no_grad():
-            for inputs, labels in val_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                logits = net(inputs)
-                # Temperature로 스케일링
-                scaled_logits = logits / optimal_temperature
-                _, predicted = torch.max(scaled_logits.data, 1)
-                calibrated_total += labels.size(0)
-                calibrated_correct += (predicted == labels).sum().item()
-
-        calibrated_acc = 100 * calibrated_correct / calibrated_total
-        print(f"캘리브레이션 후 검증 정확도: {calibrated_acc:.2f}%")
-        print("="*50 + "\n")
-
-        # 히스토리에 temperature 저장
-        update_history_calibration(history, optimal_temperature, calibrated_acc)
-
-        # 히스토리 파일 업데이트
-        save_history(history, HISTORY_PATH)
-
     # 최고 모델은 이미 저장되어 있음
     print(
         f"Best model (Val Accuracy: {best_val_acc:.2f}%) saved to: {SAVE_PATH}")
     print(f"Training history saved to: {HISTORY_PATH}")
-
-    # Temperature가 있으면 별도 파일로도 저장
-    if optimal_temperature is not None:
-        TEMP_PATH = os.path.join(output_dir, f"{model_name}_temperature.json")
-        with open(TEMP_PATH, 'w') as f:
-            json.dump({'temperature': optimal_temperature}, f, indent=2)
-        print(f"Temperature saved to: {TEMP_PATH}")
+    print("\n캘리브레이션을 수행하려면 다음 명령어를 사용하세요:")
+    print(f"python calibrate_model.py --model-path {SAVE_PATH} --history-path {HISTORY_PATH}")
 
 
 if __name__ == '__main__':

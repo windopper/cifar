@@ -61,6 +61,11 @@ def get_model_name_parts(args):
     if args.label_smoothing > 0.0:
         model_name_parts.append(f"ls{args.label_smoothing}")
     
+    if args.criterion.lower() == 'focal_loss_adaptive':
+        model_name_parts.append("focal")
+        if args.flsd_gamma != 3.0:  # 기본값이 아닐 때만 추가
+            model_name_parts.append(f"flsd{args.flsd_gamma}")
+    
     if args.weighted_ce:
         model_name_parts.append("weighted_ce")
     
@@ -116,8 +121,6 @@ def get_model_name_parts(args):
     if args.w_init:
         model_name_parts.append("winit")
     
-    if args.calibrate:
-        model_name_parts.append("calibrated")
     
     if args.use_cifar_normalize:
         model_name_parts.append("cifar_normalize")

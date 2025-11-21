@@ -31,6 +31,7 @@ def create_history(args, normalize_mean, normalize_std, device, num_workers, pin
             'nesterov': args.nesterov if args.optimizer.lower() == 'sgd' else None,
             'scheduler': args.scheduler,
             'label_smoothing': args.label_smoothing,
+            'flsd_gamma': args.flsd_gamma if args.criterion.lower() == 'focal_loss_adaptive' else None,
             'weighted_ce': args.weighted_ce,
             'data_augment': args.augment,
             'autoaugment': args.autoaugment and args.augment,
@@ -168,6 +169,22 @@ def update_history_calibration(history, optimal_temperature, calibrated_val_accu
     """
     history['hyperparameters']['temperature'] = optimal_temperature
     history['calibrated_val_accuracy'] = calibrated_val_accuracy
+
+
+def load_history(history_path):
+    """
+    히스토리를 JSON 파일에서 로드
+    
+    Args:
+        history_path: 로드할 파일 경로
+    
+    Returns:
+        history: 히스토리 딕셔너리 (파일이 없으면 None)
+    """
+    if os.path.exists(history_path):
+        with open(history_path, 'r') as f:
+            return json.load(f)
+    return None
 
 
 def save_history(history, history_path):

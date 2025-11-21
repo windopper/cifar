@@ -15,6 +15,7 @@ dependencies = [
     "torchviz>=0.0.3",
     "setuptools>=80.9.0",
     "timm>=1.0.22",
+    "scipy>=1.16.3",
 ]
 
 [[tool.uv.index]]
