@@ -566,6 +566,8 @@ def parse_args():
                         help='ShakeDrop 확률 (0.0~1.0, WideResNet 모델에만 적용, default: 0.0)')
     parser.add_argument('--weighted-ce', action='store_true',
                         help='Weighted Cross Entropy 사용 (cat, dog 클래스에 1.5배 가중치 부여, default: False)')
+    parser.add_argument('--grad-norm', type=float, default=None,
+                        help='Gradient clipping의 최대 norm 값 (None이면 비활성화, default: None)')
     return parser.parse_args()
 
 
@@ -807,6 +809,10 @@ def main():
 
             loss, outputs = compute_loss(inputs, labels)
             loss.backward()
+            
+            # Gradient clipping
+            if args.grad_norm is not None:
+                torch.nn.utils.clip_grad_norm_(net.parameters(), args.grad_norm)
             
             if args.sam:
                 def closure():
