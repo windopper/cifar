@@ -10,24 +10,22 @@ class ShakeDropFunction(torch.autograd.Function):
         if training:
             gate = torch.zeros(1, device=x.device, dtype=torch.float32).bernoulli_(1 - p_drop)
             ctx.save_for_backward(gate)
-            if gate.item() == 0:
-                alpha = torch.empty(x.size(0), device=x.device, dtype=torch.float32).uniform_(*alpha_range)
-                alpha = alpha.view(alpha.size(0), 1, 1, 1).expand_as(x)
-                return alpha * x
-            else:
-                return x
+            # torch.compile 호환: .item() 대신 텐서 연산 사용
+            alpha = torch.empty(x.size(0), device=x.device, dtype=torch.float32).uniform_(*alpha_range)
+            alpha = alpha.view(alpha.size(0), 1, 1, 1).expand_as(x)
+            # gate가 0이면 alpha*x, 1이면 x를 반환
+            return gate * x + (1 - gate) * alpha * x
         else:
             return (1 - p_drop) * x
 
     @staticmethod
     def backward(ctx, grad_output):
         gate = ctx.saved_tensors[0]
-        if gate.item() == 0:
-            beta = torch.rand(grad_output.size(0), device=grad_output.device, dtype=torch.float32)
-            beta = beta.view(beta.size(0), 1, 1, 1).expand_as(grad_output)
-            return beta * grad_output, None, None, None
-        else:
-            return grad_output, None, None, None
+        # torch.compile 호환: .item() 대신 텐서 연산 사용
+        beta = torch.rand(grad_output.size(0), device=grad_output.device, dtype=torch.float32)
+        beta = beta.view(beta.size(0), 1, 1, 1).expand_as(grad_output)
+        # gate가 0이면 beta*grad, 1이면 grad를 반환
+        return gate * grad_output + (1 - gate) * beta * grad_output, None, None, None
 
 
 class ShakeDrop(nn.Module):

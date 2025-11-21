@@ -36,11 +36,10 @@ class PyramidBasicBlock(nn.Module):
         
         h0 = x if not self.downsampled else self.shortcut(x)
         
+        # torch.compile 최적화: F.pad 사용
         if h.size(1) > h0.size(1):
             pad_size = h.size(1) - h0.size(1)
-            pad_zero = torch.zeros(h0.size(0), pad_size, h0.size(2), h0.size(3), 
-                                  dtype=h0.dtype, device=h0.device)
-            h0 = torch.cat([h0, pad_zero], dim=1)
+            h0 = F.pad(h0, (0, 0, 0, 0, 0, pad_size))
         
         return h + h0
 
