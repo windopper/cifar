@@ -411,7 +411,7 @@ def get_scheduler(name: str, optimizer, epochs: int = 24, steps_per_epoch: int =
     return schedulers[name.lower()]
 
 
-def validate(net, criterion, val_loader, device, ema_model=None):
+def validate(net, criterion, val_loader, device):
     """Validation 함수 - loss와 accuracy 계산
     
     Args:
@@ -419,12 +419,8 @@ def validate(net, criterion, val_loader, device, ema_model=None):
         criterion: 손실 함수
         val_loader: 검증 데이터 로더
         device: 디바이스
-        ema_model: EMA 모델 (있으면 EMA 모델 사용, 없으면 일반 모델 사용)
     """
-    # EMA 모델이 있으면 EMA 모델 사용, 없으면 일반 모델 사용
-    model_to_validate = ema_model.get_model() if ema_model is not None else net
-    
-    model_to_validate.eval()
+    net.eval()
     val_loss = 0.0
     correct = 0
     total = 0
@@ -432,7 +428,7 @@ def validate(net, criterion, val_loader, device, ema_model=None):
     with torch.no_grad():
         for inputs, labels in val_loader:
             inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model_to_validate(inputs)
+            outputs = net(inputs)
             loss = criterion(outputs, labels)
 
             val_loss += loss.item()
@@ -440,9 +436,8 @@ def validate(net, criterion, val_loader, device, ema_model=None):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-    # 일반 모델은 학습 모드로 복원 (EMA 모델은 항상 eval 모드)
-    if ema_model is None:
-        net.train()
+    # 학습 모드로 복원
+    net.train()
     avg_loss = val_loss / len(val_loader)
     accuracy = 100 * correct / total
     return avg_loss, accuracy
@@ -843,8 +838,8 @@ def main():
 
         # Epoch 종료 후 평균 train loss 계산
         avg_train_loss = running_loss / len(train_loader)
-
-        val_loss, val_acc = validate(net, criterion, val_loader, device, ema_model=ema_model)
+        
+        val_loss, val_acc = validate(net, criterion, val_loader, device)
 
         # ExponentialLR, CosineAnnealingLR은 각 epoch마다 업데이트
         if scheduler is not None and isinstance(scheduler, lr_scheduler.ExponentialLR):
@@ -916,9 +911,9 @@ def main():
     if ema_model is not None:
         print("\n=== 최종 모델 성능 평가 ===")
         # 일반 모델로 추론
-        original_val_loss, original_val_acc = validate(net, criterion, val_loader, device, ema_model=None)
+        original_val_loss, original_val_acc = validate(net, criterion, val_loader, device)
         # EMA 모델로 추론
-        ema_val_loss, ema_val_acc = validate(net, criterion, val_loader, device, ema_model=ema_model)
+        ema_val_loss, ema_val_acc = validate(ema_model.get_model(), criterion, val_loader, device)
         
         print(f"Original Model:")
         print(f"  Val Loss: {original_val_loss:.4f}")
