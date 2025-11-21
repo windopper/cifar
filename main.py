@@ -590,6 +590,7 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     SAVE_PATH = os.path.join(output_dir, f"{model_name}.pth")
+    EMA_SAVE_PATH = os.path.join(output_dir, f"{model_name}_ema.pth")
     HISTORY_PATH = os.path.join(output_dir, f"{model_name}_history.json")
 
     # Normalize 값 설정 (히스토리 저장용)
@@ -843,7 +844,6 @@ def main():
         # Epoch 종료 후 평균 train loss 계산
         avg_train_loss = running_loss / len(train_loader)
 
-        # Validation 수행 (EMA 모델이 있으면 EMA 모델 사용)
         val_loss, val_acc = validate(net, criterion, val_loader, device, ema_model=ema_model)
 
         # ExponentialLR, CosineAnnealingLR은 각 epoch마다 업데이트
@@ -863,10 +863,13 @@ def main():
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             update_history_best(history, best_val_acc)
-            # EMA가 활성화되어 있으면 EMA 모델만 저장, 없으면 일반 모델 저장
+            
             if ema_model is not None:
-                torch.save(ema_model.get_model().state_dict(), SAVE_PATH)
-                print(f"  [Best Model Saved (EMA)] Val Accuracy: {val_acc:.2f}%")
+                torch.save(net.state_dict(), SAVE_PATH)
+                torch.save(ema_model.get_model().state_dict(), EMA_SAVE_PATH)
+                print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
+                print(f"    - Original model: {SAVE_PATH}")
+                print(f"    - EMA model: {EMA_SAVE_PATH}")
             else:
                 torch.save(net.state_dict(), SAVE_PATH)
                 print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
@@ -909,9 +912,27 @@ def main():
 
     print('Finished Training')
 
-    # 최고 모델은 이미 저장되어 있음
-    print(
-        f"Best model (Val Accuracy: {best_val_acc:.2f}%) saved to: {SAVE_PATH}")
+    # EMA 모델이 활성화되어 있으면 둘 다 추론하여 결과 출력
+    if ema_model is not None:
+        print("\n=== 최종 모델 성능 평가 ===")
+        # 일반 모델로 추론
+        original_val_loss, original_val_acc = validate(net, criterion, val_loader, device, ema_model=None)
+        # EMA 모델로 추론
+        ema_val_loss, ema_val_acc = validate(net, criterion, val_loader, device, ema_model=ema_model)
+        
+        print(f"Original Model:")
+        print(f"  Val Loss: {original_val_loss:.4f}")
+        print(f"  Val Accuracy: {original_val_acc:.2f}%")
+        print(f"EMA Model:")
+        print(f"  Val Loss: {ema_val_loss:.4f}")
+        print(f"  Val Accuracy: {ema_val_acc:.2f}%")
+        print()
+        
+        print(f"Best original model (Val Accuracy: {best_val_acc:.2f}%) saved to: {SAVE_PATH}")
+        print(f"Best EMA model saved to: {EMA_SAVE_PATH}")
+    else:
+        print(
+            f"Best model (Val Accuracy: {best_val_acc:.2f}%) saved to: {SAVE_PATH}")
     print(f"Training history saved to: {HISTORY_PATH}")
     print("\n캘리브레이션을 수행하려면 다음 명령어를 사용하세요:")
     print(f"python calibrate_model.py --model-path {SAVE_PATH} --history-path {HISTORY_PATH}")

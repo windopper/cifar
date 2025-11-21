@@ -280,8 +280,9 @@ AutoAugment: ✅
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1 | 96.34 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA | 96.4 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1 | 96.86 | 10.9 M |
-| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Weighted CE | 진행 중 | 10.9 M |
-| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Focal Loss Adaptive (gamma=3.0), Grad Norm 2, Epoch 100 | -- | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Weighted CE | 96.56 | 10.9 M |
+| wideresnet16_8 | + TTA 2 | 96.74 | 10.9 M |
+| wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Focal Loss Adaptive (gamma=3.0)| 95.73 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Use CIFAR-10 Normalize | 96.61 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, Learning Rate 0.1, Label Smoothing 0.1, Epoch 200, Use CIFAR-10 Normalize | 96.49 | 10.9 M |
 | wideresnet16_8 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 200 | **97.07** | 10.9 M |

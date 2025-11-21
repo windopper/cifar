@@ -38,19 +38,11 @@ class FocalLossAdaptive(nn.Module):
         self.device = device
 
     def get_gamma_list(self, pt):
-        gamma_list = []
-        batch_size = pt.shape[0]
-        for i in range(batch_size):
-            pt_sample = pt[i].item()
-            if (pt_sample >= 0.5):
-                gamma_list.append(self.gamma)
-                continue
-            # Choosing the gamma for the sample
-            for key in sorted(gamma_dic.keys()):
-                if pt_sample < key:
-                    gamma_list.append(gamma_dic[key])
-                    break
-        return torch.tensor(gamma_list).to(self.device)
+        gamma_tensor = torch.full_like(pt, self.gamma)
+        for key in sorted(gamma_dic.keys(), reverse=True):
+            mask = pt < key
+            gamma_tensor.masked_fill_(mask, gamma_dic[key])
+        return gamma_tensor
 
     def forward(self, input, target):
         if input.dim()>2:
