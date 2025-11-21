@@ -61,6 +61,9 @@ def get_model_name_parts(args):
     if args.label_smoothing > 0.0:
         model_name_parts.append(f"ls{args.label_smoothing}")
     
+    if args.weighted_ce:
+        model_name_parts.append("weighted_ce")
+    
     if args.augment:
         model_name_parts.append("aug")
     

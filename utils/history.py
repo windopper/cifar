@@ -31,6 +31,7 @@ def create_history(args, normalize_mean, normalize_std, device, num_workers, pin
             'nesterov': args.nesterov if args.optimizer.lower() == 'sgd' else None,
             'scheduler': args.scheduler,
             'label_smoothing': args.label_smoothing,
+            'weighted_ce': args.weighted_ce,
             'data_augment': args.augment,
             'autoaugment': args.autoaugment and args.augment,
             'cutmix': args.cutmix and args.augment,
