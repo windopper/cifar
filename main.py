@@ -43,7 +43,7 @@ from models.wideresnet import (
 )
 from models.wideresnet_pyramid import (
     wideresnet28_10_pyramid, wideresnet16_8_pyramid,
-    pyramidnet110_270, pyramidnet110_150
+    pyramidnet110_270, pyramidnet110_150, pyramidnet272_200_bottleneck
 )
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
 from utils.cutmix import CutMixCollator, CutMixCriterion
@@ -277,6 +277,8 @@ def _get_nets_dict(init_weights: bool = False, shakedrop_prob: float = 0.0):
         'pyramidnet110_270': pyramidnet110_270(shakedrop_prob=shakedrop_prob),
         # PyramidNet-110 with alpha=150 (~10M parameters, depth=110으로 변경됨)
         'pyramidnet110_150': pyramidnet110_150(shakedrop_prob=shakedrop_prob),
+        # PyramidNet-272 with bottleneck structure and alpha=200
+        'pyramidnet272_200_bottleneck': pyramidnet272_200_bottleneck(shakedrop_prob=shakedrop_prob),
         'rdnet_tiny': rdnet_tiny(pretrained=False, num_classes=10),
         'rdnet_small': rdnet_small(pretrained=False, num_classes=10),
         'rdnet_base': rdnet_base(pretrained=False, num_classes=10),
@@ -668,6 +670,7 @@ def main():
     wideresnet_models = ['wideresnet28_10', 'wideresnet16_8', 'wideresnet28_10_pyramid', 
                          'wideresnet16_8_pyramid', 'wideresnet28_10_fullpyramid', 
                          'wideresnet16_8_fullpyramid', 'pyramidnet110_270', 'pyramidnet110_150', 'pyramidnet164_118',
+                         'pyramidnet272_200_bottleneck',
                          'wideresnet28_10_remove_first_relu', 'wideresnet28_10_last_bn_remove_first_relu',
                          'wideresnet16_8_remove_first_relu', 'wideresnet16_8_last_bn_remove_first_relu']
     shakedrop_prob = args.shakedrop if args.net in wideresnet_models else 0.0
@@ -847,7 +850,7 @@ def main():
             else:
                 loss.backward()
             
-            # Gradient clipping (SAM 사용 시에는 적용하지 않음)
+            # Gradient clipping
             if args.grad_norm is not None and not args.sam:
                 if args.amp:
                     # AMP 사용 시 scaler를 통해 gradient unscale 후 clipping
@@ -867,7 +870,7 @@ def main():
                 optimizer.zero_grad(set_to_none=True)
                 loss, _ = compute_loss(inputs, labels)
                 
-                # 두 번째 backward는 AMP 없이 수행 (이미 unscale되었으므로)
+                # 두 번째 backward는 AMP 없이 수행
                 loss.backward()
                 optimizer.second_step()
                 
@@ -916,20 +919,20 @@ def main():
         # 히스토리에 저장
         update_history_epoch(history, avg_train_loss, val_loss, val_acc)
 
-        # 최고 검증 정확도일 때만 모델 저장
+        # EMA 모델은 매 에포크마다 항상 저장
+        if ema_model is not None:
+            torch.save(ema_model.get_model().state_dict(), EMA_SAVE_PATH)
+
+        # 최고 검증 정확도일 때만 원본 모델 저장
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             update_history_best(history, best_val_acc)
             
+            torch.save(net.state_dict(), SAVE_PATH)
+            print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
             if ema_model is not None:
-                torch.save(net.state_dict(), SAVE_PATH)
-                torch.save(ema_model.get_model().state_dict(), EMA_SAVE_PATH)
-                print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
                 print(f"    - Original model: {SAVE_PATH}")
-                print(f"    - EMA model: {EMA_SAVE_PATH}")
-            else:
-                torch.save(net.state_dict(), SAVE_PATH)
-                print(f"  [Best Model Saved] Val Accuracy: {val_acc:.2f}%")
+                print(f"    - EMA model: {EMA_SAVE_PATH} (updated every epoch)")
             # Early stopping 카운터 리셋 (활성화된 경우에만)
             if early_stopping_enabled:
                 patience_counter = 0
@@ -968,32 +971,9 @@ def main():
         save_history(history, HISTORY_PATH)
 
     print('Finished Training')
-
-    # EMA 모델이 활성화되어 있으면 둘 다 추론하여 결과 출력
-    if ema_model is not None:
-        print("\n=== 최종 모델 성능 평가 ===")
-        # 일반 모델로 추론
-        original_val_loss, original_val_acc = validate(net, criterion, val_loader, device)
-        # EMA 모델로 추론
-        ema_val_loss, ema_val_acc = validate(ema_model.get_model(), criterion, val_loader, device)
-        
-        print(f"Original Model:")
-        print(f"  Val Loss: {original_val_loss:.4f}")
-        print(f"  Val Accuracy: {original_val_acc:.2f}%")
-        print(f"EMA Model:")
-        print(f"  Val Loss: {ema_val_loss:.4f}")
-        print(f"  Val Accuracy: {ema_val_acc:.2f}%")
-        print()
-        
-        print(f"Best original model (Val Accuracy: {best_val_acc:.2f}%) saved to: {SAVE_PATH}")
-        print(f"Best EMA model saved to: {EMA_SAVE_PATH}")
-    else:
-        print(
-            f"Best model (Val Accuracy: {best_val_acc:.2f}%) saved to: {SAVE_PATH}")
     print(f"Training history saved to: {HISTORY_PATH}")
     print("\n캘리브레이션을 수행하려면 다음 명령어를 사용하세요:")
     print(f"python calibrate_model.py --model-path {SAVE_PATH} --history-path {HISTORY_PATH}")
-
 
 if __name__ == '__main__':
     main()

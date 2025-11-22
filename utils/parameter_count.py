@@ -2,6 +2,7 @@
 deep_baseline2 기반 모든 모델의 파라미터 개수를 계산하는 유틸 함수
 """
 import sys
+import argparse
 from pathlib import Path
 
 # 프로젝트 루트를 sys.path에 추가
@@ -86,12 +87,13 @@ from models.resnext import ResNeXt29_2x64d, ResNeXt29_4x64d, ResNeXt29_8x64d, Re
 from models.wideresnet import wideresnet28_10, wideresnet16_8, WideResNet
 from models.wideresnet_pyramid import (
     wideresnet28_10_pyramid, wideresnet16_8_pyramid,
-    pyramidnet110_270, pyramidnet110_150
+    pyramidnet110_270, pyramidnet110_150, pyramidnet272_200_bottleneck
 )
 from models.dla import DLA
 from models.convnext_step3_full import ConvNeXtCIFAR
 from models.convnextv2 import convnext_v2_cifar_nano, convnext_v2_cifar_nano_k3
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
+from main import get_net, get_available_nets
 
 
 def count_parameters(model):
@@ -372,6 +374,10 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     model_pyramidnet110_150 = pyramidnet110_150()
     results['pyramidnet110_150'] = count_parameters(model_pyramidnet110_150)
     
+    # PyramidNet-272 with bottleneck structure and alpha=200
+    model_pyramidnet272_200_bottleneck = pyramidnet272_200_bottleneck()
+    results['pyramidnet272_200_bottleneck'] = count_parameters(model_pyramidnet272_200_bottleneck)
+    
     # DLA model
     model_dla = DLA()
     results['dla'] = count_parameters(model_dla)
@@ -403,17 +409,75 @@ def get_deep_baseline2_parameter_counts(init_weights=False):
     return results
 
 
-def print_deep_baseline2_parameter_counts(init_weights=False):
+def get_model_parameter_count(model_name: str, init_weights: bool = False, shakedrop_prob: float = 0.0):
+    """
+    특정 모델의 파라미터 개수를 계산합니다.
+    
+    Args:
+        model_name: 모델 이름
+        init_weights: 가중치 초기화 여부 (기본값: False)
+        shakedrop_prob: ShakeDrop 확률 (기본값: 0.0)
+        
+    Returns:
+        int: 학습 가능한 파라미터의 총 개수
+    """
+    try:
+        model = get_net(model_name, init_weights=init_weights, shakedrop_prob=shakedrop_prob)
+        return count_parameters(model)
+    except Exception as e:
+        print(f"[오류] 모델 '{model_name}' 생성 실패: {e}")
+        return None
+
+
+def get_models_parameter_counts(model_names: list = None, init_weights: bool = False, shakedrop_prob: float = 0.0):
+    """
+    지정된 모델들의 파라미터 개수를 계산합니다.
+    
+    Args:
+        model_names: 모델 이름 목록 (None이면 모든 모델)
+        init_weights: 가중치 초기화 여부 (기본값: False)
+        shakedrop_prob: ShakeDrop 확률 (기본값: 0.0)
+        
+    Returns:
+        dict: 모델 이름을 키로 하고 파라미터 개수를 값으로 하는 딕셔너리
+    """
+    results = {}
+    
+    # 모델 이름 목록이 없으면 모든 모델 사용
+    if model_names is None:
+        model_names = get_available_nets()
+    
+    for model_name in model_names:
+        param_count = get_model_parameter_count(model_name, init_weights=init_weights, shakedrop_prob=shakedrop_prob)
+        if param_count is not None:
+            results[model_name] = param_count
+    
+    return results
+
+
+def print_deep_baseline2_parameter_counts(init_weights=False, model_name: str = None, shakedrop_prob: float = 0.0):
     """
     deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, WideResNet, DLA, ConvNeXt 및 RDNet 모델의 파라미터 개수를 출력합니다.
     
     Args:
         init_weights: 가중치 초기화 여부 (기본값: False)
+        model_name: 특정 모델 이름 (None이면 모든 모델)
+        shakedrop_prob: ShakeDrop 확률 (기본값: 0.0)
     """
-    results = get_deep_baseline2_parameter_counts(init_weights=init_weights)
+    if model_name:
+        # 특정 모델만 계산
+        model_names = [model_name]
+    else:
+        # 모든 모델 계산
+        model_names = None
+    
+    results = get_models_parameter_counts(model_names=model_names, init_weights=init_weights, shakedrop_prob=shakedrop_prob)
     
     print("=" * 70)
-    print("deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, WideResNet, DLA, ConvNeXt 및 RDNet 모델 파라미터 개수")
+    if model_name:
+        print(f"모델 '{model_name}' 파라미터 개수")
+    else:
+        print("deep_baseline, deep_baseline2/3, MXResNet, ResNeXt, WideResNet, DLA, ConvNeXt 및 RDNet 모델 파라미터 개수")
     print("=" * 70)
     
     # 파라미터 개수로 정렬
@@ -429,7 +493,33 @@ def print_deep_baseline2_parameter_counts(init_weights=False):
     print("=" * 70)
 
 
+def parse_args():
+    """커맨드라인 인자 파싱"""
+    parser = argparse.ArgumentParser(description='모델 파라미터 개수 계산')
+    parser.add_argument('--model', type=str, default=None,
+                        help='계산할 모델 이름 (지정하지 않으면 모든 모델)')
+    parser.add_argument('--init-weights', action='store_true',
+                        help='가중치 초기화 사용 (default: False)')
+    parser.add_argument('--shakedrop', type=float, default=0.0,
+                        help='ShakeDrop 확률 (0.0~1.0, WideResNet/PyramidNet 모델에만 적용, default: 0.0)')
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    # 기본 설정으로 파라미터 개수 출력
-    print_deep_baseline2_parameter_counts()
+    args = parse_args()
+    
+    # 모델 이름 검증
+    if args.model:
+        available_models = get_available_nets()
+        if args.model.lower() not in [m.lower() for m in available_models]:
+            print(f"[오류] 알 수 없는 모델: {args.model}")
+            print(f"사용 가능한 모델: {', '.join(available_models)}")
+            sys.exit(1)
+        # 대소문자 구분 없이 정확한 모델 이름 찾기
+        model_name = next(m for m in available_models if m.lower() == args.model.lower())
+    else:
+        model_name = None
+    
+    # 파라미터 개수 출력
+    print_deep_baseline2_parameter_counts(init_weights=args.init_weights, model_name=model_name, shakedrop_prob=args.shakedrop)
 

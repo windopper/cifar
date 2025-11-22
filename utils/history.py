@@ -60,6 +60,7 @@ def create_history(args, normalize_mean, normalize_std, device, num_workers, pin
             'sam': args.sam,
             'sam_rho': args.sam_rho if args.sam else None,
             'sam_adaptive': args.sam_adaptive if args.sam else None,
+            'shakedrop_prob': args.shakedrop if args.shakedrop > 0.0 else None,
             'grad_norm': args.grad_norm,
             'amp': args.amp,
             'compile': args.compile,

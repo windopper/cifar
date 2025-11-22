@@ -1,0 +1,10 @@
+{
+  "history_paths": [
+    "outputs/final2/pyramidnet/pyramidnet110_150_sgd_crossentropy_bs128_ep400_lr0.1_mom0.9_nesterov_schcosineannealinglr_tmax400_ls0.1_aug_autoaug_winit_ema_emad0.999_sam_samrho2.0_samadaptive_shakedrop_history.json",
+    "outputs/final2/pyramidnet/pyramidnet110_150_sgd_crossentropy_bs128_ep200_lr0.1_mom0.9_nesterov_schcosineannealinglr_tmax200_ls0.1_aug_autoaug_winit_ema_emad0.999_sam_samrho2.0_samadaptive_shakedrop_history.json",
+    "outputs/final2/wideresnet/wideresnet16_8_sgd_crossentropy_bs128_ep200_lr0.1_mom0.9_nesterov_schcosineannealinglr_tmax200_ls0.1_aug_autoaug_winit_ema_emad0.999_sam_samrho2.0_samadaptive_history.json"
+  ],
+  "history_paths_hash": "6fa6698ba255871990dcf768c4e79ed2",
+  "num_models": 3,
+  "num_classes": 10
+}

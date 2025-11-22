@@ -306,7 +306,9 @@ python cifar/main.py --optimizer sgd --epochs 100 --lr 0.025 --batch-size 32 --s
 | pyramidnet110_150 | SGD with Nestrov, Learning Rate 0.1, ShakeDrop 0.5 | 96.90 | 10.9 M |
 | pyramidnet110_150 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, ShakeDrop 0.5, Label Smoothing 0.1 | 97.0 | 10.9 M |
 | pyramidnet110_150 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 200, ShakeDrop 0.5 | 97.48 | 10.9 M |
-| pyramidnet110_150 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 400, ShakeDrop 0.5 | TODO: 진행중 | 10.9 M |
+| pyramidnet110_150 | SGD with Nestrov, ASAM (rho=2.0), Learning Rate 0.1, EMA, Label Smoothing 0.1, Epoch 400, ShakeDrop 0.5 | **97.70** | 10.9 M |
+| pyramidnet110_150 | + TTA 4 | 97.43 | 10.9 M |
+| pyramidnet110_150 | + TTA 2 | 97.67 | 10.9 M |
 
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --net pyramidnet110_150`
 
@@ -317,8 +319,16 @@ python cifar/main.py --optimizer sgd --epochs 100 --lr 0.025 --batch-size 32 --s
 `python cifar/main.py --optimizer sgd --epochs 100 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net pyramidnet110_150 --shakedrop 0.5`
 
 ```bash
-python cifar/main.py --optimizer sgd --epochs 400 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net pyramidnet110_150 --shakedrop 0.5 --amp
+python cifar/main.py --optimizer sgd --epochs 400 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net pyramidnet110_150 --shakedrop 0.5
 ```
+
+| pyramidnet272_200_bottleneck | -- | -- | 26.0 M |
+
+
+```bash
+python cifar/main.py --optimizer sgd --epochs 400 --lr 0.1 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net pyramidnet272_200_bottleneck --shakedrop 0.5
+```
+
 
 | 모델 | 세부 사항 | 최고 Val Accuracy (%) | Parameter Count |
 |------|------------|----------------------|----------------------|

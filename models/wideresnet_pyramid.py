@@ -44,6 +44,58 @@ class PyramidBasicBlock(nn.Module):
         return h + h0
 
 
+class PyramidBottleneckBlock(nn.Module):
+    """
+    PyramidNet 스타일의 Bottleneck Block
+    1x1 -> 3x3 -> 1x1 구조를 사용
+    
+    ResNet 스타일의 bottleneck 구조를 따르되, PyramidNet의 점진적 채널 증가에 맞춰 조정
+    중간 채널 수는 출력 채널과 동일하게 설정하여 논문의 파라미터 수(약 26M)에 맞춤
+    """
+    def __init__(self, in_planes, out_planes, stride=1, dropRate=0.0, shakedrop_prob=0.0):
+        super(PyramidBottleneckBlock, self).__init__()
+        
+        self.downsampled = stride == 2
+        self.branch = self._make_branch(in_planes, out_planes, stride=stride)
+        self.shortcut = None if not self.downsampled else nn.AvgPool2d(2)
+        
+        self.shake_drop = ShakeDrop(p_drop=shakedrop_prob)
+        
+        self.droprate = dropRate
+        self.in_planes = in_planes
+        self.out_planes = out_planes
+
+    def _make_branch(self, in_ch, out_ch, stride=1):
+        # Bottleneck 구조: 중간 채널 수를 설정하여 파라미터 수 조정
+        # 논문의 26M 파라미터를 맞추기 위해 중간 채널을 출력 채널과 비슷하게 설정
+        # 일반적으로 out_ch 정도로 설정하면 적절한 파라미터 수를 얻을 수 있음
+        mid_ch = out_ch
+        
+        return nn.Sequential(
+            nn.BatchNorm2d(in_ch),
+            nn.Conv2d(in_ch, mid_ch, 1, bias=False),  # 1x1 conv
+            nn.BatchNorm2d(mid_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(mid_ch, mid_ch, 3, padding=1, stride=stride, bias=False),  # 3x3 conv
+            nn.BatchNorm2d(mid_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(mid_ch, out_ch, 1, bias=False),  # 1x1 conv
+            nn.BatchNorm2d(out_ch))
+
+    def forward(self, x):
+        h = self.branch(x)
+        h = self.shake_drop(h)
+        
+        h0 = x if not self.downsampled else self.shortcut(x)
+        
+        # torch.compile 최적화: F.pad 사용
+        if h.size(1) > h0.size(1):
+            pad_size = h.size(1) - h0.size(1)
+            h0 = F.pad(h0, (0, 0, 0, 0, 0, pad_size))
+        
+        return h + h0
+
+
 class NetworkBlock(nn.Module):
     def __init__(self, nb_layers, in_chs, start_idx, block, stride, dropRate=0.0, 
                  shakedrop_probs=None):
@@ -86,11 +138,12 @@ class WideResNetPyramid(nn.Module):
         alpha: pyramid 스타일 총 채널 증가량
     """
     def __init__(self, depth=28, num_classes=10, widen_factor=10, dropRate=0.3, 
-                 shakedrop_prob=0.5, use_pyramid=False, alpha=48, use_original_depth=False):
+                 shakedrop_prob=0.5, use_pyramid=False, alpha=48, use_original_depth=False,
+                 use_bottleneck=False):
         super(WideResNetPyramid, self).__init__()
         
         in_ch = 16
-        block = PyramidBasicBlock
+        block = PyramidBottleneckBlock if use_bottleneck else PyramidBasicBlock
         
         if use_original_depth:
             n_units = (depth - 2) // 6
@@ -186,4 +239,17 @@ def pyramidnet110_150(shakedrop_prob=0.5, alpha=150):
     return WideResNetPyramid(depth=110, num_classes=10, widen_factor=1, dropRate=0.0,
                             shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha,
                             use_original_depth=True)
+
+
+def pyramidnet272_200_bottleneck(shakedrop_prob=0.5, alpha=200):
+    """
+    PyramidNet-272 with bottleneck structure and alpha=200
+    
+    Args:
+        shakedrop_prob: 최대 ShakeDrop 확률
+        alpha: pyramid 채널 증가량
+    """
+    return WideResNetPyramid(depth=272, num_classes=10, widen_factor=1, dropRate=0.0,
+                            shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha,
+                            use_original_depth=True, use_bottleneck=True)
 
