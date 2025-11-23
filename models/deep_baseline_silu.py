@@ -18,7 +18,6 @@ class DeepBaselineNetSilu(nn.Module):
         self.fc3 = nn.Linear(256, 128)
         self.fc4 = nn.Linear(128, 10)
         
-        # SiLU 이므로 Xavier Uniform 초기화
         self._initialize_weights()
 
     def _initialize_weights(self):

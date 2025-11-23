@@ -19,9 +19,9 @@ import torchvision.transforms as transforms
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from utils.cutout import Cutout
-from utils.cutmix import cutmix
-from utils.mixup import mixup
+from utils.augmentation.cutout import Cutout
+from utils.augmentation.cutmix import cutmix
+from utils.augmentation.mixup import mixup
 
 
 # Seaborn 스타일 설정

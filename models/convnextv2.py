@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from timm.layers import DropPath
 
-# 1. Layer Normalization for Channels First (N, C, H, W)
 class LayerNorm(nn.Module):
     def __init__(self, normalized_shape, eps=1e-6, data_format="channels_last"):
         super().__init__()
@@ -25,7 +24,6 @@ class LayerNorm(nn.Module):
             x = self.weight[:, None, None] * x + self.bias[:, None, None]
             return x
 
-# 2. Global Response Normalization (GRN)
 class GRN(nn.Module):
     def __init__(self, dim):
         super().__init__()
@@ -37,7 +35,6 @@ class GRN(nn.Module):
         Nx = Gx / (Gx.mean(dim=-1, keepdim=True) + 1e-6)
         return self.gamma * (x * Nx) + self.beta + x
 
-# 3. ConvNeXt V2 Block
 class Block(nn.Module):
     def __init__(self, dim, drop_path=0., kernel_size=7):
         super().__init__()
@@ -63,14 +60,11 @@ class Block(nn.Module):
         x = input + self.drop_path(x)
         return x
 
-# 4. Main Model: ConvNeXt V2 for CIFAR-10
 class ConvNeXtV2_CIFAR(nn.Module):
     def __init__(self, in_chans=3, num_classes=10, 
                  depths=[3, 3, 9, 3], dims=[96, 192, 384, 768], drop_path_rate=0., kernel_size=7):
         super().__init__()
         
-        # CIFAR-10 전용 Stem (32x32 해상도 보존)
-        # ImageNet용(Stride 4) 대신 Stride 1 사용
         self.downsample_layers = nn.ModuleList() 
         stem = nn.Sequential(
             nn.Conv2d(in_chans, dims[0], kernel_size=3, stride=1, padding=1),
@@ -78,7 +72,6 @@ class ConvNeXtV2_CIFAR(nn.Module):
         )
         self.downsample_layers.append(stem)
         
-        # Downsample stages (총 3번의 2배 다운샘플링 -> 최종 4x4 feature map)
         for i in range(3):
             downsample_layer = nn.Sequential(
                 LayerNorm(dims[i], eps=1e-6, data_format="channels_first"),
@@ -86,7 +79,6 @@ class ConvNeXtV2_CIFAR(nn.Module):
             )
             self.downsample_layers.append(downsample_layer)
 
-        # Drop path rate를 linear schedule로 각 block에 할당
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         cur = 0
         self.stages = nn.ModuleList()
@@ -97,7 +89,7 @@ class ConvNeXtV2_CIFAR(nn.Module):
             cur += depths[i]
             self.stages.append(stage)
 
-        self.norm = nn.LayerNorm(dims[-1], eps=1e-6) # Final norm
+        self.norm = nn.LayerNorm(dims[-1], eps=1e-6)
         self.head = nn.Linear(dims[-1], num_classes)
 
         self.apply(self._init_weights)
@@ -118,12 +110,8 @@ class ConvNeXtV2_CIFAR(nn.Module):
         x = self.head(x)
         return x
 
-# 모델 생성 함수 (CIFAR-10에 최적화된 작은 사이즈: Atto/Nano 급)
 def convnext_v2_cifar_nano(drop_path_rate=0.1):
-    # 깊이와 차원을 CIFAR-10 복잡도에 맞게 조정
     return ConvNeXtV2_CIFAR(depths=[2, 2, 6, 2], dims=[80, 160, 320, 640], num_classes=10, drop_path_rate=drop_path_rate)
 
-# 커널 사이즈 3을 사용하는 모델 생성 함수
 def convnext_v2_cifar_nano_k3(drop_path_rate=0.1):
-    # 깊이와 차원을 CIFAR-10 복잡도에 맞게 조정, 커널 사이즈 3 사용
     return ConvNeXtV2_CIFAR(depths=[2, 2, 6, 2], dims=[80, 160, 320, 640], num_classes=10, drop_path_rate=drop_path_rate, kernel_size=3)

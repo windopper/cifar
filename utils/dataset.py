@@ -2,8 +2,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from utils.cutout import Cutout
-
+from utils.augmentation.cutout import Cutout
 
 def get_normalize_values(use_cifar_normalize: bool = False):
     """

@@ -5,6 +5,8 @@ import sys
 import argparse
 from pathlib import Path
 
+from utils.net import get_available_nets
+
 # 프로젝트 루트를 sys.path에 추가
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -93,7 +95,7 @@ from models.dla import DLA
 from models.convnext_step3_full import ConvNeXtCIFAR
 from models.convnextv2 import convnext_v2_cifar_nano, convnext_v2_cifar_nano_k3
 from models.rdnet import rdnet_tiny, rdnet_small, rdnet_base, rdnet_large
-from main import get_net, get_available_nets
+from utils.net import get_net
 
 
 def count_parameters(model):

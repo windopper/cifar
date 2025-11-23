@@ -1,13 +1,3 @@
-"""
-모델 구조 시각화 및 분석 유틸리티 함수
-
-주요 기능:
-1. 모델 구조 요약 출력
-2. 레이어별 상세 정보 출력
-3. 파라미터 통계
-4. 입력 크기에 따른 출력 크기 확인
-5. 계산 그래프 시각화 (선택적)
-"""
 import sys
 import argparse
 from pathlib import Path
@@ -22,7 +12,7 @@ import torch.nn as nn
 from collections import OrderedDict
 import subprocess
 import shutil
-from main import _get_nets_dict 
+from utils.net import _get_nets_dict 
 
 try:
     from torchviz import make_dot
@@ -350,7 +340,7 @@ if __name__ == '__main__':
     args = parse_args()
     
     # main.py에서 get_net 함수 import
-    from main import get_net
+    from utils.net import get_net
     
     # 모델 로드
     print(f"모델 로드 중: {args.net}\n")
@@ -369,9 +359,9 @@ if __name__ == '__main__':
     )
     
     # 계층 구조 트리 출력 (옵션)
-    if args.show_architecture:
-        print("\n" + "=" * 80)
-        print("계층 구조 트리")
-        print("=" * 80)
-        print_model_architecture(model)
+    # if args.show_architecture:
+    #     print("\n" + "=" * 80)
+    #     print("계층 구조 트리")
+    #     print("=" * 80)
+    #     print_model_architecture(model)
 

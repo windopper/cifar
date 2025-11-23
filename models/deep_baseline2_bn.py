@@ -76,7 +76,6 @@ class DeepBaselineNetBN2(nn.Module):
             self._initialize_weights()
     
     def _initialize_weights(self):
-        """가중치 초기화 - ReLU를 사용하므로 Kaiming initialization 사용"""
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -91,29 +90,24 @@ class DeepBaselineNetBN2(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        # Conv-BN-ReLU 블록 1
         x = self.conv1(x)
         x = self.bn1(x)
         x = F.relu(x)
         
-        # Conv-BN-ReLU 블록 2
         x = self.conv2(x)
         x = self.bn2(x)
         x = F.relu(x)
         x = self.pool(x)
         
-        # Conv-BN-ReLU 블록 3
         x = self.conv3(x)
         x = self.bn3(x)
         x = F.relu(x)
         
-        # Conv-BN-ReLU 블록 4
         x = self.conv4(x)
         x = self.bn4(x)
         x = F.relu(x)
         x = self.pool(x)
         
-        # Conv-BN-ReLU 블록 5
         x = self.conv5(x)
         x = self.bn5(x)
         x = F.relu(x)

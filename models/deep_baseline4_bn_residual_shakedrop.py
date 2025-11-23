@@ -1,10 +1,4 @@
-"""
-ResNet-18 with ShakeDrop regularization.
 
-이 구현은 `models/deep_baseline4_bn_residual.py`의 CIFAR-10 전용 ResNet-18을 기반으로
-ShakeDrop 규제를 각 BasicBlock에 적용한 변형입니다.
-ShakeDrop: https://arxiv.org/abs/1705.07485
-"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,7 +8,6 @@ __all__ = ["ResNet18ShakeDrop"]
 
 
 class ShakeDropFunction(Function):
-    """Autograd function that applies ShakeDrop during forward/backward."""
 
     @staticmethod
     def forward(ctx, x, training: bool, drop_prob: float):
@@ -58,7 +51,6 @@ class ShakeDropFunction(Function):
 
 
 class ShakeDrop(nn.Module):
-    """Module wrapper for the ShakeDrop autograd function."""
 
     def __init__(self, drop_prob: float):
         super().__init__()
@@ -71,9 +63,6 @@ class ShakeDrop(nn.Module):
 
 
 class BasicBlock(nn.Module):
-    """
-    ResNet BasicBlock with optional ShakeDrop on the residual branch.
-    """
     expansion = 1
 
     def __init__(self, in_planes, planes, stride=1, drop_prob: float = 0.0):
@@ -117,15 +106,6 @@ class BasicBlock(nn.Module):
 
 
 class ResNet18ShakeDrop(nn.Module):
-    """
-    ResNet-18 variant where each residual block is regularized with ShakeDrop.
-
-    Args:
-        num_classes (int): 출력 클래스 수.
-        init_weights (bool): Kaiming 초기화 수행 여부.
-        min_shakedrop_prob (float): 첫 번째 블록에 적용할 최소 drop 확률.
-        max_shakedrop_prob (float): 마지막 블록에 적용할 최대 drop 확률.
-    """
 
     def __init__(
         self,

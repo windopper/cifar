@@ -45,13 +45,6 @@ class PyramidBasicBlock(nn.Module):
 
 
 class PyramidBottleneckBlock(nn.Module):
-    """
-    PyramidNet 스타일의 Bottleneck Block
-    1x1 -> 3x3 -> 1x1 구조를 사용
-    
-    ResNet 스타일의 bottleneck 구조를 따르되, PyramidNet의 점진적 채널 증가에 맞춰 조정
-    중간 채널 수는 출력 채널과 동일하게 설정하여 논문의 파라미터 수(약 26M)에 맞춤
-    """
     def __init__(self, in_planes, out_planes, stride=1, dropRate=0.0, shakedrop_prob=0.0):
         super(PyramidBottleneckBlock, self).__init__()
         
@@ -66,9 +59,6 @@ class PyramidBottleneckBlock(nn.Module):
         self.out_planes = out_planes
 
     def _make_branch(self, in_ch, out_ch, stride=1):
-        # Bottleneck 구조: 중간 채널 수를 설정하여 파라미터 수 조정
-        # 논문의 26M 파라미터를 맞추기 위해 중간 채널을 출력 채널과 비슷하게 설정
-        # 일반적으로 out_ch 정도로 설정하면 적절한 파라미터 수를 얻을 수 있음
         mid_ch = out_ch
         
         return nn.Sequential(
@@ -126,17 +116,6 @@ class NetworkBlock(nn.Module):
 
 
 class WideResNetPyramid(nn.Module):
-    """
-    
-    Args:
-        depth: 네트워크 깊이
-        num_classes: 클래스 수
-        widen_factor: width 배수
-        dropRate: dropout 비율
-        shakedrop_prob: 마지막 블록의 최대 ShakeDrop 확률
-        use_pyramid: True이면 pyramid 스타일 채널 증가 사용
-        alpha: pyramid 스타일 총 채널 증가량
-    """
     def __init__(self, depth=28, num_classes=10, widen_factor=10, dropRate=0.3, 
                  shakedrop_prob=0.5, use_pyramid=False, alpha=48, use_original_depth=False,
                  use_bottleneck=False):
@@ -206,49 +185,28 @@ class WideResNetPyramid(nn.Module):
         return h
 
 def wideresnet28_10_pyramid(shakedrop_prob=0.5, alpha=48):
-    """
-    """
     return WideResNetPyramid(depth=28, num_classes=10, widen_factor=10, dropRate=0.3,
                             shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha)
 
 
 def wideresnet16_8_pyramid(shakedrop_prob=0.5, alpha=32):
-    """
-    """
     return WideResNetPyramid(depth=16, num_classes=10, widen_factor=8, dropRate=0.3,
                             shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha)
 
 
 def pyramidnet110_270(shakedrop_prob=0.5, alpha=270):
-    """
-    Args:
-        shakedrop_prob: 최대 ShakeDrop 확률
-        alpha: pyramid 채널 증가량
-    """
     return WideResNetPyramid(depth=110, num_classes=10, widen_factor=1, dropRate=0.0,
                             shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha,
                             use_original_depth=True)
 
 
 def pyramidnet110_150(shakedrop_prob=0.5, alpha=150):
-    """
-    Args:
-        shakedrop_prob: 최대 ShakeDrop 확률
-        alpha: pyramid 채널 증가량
-    """
     return WideResNetPyramid(depth=110, num_classes=10, widen_factor=1, dropRate=0.0,
                             shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha,
                             use_original_depth=True)
 
 
 def pyramidnet272_200_bottleneck(shakedrop_prob=0.5, alpha=200):
-    """
-    PyramidNet-272 with bottleneck structure and alpha=200
-    
-    Args:
-        shakedrop_prob: 최대 ShakeDrop 확률
-        alpha: pyramid 채널 증가량
-    """
     return WideResNetPyramid(depth=272, num_classes=10, widen_factor=1, dropRate=0.0,
                             shakedrop_prob=shakedrop_prob, use_pyramid=True, alpha=alpha,
                             use_original_depth=True, use_bottleneck=True)

@@ -13,7 +13,6 @@ class DeepBaselineNetGAP(nn.Module):
         
         self.pool = nn.MaxPool2d(2, 2)
         
-        # Global Average Pooling으로 FC 레이어 축소
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(256, 10)
 
@@ -29,11 +28,9 @@ class DeepBaselineNetGAP(nn.Module):
         x = F.relu(self.conv5(x))
         x = self.pool(x)
         
-        # Global Average Pooling 적용
         x = self.gap(x)
         x = torch.flatten(x, 1)
         
-        # 단일 FC 레이어로 분류
         x = self.fc(x)
         
         return x

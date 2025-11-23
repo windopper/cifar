@@ -1,21 +1,3 @@
-"""
-DeepBaselineNetBN3ResidualDLATree:
-
-DeepBaselineNetBN3Residual에서 사용한 ResidualBlock을 기반으로 DLA(Tree) 구조를
-적용한 변형 모델.
-
-설계 핵심:
-1. ResidualBlock 재사용
-   - 기존 DeepBaselineNetBN3Residual과 동일한 ResidualBlock을 사용하여 학습 안정성 유지
-2. DLA(Tree) 계층 도입
-   - dla.py의 Root/Tree 아이디어를 차용하여 다중 깊이의 특징을 계층적으로 집계
-   - ResidualBlock을 Tree의 기본 block으로 사용
-3. 채널 구성
-   - (64 -> 64 -> 128 -> 256 -> 256 -> 512 -> 512) 순으로 채널 확장
-   - Tree 단계마다 stride를 통해 공간 크기를 점진적으로 축소 (32 -> 16 -> 8 -> 4)
-4. 분류기
-   - AdaptiveAvgPool2d(1) 이후 전형적인 FC 레이어로 CIFAR-10 분류
-"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,7 +6,6 @@ from .deep_baseline3_bn_residual import ResidualBlock
 
 
 class Root(nn.Module):
-    """여러 노드 출력을 concat 후 1x1 Conv로 집계"""
 
     def __init__(self, in_channels, out_channels, kernel_size=1):
         super().__init__()
@@ -45,17 +26,6 @@ class Root(nn.Module):
 
 
 class Tree(nn.Module):
-    """
-    DLA에서 사용되는 계층적 Aggregation 트리.
-
-    Args:
-        block: 기본 블록 (여기서는 ResidualBlock)
-        in_channels (int): 입력 채널 수
-        out_channels (int): 출력 채널 수
-        level (int): 트리 깊이
-        stride (int): 다운샘플링 stride
-    """
-
     def __init__(self, block, in_channels, out_channels, level=1, stride=1):
         super().__init__()
         self.level = level
@@ -88,13 +58,6 @@ class Tree(nn.Module):
 
 
 class DeepBaselineNetBN3ResidualDLATree(nn.Module):
-    """
-    DeepBaselineNetBN3Residual + DLA(Tree) 하이브리드 모델.
-
-    - 초기 두 단계는 ResidualBlock으로 특징 추출
-    - 이후 Tree 모듈을 통해 계층적 집계를 수행
-    """
-
     def __init__(self, num_classes: int = 10, init_weights: bool = False):
         super().__init__()
 
@@ -104,11 +67,9 @@ class DeepBaselineNetBN3ResidualDLATree(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        # stage1-2: 원본 ResidualBlock 단계
         self.stage1 = ResidualBlock(64, 64, stride=1)
         self.stage2 = ResidualBlock(64, 128, stride=1)
 
-        # DLA Tree stages
         self.layer3 = Tree(ResidualBlock, in_channels=128, out_channels=256, level=1, stride=1)
         self.layer4 = Tree(ResidualBlock, in_channels=256, out_channels=256, level=2, stride=2)
         self.layer5 = Tree(ResidualBlock, in_channels=256, out_channels=512, level=2, stride=2)

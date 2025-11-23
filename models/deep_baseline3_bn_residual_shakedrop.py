@@ -1,10 +1,4 @@
-"""
-DeepBaselineNetBN3Residual + ShakeDrop regularization.
 
-기존 `deep_baseline3_bn_residual` 구조(ResBlock 5개 + Dropout 분류기)에
-ShakeDrop을 적용해 각 residual branch를 확률적으로 드롭하며 학습을 안정화합니다.
-기본 drop 확률은 처음 블록 0.0 → 마지막 블록 0.5로 선형 증가합니다.
-"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,8 +8,6 @@ __all__ = ["DeepBaselineNetBN3ResidualShakeDrop"]
 
 
 class ShakeDropFunction(Function):
-    """Forward/backward 모두에서 랜덤 스케일을 적용하는 ShakeDrop autograd 함수."""
-
     @staticmethod
     def forward(ctx, x, training: bool, drop_prob: float):
         ctx.drop_prob = drop_prob
@@ -57,7 +49,6 @@ class ShakeDropFunction(Function):
 
 
 class ShakeDrop(nn.Module):
-    """편의용 모듈 래퍼."""
 
     def __init__(self, drop_prob: float):
         super().__init__()
@@ -70,7 +61,6 @@ class ShakeDrop(nn.Module):
 
 
 class ResidualBlockShakeDrop(nn.Module):
-    """ShakeDrop을 residual branch에 적용한 Basic Residual Block."""
 
     def __init__(self, in_channels, out_channels, stride=1, drop_prob: float = 0.0):
         super().__init__()
@@ -115,15 +105,6 @@ class ResidualBlockShakeDrop(nn.Module):
 
 
 class DeepBaselineNetBN3ResidualShakeDrop(nn.Module):
-    """
-    DeepBaselineNetBN3Residual + ShakeDrop.
-
-    Args:
-        init_weights (bool): Kaiming 초기화 수행 여부.
-        min_shakedrop_prob (float): 첫 블록 drop 확률.
-        max_shakedrop_prob (float): 마지막 블록 drop 확률.
-    """
-
     def __init__(
         self,
         init_weights: bool = False,

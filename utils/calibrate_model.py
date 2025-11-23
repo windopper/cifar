@@ -12,7 +12,7 @@ from utils.calibration import calibrate_temperature, ECELoss
 from utils.dataset import get_cifar10_loaders
 from utils.history import update_history_calibration, save_history, load_history
 from inference import load_model_from_history, load_temperature
-from main import CLASS_NAMES
+from train import CLASS_NAMES
 from tqdm import tqdm
 
 
@@ -79,7 +79,7 @@ def calibrate_single_model(history_path, model_path, device, use_cifar_normalize
         use_cifar_normalize_model = False
     
     # 모델 로드
-    from main import get_net
+    from utils.net import get_net
     net = get_net(net_name, init_weights=False, shakedrop_prob=0.0)
     net.load_state_dict(torch.load(model_path, map_location=device))
     net = net.to(device)

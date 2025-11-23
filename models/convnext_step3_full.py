@@ -1,18 +1,3 @@
-"""
-ConvNeXt Step 3 - 풀 스택 계층형 ConvNeXt
-=========================================
-
-이 파일은 ConvNeXt의 Stage/Downsample 구조까지 포함한 완제품 버전을 제공한다.
-Julius Ruseckas의 CIFAR10 ConvNeXt 노트북
-(https://juliusruseckas.github.io/ml/convnext-cifar10.html)을 토대로,
-각 Stage에 DownsampleBlock을 배치하고 다단계 채널 폭/블록 깊이를 구성한다.
-
-의도:
-- DownsampleBlock으로 해상도를 절반씩 줄이며 계층형 표현 학습
-- Stage별 블록 수/채널 수를 설정할 수 있도록 파라미터화
-- Stem/Body/Head를 결합한 ConvNeXt Tiny(CIFAR 맞춤) 모델 제공
-"""
-
 from typing import Sequence
 
 import torch
@@ -31,7 +16,6 @@ __all__ = [
 
 
 class DownsampleBlock(nn.Sequential):
-    """LayerNorm + 스트라이드 Conv로 해상도를 절반으로 줄인다."""
 
     def __init__(self, in_channels: int, out_channels: int, stride: int = 2):
         super().__init__(
@@ -41,7 +25,6 @@ class DownsampleBlock(nn.Sequential):
 
 
 class ConvNeXtStage(nn.Sequential):
-    """Downsample(필요 시) + ConvNeXtBlock * N."""
 
     def __init__(
         self,
@@ -69,7 +52,6 @@ class ConvNeXtStage(nn.Sequential):
 
 
 class ConvNeXtBody(nn.Sequential):
-    """다중 Stage를 순차적으로 연결."""
 
     def __init__(
         self,
@@ -98,7 +80,6 @@ class ConvNeXtBody(nn.Sequential):
 
 
 class ConvNeXtCIFAR(nn.Module):
-    """CIFAR용 ConvNeXt 전체 모델."""
 
     def __init__(
         self,

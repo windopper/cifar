@@ -16,11 +16,13 @@ from typing import Dict, List, Tuple, Optional
 import sys
 from pathlib import Path
 
+from utils.net import get_net
+
 # 프로젝트 루트를 sys.path에 추가
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from main import CLASS_NAMES, get_net
+from train import CLASS_NAMES
 
 
 def load_model_from_history(history_path: str) -> Tuple[str, str, tuple, tuple]:

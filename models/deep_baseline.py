@@ -22,7 +22,6 @@ class DeepBaselineNet(nn.Module):
             self._initialize_weights()
     
     def _initialize_weights(self):
-        """가중치 초기화 - ReLU를 사용하므로 Kaiming initialization 사용"""
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')

@@ -1,32 +1,8 @@
-"""
-DeepBaselineNetBN2ResidualGRN
-============================
-
-DeepBaselineNetBN2Residual에 2024/2025년 CNN 이미지 분류 SOTA 계열(ConvNeXt V2, EfficientViT 등)
-모델에서 핵심적으로 사용하는 Global Response Normalization(GRN)과
-대규모 depthwise-separable Conv 블록을 결합한 변형을 도입한 버전입니다.
-
-도입된 최신 기술: ConvNeXt V2 스타일의 GRN + LayerScale + DropPath + SE
-- Depthwise Conv (k=7)로 지역적 문맥을 넓게 포착
-- GRN(Global Response Normalization)은 ConvNeXt V2 (Meta AI, CVPR 2023)에서 제안되어
-  2024/2025년 ImageNet Top-1 챔피언 CNN 계열에서 표준으로 사용됨
-- LayerScale과 DropPath(Stochastic Depth)는 깊은 네트워크에서도 안정적인 학습을 제공
-
-- CIFAR-10 특화 개선 사항
-  - Stage 간 Shortcut 경로에 BatchNorm을 더해 분포 차이를 보정하고 안정적인 Residual 학습 지원
-  - Squeeze-and-Excitation(SE) 블록으로 채널별 응답을 재보정해 작은 입력 해상도에서도 표현력 확보
-  - LayerScale 초기값을 1e-2로 키워 소형 네트워크에서도 GRN 블록이 초반부터 충분한 기여를 할 수 있게 구성
-"""
-
 import torch
 import torch.nn as nn
 
 
 class DropPath(nn.Module):
-    """
-    Stochastic Depth 구현 (ConvNeXt, EfficientNet, DeiT 등에서 사용)
-    """
-
     def __init__(self, drop_prob: float = 0.0):
         super().__init__()
         self.drop_prob = drop_prob
@@ -45,10 +21,6 @@ class DropPath(nn.Module):
 
 
 class LayerNorm2d(nn.Module):
-    """
-    ConvNeXt 계열이 즐겨 사용하는 Channel-first LayerNorm 구현
-    """
-
     def __init__(self, num_channels: int, eps: float = 1e-6):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(num_channels))
@@ -65,10 +37,6 @@ class LayerNorm2d(nn.Module):
 
 
 class GlobalResponseNorm(nn.Module):
-    """
-    ConvNeXt V2의 핵심인 GRN(Global Response Normalization) 모듈
-    """
-
     def __init__(self, dim: int, eps: float = 1e-6):
         super().__init__()
         self.gamma = nn.Parameter(torch.zeros(1, dim, 1, 1))
@@ -82,11 +50,6 @@ class GlobalResponseNorm(nn.Module):
 
 
 class SqueezeExcite(nn.Module):
-    """
-    Squeeze-and-Excitation 모듈
-    - CIFAR-10처럼 채널 수 대비 공간 크기가 작은 입력에서 채널 중요도 재조정에 효과적
-    """
-
     def __init__(self, channels: int, reduction: int = 4):
         super().__init__()
         reduced_channels = max(1, channels // reduction)
@@ -106,13 +69,6 @@ class SqueezeExcite(nn.Module):
 
 
 class ConvNeXtV2ResidualBlock(nn.Module):
-    """
-    ConvNeXt V2 스타일 Residual Block
-    - DW Conv(k=7) + LayerNorm2d
-    - 1x1 Conv 확장 -> GELU -> GRN -> 1x1 Conv 축소
-    - LayerScale + DropPath + Skip 연결
-    """
-
     def __init__(
         self,
         in_channels: int,
@@ -184,13 +140,6 @@ class ConvNeXtV2ResidualBlock(nn.Module):
 
 
 class DeepBaselineNetBN2ResidualGRN(nn.Module):
-    """
-    DeepBaselineNetBN2Residual + ConvNeXt V2 블록 융합 모델
-    - GRN, LayerScale, DropPath 기반 Residual Block으로 고급 표현력 확보
-    - 4개의 Stage(64/128/256/512 채널)로 구성, 각 Stage는 2개의 블록
-    - AdaptiveAvgPool + LayerNorm 기반 헤드로 안정적 분류
-    """
-
     def __init__(
         self,
         init_weights: bool = False,

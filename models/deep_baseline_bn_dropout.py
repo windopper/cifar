@@ -5,7 +5,6 @@ import torch.nn.functional as F
 class DeepBaselineNetBNDropout(nn.Module):
     def __init__(self, dropout_rate=0.2):
         super(DeepBaselineNetBNDropout, self).__init__()
-        # Conv-BN-ReLU 블록들
         self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(32)
         
@@ -23,7 +22,6 @@ class DeepBaselineNetBNDropout(nn.Module):
         
         self.pool = nn.MaxPool2d(2, 2)
         
-        # 분류기 앞에 Dropout 추가
         self.dropout = nn.Dropout(dropout_rate)
         
         self.fc1 = nn.Linear(256 * 4 * 4, 512)
@@ -32,29 +30,24 @@ class DeepBaselineNetBNDropout(nn.Module):
         self.fc4 = nn.Linear(128, 10)
 
     def forward(self, x):
-        # Conv-BN-ReLU 블록 1
         x = self.conv1(x)
         x = self.bn1(x)
         x = F.relu(x)
         
-        # Conv-BN-ReLU 블록 2
         x = self.conv2(x)
         x = self.bn2(x)
         x = F.relu(x)
         x = self.pool(x)
         
-        # Conv-BN-ReLU 블록 3
         x = self.conv3(x)
         x = self.bn3(x)
         x = F.relu(x)
         
-        # Conv-BN-ReLU 블록 4
         x = self.conv4(x)
         x = self.bn4(x)
         x = F.relu(x)
         x = self.pool(x)
         
-        # Conv-BN-ReLU 블록 5
         x = self.conv5(x)
         x = self.bn5(x)
         x = F.relu(x)
@@ -62,7 +55,6 @@ class DeepBaselineNetBNDropout(nn.Module):
         
         x = torch.flatten(x, 1)
         
-        # 분류기 앞에 Dropout 적용
         x = self.dropout(x)
         
         x = F.relu(self.fc1(x))

@@ -1,18 +1,3 @@
-"""
-ConvNeXt Step 2 - Depthwise ConvNeXt Block
-==========================================
-
-이 단계에서는 Stem/Head 외에 ConvNeXt의 핵심인 Depthwise Separable Conv 블록과
-Residual γ 스케일링을 추가한다. Julius Ruseckas의 CIFAR10 ConvNeXt 예제
-(https://juliusruseckas.github.io/ml/convnext-cifar10.html)를 바탕으로, 블록을 반복하여
-로컬 토큰 상호작용을 학습하는 소형 네트워크를 구성한다.
-
-의도:
-- Depthwise Conv를 통해 공간적 혼합, 1x1 Conv를 통해 채널 혼합을 분리
-- Residual 경로에 학습 가능한 γ(초기 0) 스칼라를 두어 안정적인 학습 유도
-- Stage/Downsample 없이 동일 해상도에서 ConvNeXt Block만 누적
-"""
-
 import torch
 import torch.nn as nn
 
@@ -30,7 +15,6 @@ __all__ = [
 
 
 class ResidualBranch(nn.Module):
-    """γ 파라미터가 있는 Residual 래퍼."""
 
     def __init__(self, *layers: nn.Module):
         super().__init__()
@@ -42,7 +26,6 @@ class ResidualBranch(nn.Module):
 
 
 class ConvNeXtBlock(ResidualBranch):
-    """ConvNeXt의 Depthwise Conv + 채널 혼합 블록."""
 
     def __init__(
         self,
@@ -71,7 +54,6 @@ class ConvNeXtBlock(ResidualBranch):
 
 
 class ConvNeXtLocalBlockClassifier(nn.Module):
-    """ConvNeXt Stem + 반복 블록 + Head 구조."""
 
     def __init__(
         self,

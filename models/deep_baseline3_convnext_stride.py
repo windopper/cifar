@@ -1,14 +1,3 @@
-"""
-DeepBaselineNetBN3ResidualConvNeXt
-==================================
-
-기존 `deep_baseline3_bn_residual_bottleneck.py`를 ConvNeXt 스타일로 변형한 실험 모델.
-
-변경 사항:
-1. MaxPool 대신 Stage 전환 시 stride=2 컨볼루션으로 해상도를 절반으로 축소
-2. Residual Block을 ConvNeXt 구조(7x7 depthwise -> LayerNorm -> 1x1 -> GELU -> 1x1)로 대체
-3. Stage 1 이후의 모든 Stage가 stride 2 다운샘플을 수행하여 32→16→8→4 해상도 달성
-"""
 
 from typing import Sequence
 
@@ -21,7 +10,6 @@ __all__ = ["DeepBaselineNetBN3ResidualConvNeXt"]
 
 
 class ConvNeXtResidualBlock(nn.Module):
-    """ConvNeXt 스타일의 레지듀얼 블록."""
 
     def __init__(
         self,
@@ -72,7 +60,6 @@ class ConvNeXtResidualBlock(nn.Module):
         return residual + out
 
 class StridedDownsample(nn.Sequential):
-    """LayerNorm + stride 2 conv로 해상도를 절반으로 축소."""
 
     def __init__(self, in_channels: int, out_channels: int):
         super().__init__(
@@ -82,7 +69,6 @@ class StridedDownsample(nn.Sequential):
 
 
 class ConvNeXtStage(nn.Sequential):
-    """Stage 전환 및 ConvNeXt 블록 반복."""
 
     def __init__(
         self,
@@ -117,7 +103,6 @@ class ConvNeXtStage(nn.Sequential):
 
 
 class DeepBaselineNetBN3ResidualConvNeXt(nn.Module):
-    """ConvNeXt 블록과 stride 다운샘플을 사용하는 DeepBaseline 변형 모델."""
 
     def __init__(
         self,
