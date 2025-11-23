@@ -1,4 +1,4 @@
-# CIFAR-10 97.78%
+# CIFAR-10
 
 ## Installation
 ### Installing uv
