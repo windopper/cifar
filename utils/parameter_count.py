@@ -5,11 +5,10 @@ import sys
 import argparse
 from pathlib import Path
 
-from utils.net import get_available_nets
-
-# 프로젝트 루트를 sys.path에 추가
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
+from utils.net import get_available_nets
 
 import torch
 import torch.nn as nn

@@ -5,18 +5,14 @@ import sys
 import argparse
 from pathlib import Path
 
-from utils.net import get_available_nets
-
-# 프로젝트 루트를 sys.path에 추가
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
+from utils.net import get_available_nets, get_net
 
 import torch
 import torch.nn as nn
 from thop import profile, clever_format
-
-from utils.net import get_net
-
 
 def measure_gflops(model: nn.Module, input_size: tuple = (1, 3, 32, 32), device: torch.device = None):
     """

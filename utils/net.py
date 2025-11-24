@@ -4,7 +4,7 @@ from models.convnext_step1_patchify import ConvNeXtPatchifyClassifier
 from models.convnext_step2_local_block import ConvNeXtLocalBlockClassifier
 from models.convnext_step3_full import ConvNeXtCIFAR, convnext_tiny
 from models.convnextv2 import convnext_v2_cifar_nano, convnext_v2_cifar_nano_k3
-from models.cvt_cifar import cvt_cifar_10m
+from models.cvt import cvt_10m
 from models.deep_baseline import DeepBaselineNet
 from models.deep_baseline2_bn import DeepBaselineNetBN2
 from models.deep_baseline2_bn_residual import DeepBaselineNetBN2Residual
@@ -132,7 +132,7 @@ def _get_nets_dict(init_weights: bool = False, shakedrop_prob: float = 0.0):
         'convnext_tiny': convnext_tiny(init_weights=init_weights),
         'convnext_v2_cifar_nano': convnext_v2_cifar_nano(),
         'convnext_v2_cifar_nano_k3': convnext_v2_cifar_nano_k3(),
-        'cvt_cifar_10m': cvt_cifar_10m(init_weights=init_weights),
+        'cvt_10m': cvt_10m(init_weights=init_weights),
         'resnet18': ResNet18(),
         'vgg16': VGG('VGG16'),
         'mobilenetv2': MobileNetV2(),

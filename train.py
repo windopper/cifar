@@ -27,7 +27,6 @@ from utils.net import get_available_nets
 from utils.net import get_net
 from utils.training_config import print_training_configuration
 
-
 from utils.loss.supcon import SupConLoss
 from utils.scheduler.cosine_annealing_warmup_restarts import CosineAnnealingWarmupRestarts
 from utils.ema import ModelEMA

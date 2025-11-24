@@ -356,6 +356,9 @@ python cifar/main.py --optimizer sgd --epochs 400 --lr 0.1 --batch-size 128 --sc
 | DLA | -- | 94.9 | 16.2M |
 | rdnet_tiny | -- | -- | 22.8 M |
 
+
+`uv run train.py --optimizer adamw --epochs 200 --lr 3e-4 --batch-size 128 --scheduler cosineannealinglr --w-init --augment --autoaugment --nesterov --ema --sam --sam-rho 2.0 --sam-adaptive --label-smoothing 0.1 --net cvt_10m`
+
 ![image](./comparison/final_comparison_2.png)
 
 # BaseModel

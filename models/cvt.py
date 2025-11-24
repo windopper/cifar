@@ -24,7 +24,6 @@ import torch.nn.functional as F
 from einops import rearrange
 from timm.layers import DropPath, trunc_normal_
 
-
 class Mlp(nn.Module):
     """Multi-layer perceptron."""
     def __init__(self, in_features, hidden_features=None, out_features=None, 
@@ -242,7 +241,7 @@ class VisionTransformerStage(nn.Module):
         return x
 
 
-class CvTCIFAR(nn.Module):
+class CvT(nn.Module):
     """Convolutional Vision Transformer for CIFAR-10.
     
     This is a 3-stage architecture adapted for 32x32 images with ~10M parameters.
@@ -357,6 +356,6 @@ class CvTCIFAR(nn.Module):
         return x
 
 
-def cvt_cifar_10m(init_weights=False):
+def cvt_10m(init_weights=False):
     """Create a CvT model for CIFAR-10 with approximately 10M parameters."""
-    return CvTCIFAR(num_classes=10, init_weights=init_weights)
+    return CvT(num_classes=10, init_weights=init_weights)
