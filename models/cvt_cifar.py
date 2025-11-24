@@ -1,18 +1,28 @@
 """
 Convolutional Vision Transformer (CvT) for CIFAR-10
-Adapted from: https://github.com/microsoft/CvT/blob/main/lib/models/cls_cvt.py
+
+Reference: https://github.com/microsoft/CvT/blob/main/lib/models/cls_cvt.py
+Paper: "CvT: Introducing Convolutions to Vision Transformers"
+       (Wu et al., ICCV 2021)
+
+This implementation adapts the CvT architecture for CIFAR-10 (32x32 images, 10 classes).
+The model uses a 3-stage hierarchy with convolutional token embeddings and 
+convolutional projection in the multi-head self-attention mechanism.
+
+Architecture:
+- Stage 1: 32x32 -> 8x8, 64 channels, 1 transformer block
+- Stage 2: 8x8 -> 4x4, 128 channels, 2 transformer blocks  
+- Stage 3: 4x4 -> 2x2, 256 channels, 12 transformer blocks
+- Global average pooling + linear classifier
+
+Total parameters: ~10.3M (comparable to WideResNet-16-8 and PyramidNet-110-150)
 """
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
-
-
-class QuickGELU(nn.Module):
-    """Quick GELU activation function."""
-    def forward(self, x):
-        return x * torch.sigmoid(1.702 * x)
+from timm.layers import DropPath, trunc_normal_
 
 
 class Mlp(nn.Module):
@@ -95,7 +105,7 @@ class Attention(nn.Module):
             )
         elif method == 'avg':
             proj = nn.Sequential(
-                nn.AvgPool2d(kernel_size, stride, padding, count_include_pad=False, ceil_mode=False),
+                nn.AvgPool2d(kernel_size, stride, padding),
             )
         elif method == 'linear':
             proj = None
@@ -162,7 +172,7 @@ class Block(nn.Module):
             stride_kv=stride_kv, stride_q=stride_q, padding_kv=padding_kv, padding_q=padding_q
         )
         
-        self.drop_path = nn.Dropout(drop_path) if drop_path > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim_out)
         mlp_hidden_dim = int(dim_out * mlp_ratio)
         self.mlp = Mlp(in_features=dim_out, hidden_features=mlp_hidden_dim, 
@@ -312,7 +322,7 @@ class CvTCIFAR(nn.Module):
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                nn.init.trunc_normal_(m.weight, std=0.02)
+                trunc_normal_(m.weight, std=0.02)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.LayerNorm):
