@@ -251,9 +251,9 @@ class CvT(nn.Module):
         
         # Stage 1: 32x32 -> 8x8, 64 channels
         self.stage1 = VisionTransformerStage(
-            patch_size=7,
+            patch_size=3,
             patch_stride=4,
-            patch_padding=2,
+            patch_padding=1,
             in_chans=in_chans,
             embed_dim=64,
             depth=1,
