@@ -249,10 +249,9 @@ class CvT(nn.Module):
     def __init__(self, in_chans=3, num_classes=10, init_weights=False):
         super().__init__()
         
-        # Stage 1: 32x32 -> 8x8, 64 channels
         self.stage1 = VisionTransformerStage(
             patch_size=3,
-            patch_stride=4,
+            patch_stride=1,
             patch_padding=1,
             in_chans=in_chans,
             embed_dim=64,
@@ -270,10 +269,10 @@ class CvT(nn.Module):
             stride_q=1
         )
         
-        # Stage 2: 8x8 -> 4x4, 128 channels
+        # 32x32 -> 16x16
         self.stage2 = VisionTransformerStage(
             patch_size=3,
-            patch_stride=2,
+            patch_stride=2,    # Downsampling (32->16)
             patch_padding=1,
             in_chans=64,
             embed_dim=128,
@@ -291,7 +290,7 @@ class CvT(nn.Module):
             stride_q=1
         )
         
-        # Stage 3: 4x4 -> 2x2, 256 channels
+        # Stage 3: 16x16 -> 8x8
         self.stage3 = VisionTransformerStage(
             patch_size=3,
             patch_stride=2,
